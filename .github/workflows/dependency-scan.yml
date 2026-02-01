@@ -68,7 +68,7 @@ jobs:
           cyclonedx-bom -o sbom.xml
 
       - name: Upload SBOM
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: sbom
           path: sbom.xml
@@ -144,7 +144,7 @@ jobs:
           cat LICENSES.md
 
       - name: Upload license report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: licenses
           path: LICENSES.md
