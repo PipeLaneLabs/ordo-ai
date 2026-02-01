@@ -123,8 +123,8 @@ select = [
     "B",   # flake8-bugbear
     "UP",  # pyupgrade
     "N",   # pep8-naming
-    "ANN", # flake8-annotations
-    "S",   # flake8-bandit (security)
+    "ANN", # flake8-annotations (Strict typing)
+    "S",   # flake8-bandit (Security)
     "A",   # flake8-builtins
     "COM", # flake8-commas
     "DTZ", # flake8-datetimez
@@ -134,21 +134,27 @@ select = [
     "PTH", # flake8-use-pathlib
     "RUF", # Ruff-specific rules
 ]
+
 ignore = [
-    "ANN101", # Missing type annotation for self
-    "ANN102", # Missing type annotation for cls
-    "COM812", # Trailing comma missing (conflicts with black)
-    "S101",   # Use of assert (allowed in tests)
-    "B008",   # Do not perform function call in argument defaults (FastAPI Depends pattern)
+    "E501",    # Line length (Leave this to Black, it handles it better)
+    "B008",    # Allow function calls in default args (REQUIRED for FastAPI Depends)
+    "COM812",  # Trailing comma missing (Conflicts with Black formatter)
+    "ISC001",  # Implicit string concatenation (Conflicts with Black formatter)
+    "ANN101",  # Deprecated: Missing type annotation for self
+    "ANN102",  # Deprecated: Missing type annotation for cls
+    "ANN401",  # Allow 'Any' type hints (Necessary for some dynamic Python patterns)
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = [
-    "S101",   # Allow assert in tests
-    "ANN",    # Don't require annotations in tests
-    "ARG",    # Allow unused arguments in test fixtures
+    "S101",    # Allow 'assert' (Standard for Pytest)
+    "S105",    # Allow hardcoded passwords (fake keys for testing)
+    "S106",    # Allow hardcoded passwords (fake keys for testing)
+    "ANN",     # Tests don't need strict type return annotations
+    "ARG",     # Allow unused arguments (Standard for Pytest fixtures)
+    "E402",    # Allow imports not at top (Standard for mocking)
 ]
-"__init__.py" = ["F401"]  # Allow unused imports in __init__.py
+"__init__.py" = ["F401"]  # Allow unused imports in package initialization
 
 [tool.ruff.lint.isort]
 known-first-party = ["src"]

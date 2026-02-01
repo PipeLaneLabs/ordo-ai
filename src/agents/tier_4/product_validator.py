@@ -33,7 +33,7 @@ class ProductValidatorAgent(BaseAgent):
     async def _build_prompt(
         self,
         state: WorkflowState,
-        **_kwargs: Any,  # noqa: ANN401
+        **_kwargs: Any,
     ) -> str:
         """Build prompt for product validation.
 

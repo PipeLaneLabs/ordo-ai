@@ -13,17 +13,16 @@ NOTE: Requires proper subprocess mocking for pytest execution.
 
 import pytest
 
+
 # Skip tests requiring subprocess execution and file system operations
 pytestmark = pytest.mark.skip(
     reason="Requires complex subprocess and filesystem mocking for pytest execution"
 )
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, patch, call
-from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from src.agents.tier_3.quality_engineer import QualityEngineerAgent
 from src.config import Settings
-from src.llm.base_client import BaseLLMClient, LLMResponse
+from src.llm.base_client import BaseLLMClient
 from src.orchestration.budget_guard import BudgetGuard
 
 

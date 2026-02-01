@@ -29,14 +29,13 @@ class TestRedisCacheConnect:
 
         with patch(
             "src.storage.cache.redis.ConnectionPool.from_url", return_value=mock_pool
-        ):
-            with patch("src.storage.cache.redis.Redis", return_value=mock_client):
-                cache = RedisCache()
-                await cache.connect()
+        ), patch("src.storage.cache.redis.Redis", return_value=mock_client):
+            cache = RedisCache()
+            await cache.connect()
 
-                assert cache.pool is not None
-                assert cache.client is not None
-                mock_client.ping.assert_called_once()
+            assert cache.pool is not None
+            assert cache.client is not None
+            mock_client.ping.assert_called_once()
 
     @pytest.mark.anyio
     async def test_connect_failure(self):
@@ -452,7 +451,7 @@ class TestRedisCacheEdgeCases:
         cache.client.incr = AsyncMock(side_effect=[1, 2, 3, 4, 5])
         cache.client.expire = AsyncMock()
 
-        for i in range(5):
+        for _i in range(5):
             result = await cache.rate_limit(
                 "api:user:123", max_requests=5, window_seconds=60
             )
@@ -464,7 +463,7 @@ class TestRedisCacheEdgeCases:
         cache.client.incr = AsyncMock(side_effect=[1, 2, 3, 4, 5, 6])
         cache.client.expire = AsyncMock()
 
-        for i in range(5):
+        for _i in range(5):
             result = await cache.rate_limit(
                 "api:user:123", max_requests=5, window_seconds=60
             )

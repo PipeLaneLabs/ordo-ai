@@ -12,7 +12,6 @@ Tests cover:
 - Error handling
 """
 
-import re
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -22,7 +21,6 @@ from src.agents.tier_5.documentation import DocumentationAgent
 from src.config import Settings
 from src.llm.base_client import BaseLLMClient, LLMResponse
 from src.orchestration.budget_guard import BudgetGuard
-from src.orchestration.state import WorkflowState
 
 
 @pytest.fixture
@@ -219,12 +217,12 @@ class TestParseOutput:
         # Project README
         This is a test README.
         </FILE>
-        
+
         <FILE name="docs/API_REFERENCE.md">
         # API Reference
         This is a test API reference.
         </FILE>
-        
+
         <FILE name="docs/TROUBLESHOOTING.md">
         # Troubleshooting
         This is a test troubleshooting guide.
@@ -335,7 +333,7 @@ Run `pip install project`
         <file name="README.md">
         # Project README
         </file>
-        
+
         <FILE name="docs/API_REFERENCE.md">
         # API Reference
         </FILE>
@@ -367,9 +365,9 @@ Run `pip install project`
         <FILE name="README.md">
         # Project README
         </FILE>
-        
+
         <FILE name="docs/EMPTY.md">
-        
+
         </FILE>
         """
 

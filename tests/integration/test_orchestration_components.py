@@ -53,7 +53,7 @@ class TestLLMClientFallback:
                 # Try OpenRouter first
                 try:
                     await openrouter.generate(prompt="Test")
-                    assert False, "Should have raised error"
+                    raise AssertionError("Should have raised error")
                 except Exception:
                     pass
 

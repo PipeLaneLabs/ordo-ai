@@ -9,16 +9,15 @@ Tests cover:
 - Escalation handling
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, patch
 
 from src.agents.tier_0.deviation_handler import DeviationHandlerAgent
 from src.config import Settings
-from src.exceptions import WorkflowError, BudgetExhaustedError
+from src.exceptions import BudgetExhaustedError, WorkflowError
 from src.llm.base_client import BaseLLMClient
 from src.orchestration.budget_guard import BudgetGuard
-from src.orchestration.state import WorkflowState
 
 
 @pytest.fixture
@@ -185,7 +184,7 @@ class TestErrorRecovery:
     ):
         """Test that recovery increments rejection count."""
         error = WorkflowError("Workflow failed")
-        initial_count = sample_workflow_state.get("rejection_count", 0)
+        sample_workflow_state.get("rejection_count", 0)
 
         with patch.object(deviation_handler, "logger"):
             result = await deviation_handler.attempt_recovery(
@@ -238,7 +237,7 @@ class TestStateRollback:
     ):
         """Test that rollback preserves workflow ID."""
         previous_state = sample_workflow_state.copy()
-        workflow_id = sample_workflow_state["workflow_id"]
+        sample_workflow_state["workflow_id"]
 
         with patch.object(deviation_handler, "logger"):
             result = await deviation_handler.rollback_state(

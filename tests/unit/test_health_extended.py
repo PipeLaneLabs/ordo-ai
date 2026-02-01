@@ -9,12 +9,11 @@ Tests cover:
 - Health metrics aggregation
 NOTE: Some tests require complex FastAPI/service mocking."""
 
-import pytest
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
-from fastapi.testclient import TestClient
 
-from src.api.health import router
+import pytest
+
 from src.config import Settings
 
 
@@ -243,11 +242,6 @@ class TestHealthMetricsAggregation:
     @pytest.mark.asyncio
     async def test_aggregate_healthy_metrics(self):
         """Test aggregating healthy service metrics."""
-        metrics = {
-            "database": {"status": "healthy", "latency_ms": 10},
-            "cache": {"status": "healthy", "latency_ms": 5},
-            "api": {"status": "healthy", "response_time_ms": 50},
-        }
 
         overall_status = "healthy"
         avg_latency = (10 + 5 + 50) / 3
@@ -258,11 +252,6 @@ class TestHealthMetricsAggregation:
     @pytest.mark.asyncio
     async def test_aggregate_mixed_metrics(self):
         """Test aggregating mixed service metrics."""
-        metrics = {
-            "database": {"status": "healthy", "latency_ms": 10},
-            "cache": {"status": "degraded", "latency_ms": 2000},
-            "api": {"status": "healthy", "response_time_ms": 50},
-        }
 
         overall_status = "degraded"
 
@@ -271,11 +260,6 @@ class TestHealthMetricsAggregation:
     @pytest.mark.asyncio
     async def test_aggregate_unhealthy_metrics(self):
         """Test aggregating unhealthy service metrics."""
-        metrics = {
-            "database": {"status": "unavailable"},
-            "cache": {"status": "unavailable"},
-            "api": {"status": "unavailable"},
-        }
 
         overall_status = "unhealthy"
 

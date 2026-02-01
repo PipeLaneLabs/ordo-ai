@@ -10,10 +10,10 @@ Tests cover:
 - Error handling
 """
 
-import pytest
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import UUID
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from src.config import Settings
 
@@ -372,7 +372,6 @@ class TestChainlitIntegration:
     async def test_workflow_with_approval_gate(self, mock_chainlit):
         """Test workflow with approval gate."""
         # Initialize session
-        session_data = {"session_id": "test-session-123"}
 
         # Display approval request
         approval = {
@@ -393,7 +392,6 @@ class TestChainlitIntegration:
     async def test_workflow_with_error_recovery(self, mock_chainlit):
         """Test workflow with error recovery."""
         # Initialize session
-        session_data = {"session_id": "test-session-123"}
 
         # Workflow encounters error
         error = {
@@ -402,7 +400,7 @@ class TestChainlitIntegration:
         }
 
         # Display error to user
-        error_display = {
+        {
             "title": "Workflow Error",
             "message": error["message"],
         }

@@ -11,14 +11,13 @@ Tests cover:
 NOTE: These tests require proper async implementation of budget guard methods.
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
 
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, patch
-
-from src.orchestration.budget_guard import BudgetGuard
 from src.config import Settings
 from src.exceptions import BudgetExhaustedError
+from src.orchestration.budget_guard import BudgetGuard
 
 
 @pytest.fixture
@@ -101,7 +100,7 @@ class TestBudgetExhaustion:
         sample_workflow_state["budget_used_tokens"] = 9500
         sample_workflow_state["budget_remaining_tokens"] = 500
 
-        with patch.object(budget_guard, "logger") as mock_logger:
+        with patch.object(budget_guard, "logger"):
             result = await budget_guard.check_budget(
                 workflow_state=sample_workflow_state,
                 tokens_required=100,
@@ -162,7 +161,7 @@ class TestCostTracking:
     @pytest.mark.asyncio
     async def test_track_cost_accumulation(self, budget_guard, sample_workflow_state):
         """Test tracking cost accumulation."""
-        initial_cost = sample_workflow_state["budget_used_usd"]
+        sample_workflow_state["budget_used_usd"]
 
         result = await budget_guard.track_cost(
             workflow_state=sample_workflow_state,
@@ -256,7 +255,7 @@ class TestStressScenarios:
     @pytest.mark.asyncio
     async def test_rapid_token_consumption(self, budget_guard, sample_workflow_state):
         """Test rapid token consumption."""
-        for i in range(10):
+        for _i in range(10):
             sample_workflow_state["budget_used_tokens"] += 1000
             sample_workflow_state["budget_remaining_tokens"] -= 1000
 
@@ -271,7 +270,7 @@ class TestStressScenarios:
     @pytest.mark.asyncio
     async def test_rapid_cost_accumulation(self, budget_guard, sample_workflow_state):
         """Test rapid cost accumulation."""
-        for i in range(20):
+        for _i in range(20):
             sample_workflow_state["budget_used_usd"] += 5.0
             sample_workflow_state["budget_remaining_usd"] -= 5.0
 

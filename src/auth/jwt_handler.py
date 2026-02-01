@@ -12,6 +12,7 @@ from typing import Any
 
 import jwt
 
+
 try:
     from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 except ImportError:

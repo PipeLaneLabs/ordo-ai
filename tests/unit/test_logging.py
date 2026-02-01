@@ -131,13 +131,12 @@ class TestBindWorkflowContext:
         """Test that bind_workflow_context clears previous context."""
         with patch(
             "src.observability.logging.structlog.contextvars.clear_contextvars"
-        ) as mock_clear:
-            with patch(
-                "src.observability.logging.structlog.contextvars.bind_contextvars"
-            ):
-                bind_workflow_context("wf-001", "trace-abc123")
+        ) as mock_clear, patch(
+            "src.observability.logging.structlog.contextvars.bind_contextvars"
+        ):
+            bind_workflow_context("wf-001", "trace-abc123")
 
-                mock_clear.assert_called_once()
+            mock_clear.assert_called_once()
 
 
 class TestBindAgentContext:

@@ -9,19 +9,20 @@ Tests cover:
 - Conditional branching
 """
 
-import pytest
-from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
 
 # Skip all tests in this module - requires complex graph routing setup
 pytestmark = pytest.mark.skip(
     reason="Requires complex LangGraph routing and agent coordination setup"
 )
 
-from src.orchestration.controller import OrchestrationController
 from src.config import Settings
 from src.orchestration.budget_guard import BudgetGuard
 from src.orchestration.checkpoints import CheckpointManager
+from src.orchestration.controller import OrchestrationController
 
 
 @pytest.fixture
@@ -240,7 +241,7 @@ class TestStateTransitions:
     @pytest.mark.asyncio
     async def test_state_version_increment(self, controller, sample_workflow_state):
         """Test state version increment on transition."""
-        initial_version = sample_workflow_state["state_version"]
+        sample_workflow_state["state_version"]
 
         with patch.object(controller, "logger"):
             result = await controller._transition_state(

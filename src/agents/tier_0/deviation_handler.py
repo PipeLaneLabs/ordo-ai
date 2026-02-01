@@ -13,13 +13,15 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import structlog
+
 from src.agents.base_agent import BaseAgent
 from src.config import Settings
 from src.exceptions import HumanApprovalTimeoutError, WorkflowError
 from src.llm.base_client import BaseLLMClient, LLMResponse
 from src.orchestration.budget_guard import BudgetGuard
 from src.orchestration.state import WorkflowState
-import structlog
+
 
 logger = structlog.get_logger()
 

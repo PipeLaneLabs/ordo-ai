@@ -6,8 +6,8 @@ Covers all code paths in src/auth/jwt_handler.py.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-from unittest.mock import MagicMock, patch
+from datetime import UTC, datetime, timedelta
+from unittest.mock import patch
 
 import jwt
 import pytest
@@ -316,7 +316,7 @@ class TestVerifyRefreshToken:
     ) -> None:
         """Test verification fails if type field is missing."""
         # Create token without type field
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         payload = {
             "sub": "user123",
             "exp": now + timedelta(hours=24),
@@ -354,7 +354,7 @@ class TestTokenData:
 
     def test_token_data_creation(self) -> None:
         """Test TokenData creation."""
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         exp = now + timedelta(hours=1)
         data = TokenData(user_id="user123", roles=["admin"], exp=exp, iat=now)
         assert data.user_id == "user123"
@@ -364,7 +364,7 @@ class TestTokenData:
 
     def test_token_data_multiple_roles(self) -> None:
         """Test TokenData with multiple roles."""
-        now = datetime.now(tz=timezone.utc)
+        now = datetime.now(tz=UTC)
         exp = now + timedelta(hours=1)
         roles = ["admin", "developer", "viewer"]
         data = TokenData(user_id="user123", roles=roles, exp=exp, iat=now)

@@ -53,7 +53,7 @@ class TestArtifactStorageInit:
         mock_client.make_bucket = MagicMock()
 
         with patch("src.storage.artifact_storage.Minio", return_value=mock_client):
-            storage = ArtifactStorage()
+            ArtifactStorage()
 
             mock_client.make_bucket.assert_not_called()
 

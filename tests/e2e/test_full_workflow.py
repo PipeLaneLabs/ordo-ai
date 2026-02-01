@@ -4,19 +4,16 @@ Tests the full workflow from user request through all 6 tiers,
 verifying artifact generation, budget tracking, and state transitions.
 """
 
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
 
 from src.config import Settings
-from src.exceptions import BudgetExhaustedError, InfiniteLoopDetectedError
 from src.observability.logging import bind_workflow_context
 from src.orchestration.budget_guard import BudgetGuard
 from src.orchestration.checkpoints import CheckpointManager
-from src.orchestration.controller import OrchestrationController
-from src.orchestration.state import WorkflowState, create_initial_state
+from src.orchestration.state import create_initial_state
 
 
 @pytest.fixture
@@ -37,7 +34,7 @@ def mock_settings() -> Settings:
         minio_secret_key="test-minio-secret-123",
         openrouter_api_key="test-api-key-12345",
         google_api_key="test-api-key-12345",
-        jwt_secret_key="test-secret-key-min-32-chars-long-123456",  # noqa: S106
+        jwt_secret_key="test-secret-key-min-32-chars-long-123456",
         human_approval_timeout=300,
         total_budget_tokens=100000,
         max_monthly_budget_usd=10.0,
@@ -502,7 +499,7 @@ class TestWorkflowEdgeCases:
                 user_request=f"Test workflow {i}",
                 trace_id=tid,
             )
-            for i, (wid, tid) in enumerate(zip(workflow_ids, trace_ids))
+            for i, (wid, tid) in enumerate(zip(workflow_ids, trace_ids, strict=False))
         ]
 
         # Verify all states are independent

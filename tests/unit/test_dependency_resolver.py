@@ -80,7 +80,7 @@ async def test_build_prompt_missing_tasks(agent, workflow_state):
 async def test_parse_output_success_secure(agent, workflow_state):
     mock_response = MagicMock()
     mock_response.content = """# Dependency Management
-    
+
 ## Production Dependencies
 - package==1.0.0
 
@@ -106,7 +106,7 @@ Critical Issues: 0
 async def test_parse_output_with_security_issues(agent, workflow_state):
     mock_response = MagicMock()
     mock_response.content = """# Dependency Management
-    
+
 ## Production Dependencies
 
 ## Security Scan Results
@@ -126,7 +126,7 @@ Critical Issues: 2
 async def test_parse_output_with_license_issues(agent, workflow_state):
     mock_response = MagicMock()
     mock_response.content = """# Dependency Management
-    
+
 ## Production Dependencies
 
 ## Security Scan Results

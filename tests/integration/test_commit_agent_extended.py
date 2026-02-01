@@ -9,10 +9,10 @@ Tests cover:
 - Repository state validation
 """
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, patch, call
-from pathlib import Path
+
 
 # Skip all tests in this module - requires actual git repository setup
 pytestmark = pytest.mark.skip(
@@ -279,7 +279,7 @@ class TestBranchManagement:
         with patch("subprocess.run") as mock_run:
             mock_result = MagicMock()
             mock_result.returncode = 0
-            mock_result.stdout = f"Merge made by the 'recursive' strategy"
+            mock_result.stdout = "Merge made by the 'recursive' strategy"
             mock_result.stderr = ""
             mock_run.return_value = mock_result
 

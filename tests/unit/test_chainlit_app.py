@@ -13,6 +13,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+
 # Skip entire module due to Pydantic/Chainlit compatibility issue
 pytestmark = pytest.mark.skip(
     reason="Chainlit/Pydantic compatibility issue - CodeSettings not fully defined"

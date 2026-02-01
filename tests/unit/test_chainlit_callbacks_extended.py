@@ -9,9 +9,10 @@ Tests cover:
 - Session management
 """
 
-import pytest
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
+
+import pytest
 
 
 @pytest.fixture
@@ -300,7 +301,6 @@ class TestCallbackIntegration:
         feedback = {"rating": 4}
 
         # Session end
-        session_end = {"duration_seconds": 3600}
 
         assert session["session_id"] is not None
         assert message["content"] == "Start workflow"
@@ -311,19 +311,17 @@ class TestCallbackIntegration:
     async def test_workflow_with_error_callback(self, mock_chainlit):
         """Test workflow with error callback."""
         # Session start
-        session = {"session_id": "sess-123"}
 
         # Workflow encounters error
         error = {"type": "error", "message": "Execution failed"}
 
         # Error displayed to user
-        error_display = {"title": "Error", "message": error["message"]}
+        {"title": "Error", "message": error["message"]}
 
         # User provides feedback
         feedback = {"type": "negative", "rating": 1}
 
         # Session end
-        session_end = {"duration_seconds": 600}
 
         assert error["type"] == "error"
         assert feedback["type"] == "negative"
@@ -332,7 +330,6 @@ class TestCallbackIntegration:
     async def test_workflow_with_approval_callback(self, mock_chainlit):
         """Test workflow with approval callback."""
         # Session start
-        session = {"session_id": "sess-123"}
 
         # Approval request
         approval = {"gate_type": "security_review"}
@@ -341,7 +338,6 @@ class TestCallbackIntegration:
         decision = {"decision": "approve"}
 
         # Workflow continues
-        state_update = {"phase": "testing"}
 
         # Positive feedback
         feedback = {"rating": 5}

@@ -15,6 +15,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
+
 try:
     from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 except ImportError:

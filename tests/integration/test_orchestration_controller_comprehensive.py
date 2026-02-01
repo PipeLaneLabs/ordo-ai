@@ -12,9 +12,10 @@ Tests cover:
 """
 
 import unittest
-import pytest
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from src.config import Settings
 from src.exceptions import BudgetExhaustedError, InfiniteLoopDetectedError
@@ -658,7 +659,7 @@ class TestExecuteWorkflow:
         controller.graph = mock_graph
 
         async def mock_astream(*args, **kwargs):
-            for i in range(3):
+            for _i in range(3):
                 yield {
                     "workflow_id": "test-123",
                     "user_request": "Test request",

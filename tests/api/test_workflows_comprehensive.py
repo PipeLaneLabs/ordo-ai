@@ -12,11 +12,11 @@ Tests cover all workflow control endpoints including:
 
 import uuid
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi import HTTPException, status
-from fastapi.testclient import TestClient
+
 
 try:
     from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
@@ -40,15 +40,14 @@ from src.api.schemas import (
 )
 from src.api.workflows import (
     _WORKFLOWS,
-    _WorkflowRecord,
     _check_permission_dependency,
+    _WorkflowRecord,
     approve_workflow,
     get_current_user,
     get_workflow_budget,
     get_workflow_status,
     start_workflow,
 )
-from src.exceptions import WorkflowError
 
 
 class TestGetCurrentUser:

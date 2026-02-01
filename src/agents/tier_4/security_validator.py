@@ -38,7 +38,7 @@ class SecurityValidatorAgent(BaseAgent):
     async def _build_prompt(
         self,
         state: WorkflowState,  # noqa: ARG002
-        **_kwargs: Any,  # noqa: ANN401
+        **_kwargs: Any,
     ) -> str:
         """Build prompt for security validation.
 

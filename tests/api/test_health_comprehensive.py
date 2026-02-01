@@ -10,12 +10,9 @@ Tests cover:
 - Socket connection failures
 """
 
-import socket
-from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastapi.testclient import TestClient
 
 from src.api.health import (
     check_minio_health,
@@ -109,17 +106,14 @@ class TestCheckMinioHealth:
 
     def test_check_minio_health_healthy_with_protocol(self):
         """Test MinIO health check when service is healthy with protocol."""
-        with patch("src.api.health.settings.environment", "production"):
-            with patch(
-                "src.api.health.settings.minio_endpoint", "http://localhost:9000"
-            ):
-                with patch("src.api.health.settings.minio_secure", False):
-                    with patch(
-                        "src.api.health.socket.create_connection"
-                    ) as mock_socket:
-                        mock_socket.return_value = MagicMock()
-                        result = check_minio_health()
-                        assert result == HealthStatus.HEALTHY
+        with patch("src.api.health.settings.environment", "production"), patch(
+            "src.api.health.settings.minio_endpoint", "http://localhost:9000"
+        ), patch("src.api.health.settings.minio_secure", False), patch(
+            "src.api.health.socket.create_connection"
+        ) as mock_socket:
+            mock_socket.return_value = MagicMock()
+            result = check_minio_health()
+            assert result == HealthStatus.HEALTHY
 
     def test_check_minio_health_healthy_without_protocol(self):
         """Test MinIO health check when service is healthy without protocol."""

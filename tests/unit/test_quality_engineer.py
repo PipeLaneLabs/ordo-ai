@@ -272,13 +272,11 @@ async def test_build_prompt_includes_requirements(quality_engineer):
         quality_engineer,
         "_read_if_exists",
         new=AsyncMock(return_value="Requirements content"),
+    ), patch.object(
+        quality_engineer, "_read_src_files", new=AsyncMock(return_value="")
+    ), patch.object(
+        quality_engineer, "_read_existing_tests", new=AsyncMock(return_value="")
     ):
-        with patch.object(
-            quality_engineer, "_read_src_files", new=AsyncMock(return_value="")
-        ):
-            with patch.object(
-                quality_engineer, "_read_existing_tests", new=AsyncMock(return_value="")
-            ):
-                prompt = await quality_engineer._build_prompt(state)
+        prompt = await quality_engineer._build_prompt(state)
 
-                assert "Requirements content" in prompt or "REQUIREMENTS.md" in prompt
+        assert "Requirements content" in prompt or "REQUIREMENTS.md" in prompt

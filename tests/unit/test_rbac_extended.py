@@ -6,7 +6,7 @@ Covers all code paths in src/auth/rbac.py.
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -93,7 +93,7 @@ class TestPermissionsConstant:
 
     def test_permissions_are_lists(self) -> None:
         """Test all permissions are lists."""
-        for role, perms in PERMISSIONS.items():
+        for _role, perms in PERMISSIONS.items():
             assert isinstance(perms, list)
             assert all(isinstance(p, str) for p in perms)
 
@@ -366,7 +366,7 @@ class TestListAllPermissions:
     def test_list_all_permissions_values_are_lists(self) -> None:
         """Test all values in returned dict are lists."""
         all_perms = list_all_permissions()
-        for role, perms in all_perms.items():
+        for _role, perms in all_perms.items():
             assert isinstance(perms, list)
             assert all(isinstance(p, str) for p in perms)
 
