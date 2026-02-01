@@ -39,7 +39,7 @@ class TestHealthCheckEndpoint:
             with patch("src.api.health.check_cache") as mock_cache:
                 mock_db.return_value = {"status": "healthy"}
                 mock_cache.return_value = {"status": "healthy"}
-                
+
                 # Simulate endpoint call
                 result = {
                     "status": "healthy",
@@ -49,7 +49,7 @@ class TestHealthCheckEndpoint:
                         "cache": {"status": "healthy"},
                     },
                 }
-        
+
         assert result["status"] == "healthy"
         assert result["services"]["database"]["status"] == "healthy"
         assert result["services"]["cache"]["status"] == "healthy"
@@ -61,7 +61,7 @@ class TestHealthCheckEndpoint:
             with patch("src.api.health.check_cache") as mock_cache:
                 mock_db.return_value = {"status": "degraded", "latency_ms": 5000}
                 mock_cache.return_value = {"status": "healthy"}
-                
+
                 result = {
                     "status": "degraded",
                     "timestamp": datetime.now(tz=UTC).isoformat(),
@@ -70,7 +70,7 @@ class TestHealthCheckEndpoint:
                         "cache": {"status": "healthy"},
                     },
                 }
-        
+
         assert result["status"] == "degraded"
         assert result["services"]["database"]["status"] == "degraded"
 
@@ -80,17 +80,23 @@ class TestHealthCheckEndpoint:
         with patch("src.api.health.check_database") as mock_db:
             with patch("src.api.health.check_cache") as mock_cache:
                 mock_db.return_value = {"status": "healthy"}
-                mock_cache.return_value = {"status": "unavailable", "error": "Connection refused"}
-                
+                mock_cache.return_value = {
+                    "status": "unavailable",
+                    "error": "Connection refused",
+                }
+
                 result = {
                     "status": "degraded",
                     "timestamp": datetime.now(tz=UTC).isoformat(),
                     "services": {
                         "database": {"status": "healthy"},
-                        "cache": {"status": "unavailable", "error": "Connection refused"},
+                        "cache": {
+                            "status": "unavailable",
+                            "error": "Connection refused",
+                        },
                     },
                 }
-        
+
         assert result["status"] == "degraded"
         assert result["services"]["cache"]["status"] == "unavailable"
 
@@ -99,18 +105,30 @@ class TestHealthCheckEndpoint:
         """Test health check when all services are down."""
         with patch("src.api.health.check_database") as mock_db:
             with patch("src.api.health.check_cache") as mock_cache:
-                mock_db.return_value = {"status": "unavailable", "error": "Connection refused"}
-                mock_cache.return_value = {"status": "unavailable", "error": "Connection refused"}
-                
+                mock_db.return_value = {
+                    "status": "unavailable",
+                    "error": "Connection refused",
+                }
+                mock_cache.return_value = {
+                    "status": "unavailable",
+                    "error": "Connection refused",
+                }
+
                 result = {
                     "status": "unhealthy",
                     "timestamp": datetime.now(tz=UTC).isoformat(),
                     "services": {
-                        "database": {"status": "unavailable", "error": "Connection refused"},
-                        "cache": {"status": "unavailable", "error": "Connection refused"},
+                        "database": {
+                            "status": "unavailable",
+                            "error": "Connection refused",
+                        },
+                        "cache": {
+                            "status": "unavailable",
+                            "error": "Connection refused",
+                        },
                     },
                 }
-        
+
         assert result["status"] == "unhealthy"
 
 
@@ -124,13 +142,13 @@ class TestDatabaseHealthCheck:
             mock_conn = AsyncMock()
             mock_connect.return_value = mock_conn
             mock_conn.fetchval.return_value = 1
-            
+
             result = {
                 "status": "healthy",
                 "latency_ms": 10,
                 "version": "PostgreSQL 14.0",
             }
-        
+
         assert result["status"] == "healthy"
         assert result["latency_ms"] < 100
 
@@ -139,13 +157,13 @@ class TestDatabaseHealthCheck:
         """Test database connection timeout."""
         with patch("asyncpg.connect") as mock_connect:
             mock_connect.side_effect = TimeoutError("Connection timeout")
-            
+
             result = {
                 "status": "unavailable",
                 "error": "Connection timeout",
                 "latency_ms": 30000,
             }
-        
+
         assert result["status"] == "unavailable"
         assert "timeout" in result["error"].lower()
 
@@ -156,13 +174,13 @@ class TestDatabaseHealthCheck:
             mock_conn = AsyncMock()
             mock_connect.return_value = mock_conn
             mock_conn.fetchval.return_value = 1
-            
+
             result = {
                 "status": "degraded",
                 "latency_ms": 3000,
                 "warning": "Slow query response",
             }
-        
+
         assert result["status"] == "degraded"
         assert result["latency_ms"] > 1000
 
@@ -177,13 +195,13 @@ class TestCacheHealthCheck:
             mock_client = AsyncMock()
             mock_redis.return_value = mock_client
             mock_client.ping.return_value = True
-            
+
             result = {
                 "status": "healthy",
                 "latency_ms": 5,
                 "memory_usage_mb": 128,
             }
-        
+
         assert result["status"] == "healthy"
 
     @pytest.mark.asyncio
@@ -191,12 +209,12 @@ class TestCacheHealthCheck:
         """Test cache connection refused."""
         with patch("redis.asyncio.from_url") as mock_redis:
             mock_redis.side_effect = ConnectionError("Connection refused")
-            
+
             result = {
                 "status": "unavailable",
                 "error": "Connection refused",
             }
-        
+
         assert result["status"] == "unavailable"
 
     @pytest.mark.asyncio
@@ -207,14 +225,14 @@ class TestCacheHealthCheck:
             mock_redis.return_value = mock_client
             mock_client.ping.return_value = True
             mock_client.info.return_value = {"used_memory": 900 * 1024 * 1024}  # 900MB
-            
+
             result = {
                 "status": "degraded",
                 "latency_ms": 10,
                 "memory_usage_mb": 900,
                 "warning": "High memory usage",
             }
-        
+
         assert result["status"] == "degraded"
         assert result["memory_usage_mb"] > 800
 
@@ -230,10 +248,10 @@ class TestHealthMetricsAggregation:
             "cache": {"status": "healthy", "latency_ms": 5},
             "api": {"status": "healthy", "response_time_ms": 50},
         }
-        
+
         overall_status = "healthy"
         avg_latency = (10 + 5 + 50) / 3
-        
+
         assert overall_status == "healthy"
         assert avg_latency < 100
 
@@ -245,9 +263,9 @@ class TestHealthMetricsAggregation:
             "cache": {"status": "degraded", "latency_ms": 2000},
             "api": {"status": "healthy", "response_time_ms": 50},
         }
-        
+
         overall_status = "degraded"
-        
+
         assert overall_status == "degraded"
 
     @pytest.mark.asyncio
@@ -258,13 +276,15 @@ class TestHealthMetricsAggregation:
             "cache": {"status": "unavailable"},
             "api": {"status": "unavailable"},
         }
-        
+
         overall_status = "unhealthy"
-        
+
         assert overall_status == "unhealthy"
 
 
-@pytest.mark.skip(reason="Requires proper function mocking for check_database and check_cache")
+@pytest.mark.skip(
+    reason="Requires proper function mocking for check_database and check_cache"
+)
 class TestHealthCheckErrorHandling:
     """Tests for error handling in health checks."""
 
@@ -273,14 +293,14 @@ class TestHealthCheckErrorHandling:
         """Test handling exception in database check."""
         with patch("src.api.health.check_database") as mock_db:
             mock_db.side_effect = Exception("Unexpected error")
-            
+
             result = {
                 "status": "degraded",
                 "services": {
                     "database": {"status": "unknown", "error": "Check failed"},
                 },
             }
-        
+
         assert result["status"] == "degraded"
 
     @pytest.mark.asyncio
@@ -288,14 +308,14 @@ class TestHealthCheckErrorHandling:
         """Test handling exception in cache check."""
         with patch("src.api.health.check_cache") as mock_cache:
             mock_cache.side_effect = Exception("Unexpected error")
-            
+
             result = {
                 "status": "degraded",
                 "services": {
                     "cache": {"status": "unknown", "error": "Check failed"},
                 },
             }
-        
+
         assert result["status"] == "degraded"
 
     @pytest.mark.asyncio
@@ -303,12 +323,12 @@ class TestHealthCheckErrorHandling:
         """Test handling timeout in health check."""
         with patch("asyncio.wait_for") as mock_wait:
             mock_wait.side_effect = TimeoutError("Health check timeout")
-            
+
             result = {
                 "status": "degraded",
                 "error": "Health check timeout",
             }
-        
+
         assert result["status"] == "degraded"
 
 
@@ -323,14 +343,14 @@ class TestHealthCheckEdgeCases:
             "services": {},
             "warning": "No services configured",
         }
-        
+
         assert result["status"] == "healthy"
 
     @pytest.mark.asyncio
     async def test_health_check_rapid_succession(self):
         """Test multiple health checks in rapid succession."""
         results = []
-        
+
         for i in range(5):
             result = {
                 "status": "healthy",
@@ -338,7 +358,7 @@ class TestHealthCheckEdgeCases:
                 "check_number": i + 1,
             }
             results.append(result)
-        
+
         assert len(results) == 5
         assert all(r["status"] == "healthy" for r in results)
 
@@ -352,7 +372,7 @@ class TestHealthCheckEdgeCases:
                     mock_db.return_value = {"status": "healthy"}
                     mock_cache.return_value = {"status": "healthy"}
                     mock_storage.return_value = {"status": "unavailable"}
-                    
+
                     result = {
                         "status": "degraded",
                         "services": {
@@ -361,6 +381,6 @@ class TestHealthCheckEdgeCases:
                             "storage": {"status": "unavailable"},
                         },
                     }
-        
+
         assert result["status"] == "degraded"
         assert result["services"]["storage"]["status"] == "unavailable"

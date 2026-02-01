@@ -243,7 +243,9 @@ async def test_build_prompt_includes_tool_results(static_analysis):
     with patch.object(
         static_analysis, "_read_if_exists", new=AsyncMock(return_value="")
     ):
-        prompt = await static_analysis._build_prompt(state, **{"tool_results": tool_results})
+        prompt = await static_analysis._build_prompt(
+            state, **{"tool_results": tool_results}
+        )
 
         assert "Black (Code Formatting)" in prompt
         assert "Ruff (Linting)" in prompt

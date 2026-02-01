@@ -78,9 +78,7 @@ class TestCreateAccessToken:
         )
         assert isinstance(token, str)
 
-    def test_create_access_token_default_expiry(
-        self, service: JWTAuthService
-    ) -> None:
+    def test_create_access_token_default_expiry(self, service: JWTAuthService) -> None:
         """Test access token uses default 1-hour expiry."""
         token = service.create_access_token("user123", ["admin"])
         payload = jwt.decode(token, service.secret_key, algorithms=["HS256"])
@@ -95,9 +93,7 @@ class TestCreateAccessToken:
         payload = jwt.decode(token, service.secret_key, algorithms=["HS256"])
         assert payload["sub"] == "user123"
 
-    def test_create_access_token_contains_roles(
-        self, service: JWTAuthService
-    ) -> None:
+    def test_create_access_token_contains_roles(self, service: JWTAuthService) -> None:
         """Test access token contains roles."""
         roles = ["admin", "developer"]
         token = service.create_access_token("user123", roles)
@@ -110,18 +106,14 @@ class TestCreateAccessToken:
         payload = jwt.decode(token, service.secret_key, algorithms=["HS256"])
         assert payload["roles"] == []
 
-    def test_create_access_token_multiple_roles(
-        self, service: JWTAuthService
-    ) -> None:
+    def test_create_access_token_multiple_roles(self, service: JWTAuthService) -> None:
         """Test access token with multiple roles."""
         roles = ["admin", "developer", "viewer"]
         token = service.create_access_token("user123", roles)
         payload = jwt.decode(token, service.secret_key, algorithms=["HS256"])
         assert payload["roles"] == roles
 
-    def test_create_access_token_special_user_id(
-        self, service: JWTAuthService
-    ) -> None:
+    def test_create_access_token_special_user_id(self, service: JWTAuthService) -> None:
         """Test access token with special characters in user ID."""
         user_id = "user@example.com"
         token = service.create_access_token(user_id, ["admin"])
@@ -200,9 +192,7 @@ class TestVerifyToken:
         with pytest.raises(InvalidTokenError):
             service.verify_token(tampered)
 
-    def test_verify_token_extracts_all_claims(
-        self, service: JWTAuthService
-    ) -> None:
+    def test_verify_token_extracts_all_claims(self, service: JWTAuthService) -> None:
         """Test verification extracts all token claims."""
         token = service.create_access_token("user123", ["admin", "developer"])
         payload = service.verify_token(token)
@@ -236,18 +226,14 @@ class TestCreateRefreshToken:
         token = service.create_refresh_token("user123", expires_delta=expires_delta)
         assert isinstance(token, str)
 
-    def test_create_refresh_token_default_expiry(
-        self, service: JWTAuthService
-    ) -> None:
+    def test_create_refresh_token_default_expiry(self, service: JWTAuthService) -> None:
         """Test refresh token uses default 24-hour expiry."""
         token = service.create_refresh_token("user123")
         payload = jwt.decode(token, service.secret_key, algorithms=["HS256"])
         assert "exp" in payload
         assert "iat" in payload
 
-    def test_create_refresh_token_contains_type(
-        self, service: JWTAuthService
-    ) -> None:
+    def test_create_refresh_token_contains_type(self, service: JWTAuthService) -> None:
         """Test refresh token contains type field."""
         token = service.create_refresh_token("user123")
         payload = jwt.decode(token, service.secret_key, algorithms=["HS256"])
@@ -311,9 +297,7 @@ class TestVerifyRefreshToken:
             service.verify_refresh_token(access_token)
         assert "Not a refresh token" in str(exc_info.value)
 
-    def test_verify_refresh_token_invalid_format(
-        self, service: JWTAuthService
-    ) -> None:
+    def test_verify_refresh_token_invalid_format(self, service: JWTAuthService) -> None:
         """Test verification fails with invalid token format."""
         with pytest.raises(InvalidTokenError):
             service.verify_refresh_token("invalid.token.format")
@@ -397,9 +381,7 @@ class TestJWTAuthServiceEdgeCases:
             mock_settings.jwt_secret_key = "a" * 32
             return JWTAuthService()
 
-    def test_create_token_with_very_long_user_id(
-        self, service: JWTAuthService
-    ) -> None:
+    def test_create_token_with_very_long_user_id(self, service: JWTAuthService) -> None:
         """Test token creation with very long user ID."""
         long_user_id = "u" * 1000
         token = service.create_access_token(long_user_id, ["admin"])
@@ -415,9 +397,7 @@ class TestJWTAuthServiceEdgeCases:
         payload = service.verify_token(token)
         assert payload["sub"] == user_id
 
-    def test_create_token_with_unicode_user_id(
-        self, service: JWTAuthService
-    ) -> None:
+    def test_create_token_with_unicode_user_id(self, service: JWTAuthService) -> None:
         """Test token creation with unicode characters in user ID."""
         user_id = "用户123"
         token = service.create_access_token(user_id, ["admin"])

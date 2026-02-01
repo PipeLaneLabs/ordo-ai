@@ -59,21 +59,25 @@ def controller(mock_settings, mock_budget_guard, mock_checkpoint_manager):
 class TestOrchestrationControllerInit:
     """Tests for controller initialization."""
 
-    def test_init_with_defaults(self, mock_settings, mock_budget_guard, mock_checkpoint_manager):
+    def test_init_with_defaults(
+        self, mock_settings, mock_budget_guard, mock_checkpoint_manager
+    ):
         """Test controller initialization with default parameters."""
         controller = OrchestrationController(
             settings=mock_settings,
             budget_guard=mock_budget_guard,
             checkpoint_manager=mock_checkpoint_manager,
         )
-        
+
         assert controller.settings == mock_settings
         assert controller.budget_guard == mock_budget_guard
         assert controller.checkpoint_manager == mock_checkpoint_manager
         assert controller.max_iterations == 50
         assert controller.graph is None
 
-    def test_init_with_custom_max_iterations(self, mock_settings, mock_budget_guard, mock_checkpoint_manager):
+    def test_init_with_custom_max_iterations(
+        self, mock_settings, mock_budget_guard, mock_checkpoint_manager
+    ):
         """Test controller initialization with custom max iterations."""
         controller = OrchestrationController(
             settings=mock_settings,
@@ -81,7 +85,7 @@ class TestOrchestrationControllerInit:
             checkpoint_manager=mock_checkpoint_manager,
             max_iterations=100,
         )
-        
+
         assert controller.max_iterations == 100
 
 
@@ -95,9 +99,9 @@ class TestBuildGraph:
             mock_compiled_graph = MagicMock()
             mock_graph_instance.compile.return_value = mock_compiled_graph
             mock_graph_class.return_value = mock_graph_instance
-            
+
             result = controller.build_graph()
-            
+
             assert result == mock_compiled_graph
             assert controller.graph == mock_compiled_graph
             mock_graph_instance.compile.assert_called_once()
@@ -109,9 +113,9 @@ class TestBuildGraph:
             mock_compiled_graph = MagicMock()
             mock_graph_instance.compile.return_value = mock_compiled_graph
             mock_graph_class.return_value = mock_graph_instance
-            
+
             controller.build_graph()
-            
+
             # Verify all tier nodes are added
             expected_nodes = [
                 "tier_0_deviation",
@@ -128,7 +132,7 @@ class TestBuildGraph:
                 "tier_5_docs",
                 "tier_5_deployment",
             ]
-            
+
             for node in expected_nodes:
                 mock_graph_instance.add_node.assert_any_call(node, unittest.mock.ANY)
 
@@ -139,10 +143,12 @@ class TestBuildGraph:
             mock_compiled_graph = MagicMock()
             mock_graph_instance.compile.return_value = mock_compiled_graph
             mock_graph_class.return_value = mock_graph_instance
-            
+
             controller.build_graph()
-            
-            mock_graph_instance.set_entry_point.assert_called_once_with("tier_1_requirements")
+
+            mock_graph_instance.set_entry_point.assert_called_once_with(
+                "tier_1_requirements"
+            )
 
 
 class TestTierNodes:
@@ -190,9 +196,9 @@ class TestTierNodes:
             "created_at": datetime.now(UTC).isoformat(),
             "updated_at": datetime.now(UTC).isoformat(),
         }
-        
+
         result = await controller._tier_0_deviation_handler(state)
-        
+
         assert result["current_agent"] == "DeviationHandler"
 
     @pytest.mark.asyncio
@@ -237,9 +243,9 @@ class TestTierNodes:
             "created_at": datetime.now(UTC).isoformat(),
             "updated_at": datetime.now(UTC).isoformat(),
         }
-        
+
         result = await controller._tier_1_requirements(state)
-        
+
         assert result["current_agent"] == "RequirementsStrategy"
         assert result["current_phase"] == "planning"
 
@@ -285,9 +291,9 @@ class TestTierNodes:
             "created_at": datetime.now(UTC).isoformat(),
             "updated_at": datetime.now(UTC).isoformat(),
         }
-        
+
         result = await controller._tier_3_engineer(state)
-        
+
         assert result["current_agent"] == "SoftwareEngineer"
         assert result["current_phase"] == "development"
 
@@ -336,9 +342,9 @@ class TestRoutingFunctions:
             "created_at": datetime.now(UTC).isoformat(),
             "updated_at": datetime.now(UTC).isoformat(),
         }
-        
+
         result = controller._route_validator_output(state)
-        
+
         assert result == "tier_0_deviation"
 
     def test_route_validator_output_without_blocking_issues(self, controller):
@@ -382,9 +388,9 @@ class TestRoutingFunctions:
             "created_at": datetime.now(UTC).isoformat(),
             "updated_at": datetime.now(UTC).isoformat(),
         }
-        
+
         result = controller._route_validator_output(state)
-        
+
         assert result == "tier_1_architect"
 
     def test_route_dependencies_output_with_blocking_issues(self, controller):
@@ -428,9 +434,9 @@ class TestRoutingFunctions:
             "created_at": datetime.now(UTC).isoformat(),
             "updated_at": datetime.now(UTC).isoformat(),
         }
-        
+
         result = controller._route_dependencies_output(state)
-        
+
         assert result == "tier_0_deviation"
 
     def test_route_deviation_output_with_escalation(self, controller):
@@ -474,10 +480,11 @@ class TestRoutingFunctions:
             "created_at": datetime.now(UTC).isoformat(),
             "updated_at": datetime.now(UTC).isoformat(),
         }
-        
+
         from langgraph.graph import END
+
         result = controller._route_deviation_output(state)
-        
+
         assert result == END
 
     def test_route_deviation_output_with_max_rejections(self, controller):
@@ -521,10 +528,11 @@ class TestRoutingFunctions:
             "created_at": datetime.now(UTC).isoformat(),
             "updated_at": datetime.now(UTC).isoformat(),
         }
-        
+
         from langgraph.graph import END
+
         result = controller._route_deviation_output(state)
-        
+
         assert result == END
 
 
@@ -535,13 +543,13 @@ class TestExecuteWorkflow:
     async def test_execute_workflow_builds_graph_if_needed(self, controller):
         """Test that execute_workflow builds graph if not already built."""
         controller.graph = None
-        
+
         with patch.object(controller, "build_graph") as mock_build:
             mock_graph = MagicMock()
             mock_graph.astream = AsyncMock(return_value=AsyncMock())
             mock_build.return_value = mock_graph
             controller.graph = mock_graph
-            
+
             # Mock astream to return empty async generator
             async def mock_astream(*args, **kwargs):
                 yield {
@@ -583,11 +591,11 @@ class TestExecuteWorkflow:
                     "created_at": datetime.now(UTC).isoformat(),
                     "updated_at": datetime.now(UTC).isoformat(),
                 }
-            
+
             mock_graph.astream = mock_astream
-            
+
             result = await controller.execute_workflow("Test request", "test-123")
-            
+
             assert result["workflow_id"] == "test-123"
 
     @pytest.mark.asyncio
@@ -595,7 +603,7 @@ class TestExecuteWorkflow:
         """Test that execute_workflow raises BudgetExhaustedError when budget exhausted."""
         mock_graph = MagicMock()
         controller.graph = mock_graph
-        
+
         async def mock_astream(*args, **kwargs):
             yield {
                 "workflow_id": "test-123",
@@ -636,9 +644,9 @@ class TestExecuteWorkflow:
                 "created_at": datetime.now(UTC).isoformat(),
                 "updated_at": datetime.now(UTC).isoformat(),
             }
-        
+
         mock_graph.astream = mock_astream
-        
+
         with pytest.raises(BudgetExhaustedError):
             await controller.execute_workflow("Test request", "test-123")
 
@@ -648,7 +656,7 @@ class TestExecuteWorkflow:
         controller.max_iterations = 2
         mock_graph = MagicMock()
         controller.graph = mock_graph
-        
+
         async def mock_astream(*args, **kwargs):
             for i in range(3):
                 yield {
@@ -690,8 +698,8 @@ class TestExecuteWorkflow:
                     "created_at": datetime.now(UTC).isoformat(),
                     "updated_at": datetime.now(UTC).isoformat(),
                 }
-        
+
         mock_graph.astream = mock_astream
-        
+
         with pytest.raises(InfiniteLoopDetectedError):
             await controller.execute_workflow("Test request", "test-123")

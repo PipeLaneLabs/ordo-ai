@@ -418,9 +418,7 @@ class TestWorkflowEdgeCases:
         assert state["user_request"] == long_request
         assert len(state["user_request"]) > 10000
 
-    async def test_special_characters_in_request(
-        self, mock_settings: Settings
-    ) -> None:
+    async def test_special_characters_in_request(self, mock_settings: Settings) -> None:
         """Test workflow with special characters in request."""
         workflow_id = str(uuid4())
         trace_id = str(uuid4())
@@ -475,9 +473,7 @@ class TestWorkflowEdgeCases:
         )
 
         state["budget_used_tokens"] = mock_settings.max_tokens_per_workflow
-        remaining = (
-            mock_settings.max_tokens_per_workflow - state["budget_used_tokens"]
-        )
+        remaining = mock_settings.max_tokens_per_workflow - state["budget_used_tokens"]
 
         assert remaining == 0
 
@@ -492,9 +488,7 @@ class TestWorkflowEdgeCases:
         )
 
         state["budget_used_tokens"] = mock_settings.max_tokens_per_workflow + 1000
-        remaining = (
-            mock_settings.max_tokens_per_workflow - state["budget_used_tokens"]
-        )
+        remaining = mock_settings.max_tokens_per_workflow - state["budget_used_tokens"]
 
         assert remaining < 0
 

@@ -130,7 +130,9 @@ class TestMetricsDefinition:
 
     def test_security_validator_vulnerabilities_found_total_is_counter(self):
         """Test that security_validator_vulnerabilities_found_total is a Counter."""
-        assert isinstance(metrics.security_validator_vulnerabilities_found_total, Counter)
+        assert isinstance(
+            metrics.security_validator_vulnerabilities_found_total, Counter
+        )
 
     def test_deviation_handler_iterations_total_is_counter(self):
         """Test that deviation_handler_iterations_total is a Counter."""
@@ -138,7 +140,9 @@ class TestMetricsDefinition:
 
     def test_deviation_handler_max_iterations_reached_total_is_counter(self):
         """Test that deviation_handler_max_iterations_reached_total is a Counter."""
-        assert isinstance(metrics.deviation_handler_max_iterations_reached_total, Counter)
+        assert isinstance(
+            metrics.deviation_handler_max_iterations_reached_total, Counter
+        )
 
     def test_llm_api_calls_total_is_counter(self):
         """Test that llm_api_calls_total is a Counter."""
@@ -163,17 +167,24 @@ class TestREDMetrics:
     def test_http_requests_total_has_labels(self):
         """Test that http_requests_total has correct labels."""
         # Verify metric can be incremented with labels
-        metrics.http_requests_total.labels(method="GET", endpoint="/api/workflows", status="200").inc()
+        metrics.http_requests_total.labels(
+            method="GET", endpoint="/api/workflows", status="200"
+        ).inc()
 
     def test_http_errors_total_has_labels(self):
         """Test that http_errors_total has correct labels."""
         metrics.http_errors_total.labels(
-            method="POST", endpoint="/api/workflows", status="500", error_type="InternalError"
+            method="POST",
+            endpoint="/api/workflows",
+            status="500",
+            error_type="InternalError",
         ).inc()
 
     def test_http_request_duration_seconds_has_labels(self):
         """Test that http_request_duration_seconds has correct labels."""
-        metrics.http_request_duration_seconds.labels(method="GET", endpoint="/api/workflows").observe(0.5)
+        metrics.http_request_duration_seconds.labels(
+            method="GET", endpoint="/api/workflows"
+        ).observe(0.5)
 
 
 class TestWorkflowMetrics:
@@ -181,7 +192,9 @@ class TestWorkflowMetrics:
 
     def test_workflow_duration_seconds_has_labels(self):
         """Test that workflow_duration_seconds has correct labels."""
-        metrics.workflow_duration_seconds.labels(workflow_id="wf-001", status="success").observe(120)
+        metrics.workflow_duration_seconds.labels(
+            workflow_id="wf-001", status="success"
+        ).observe(120)
 
     def test_agent_execution_duration_has_labels(self):
         """Test that agent_execution_duration has correct labels."""
@@ -192,7 +205,9 @@ class TestWorkflowMetrics:
     def test_agent_rejections_total_has_labels(self):
         """Test that agent_rejections_total has correct labels."""
         metrics.agent_rejections_total.labels(
-            agent_name="software_engineer", rejected_by="quality_engineer", reason="coverage_below_threshold"
+            agent_name="software_engineer",
+            rejected_by="quality_engineer",
+            reason="coverage_below_threshold",
         ).inc()
 
     def test_workflow_rejection_count_has_labels(self):
@@ -218,13 +233,18 @@ class TestCostMetrics:
     def test_llm_tokens_consumed_total_has_labels(self):
         """Test that llm_tokens_consumed_total has correct labels."""
         metrics.llm_tokens_consumed_total.labels(
-            provider="openrouter", model="deepseek/deepseek-chat", agent_name="software_engineer", token_type="input"
+            provider="openrouter",
+            model="deepseek/deepseek-chat",
+            agent_name="software_engineer",
+            token_type="input",
         ).inc(5400)
 
     def test_llm_cost_usd_total_has_labels(self):
         """Test that llm_cost_usd_total has correct labels."""
         metrics.llm_cost_usd_total.labels(
-            provider="openrouter", model="deepseek/deepseek-chat", agent_name="software_engineer"
+            provider="openrouter",
+            model="deepseek/deepseek-chat",
+            agent_name="software_engineer",
         ).inc(0.0012)
 
     def test_budget_remaining_tokens_has_labels(self):
@@ -281,19 +301,27 @@ class TestHumanApprovalMetrics:
 
     def test_human_approvals_requested_total_has_labels(self):
         """Test that human_approvals_requested_total has correct labels."""
-        metrics.human_approvals_requested_total.labels(tier="4", gate_type="final_approval").inc()
+        metrics.human_approvals_requested_total.labels(
+            tier="4", gate_type="final_approval"
+        ).inc()
 
     def test_human_approvals_granted_total_has_labels(self):
         """Test that human_approvals_granted_total has correct labels."""
-        metrics.human_approvals_granted_total.labels(tier="4", gate_type="final_approval").inc()
+        metrics.human_approvals_granted_total.labels(
+            tier="4", gate_type="final_approval"
+        ).inc()
 
     def test_human_approvals_rejected_total_has_labels(self):
         """Test that human_approvals_rejected_total has correct labels."""
-        metrics.human_approvals_rejected_total.labels(tier="4", gate_type="final_approval").inc()
+        metrics.human_approvals_rejected_total.labels(
+            tier="4", gate_type="final_approval"
+        ).inc()
 
     def test_human_approval_wait_time_seconds_has_labels(self):
         """Test that human_approval_wait_time_seconds has correct labels."""
-        metrics.human_approval_wait_time_seconds.labels(tier="4", gate_type="final_approval").observe(1800)
+        metrics.human_approval_wait_time_seconds.labels(
+            tier="4", gate_type="final_approval"
+        ).observe(1800)
 
 
 class TestAgentMetrics:
@@ -309,7 +337,9 @@ class TestAgentMetrics:
 
     def test_static_analysis_issues_found_total_has_labels(self):
         """Test that static_analysis_issues_found_total has correct labels."""
-        metrics.static_analysis_issues_found_total.labels(severity="error", tool="ruff").inc()
+        metrics.static_analysis_issues_found_total.labels(
+            severity="error", tool="ruff"
+        ).inc()
 
     def test_quality_engineer_tests_generated_total_has_labels(self):
         """Test that quality_engineer_tests_generated_total has correct labels."""
@@ -343,21 +373,29 @@ class TestLLMProviderMetrics:
 
     def test_llm_api_calls_total_has_labels(self):
         """Test that llm_api_calls_total has correct labels."""
-        metrics.llm_api_calls_total.labels(provider="openrouter", model="deepseek/deepseek-chat", status="success").inc()
+        metrics.llm_api_calls_total.labels(
+            provider="openrouter", model="deepseek/deepseek-chat", status="success"
+        ).inc()
 
     def test_llm_api_latency_seconds_has_labels(self):
         """Test that llm_api_latency_seconds has correct labels."""
-        metrics.llm_api_latency_seconds.labels(provider="openrouter", model="deepseek/deepseek-chat").observe(3.45)
+        metrics.llm_api_latency_seconds.labels(
+            provider="openrouter", model="deepseek/deepseek-chat"
+        ).observe(3.45)
 
     def test_llm_api_errors_total_has_labels(self):
         """Test that llm_api_errors_total has correct labels."""
         metrics.llm_api_errors_total.labels(
-            provider="openrouter", model="deepseek/deepseek-chat", error_type="rate_limit"
+            provider="openrouter",
+            model="deepseek/deepseek-chat",
+            error_type="rate_limit",
         ).inc()
 
     def test_llm_fallback_triggered_total_has_labels(self):
         """Test that llm_fallback_triggered_total has correct labels."""
-        metrics.llm_fallback_triggered_total.labels(primary_provider="openrouter", fallback_provider="google").inc()
+        metrics.llm_fallback_triggered_total.labels(
+            primary_provider="openrouter", fallback_provider="google"
+        ).inc()
 
 
 class TestMetricsEdgeCases:

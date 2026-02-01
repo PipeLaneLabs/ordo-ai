@@ -54,7 +54,9 @@ class TestConfigureLogging:
         """Test logging configuration in development environment."""
         with patch("src.observability.logging.settings.environment", "development"):
             with patch("src.observability.logging.logging.basicConfig"):
-                with patch("src.observability.logging.structlog.configure") as mock_configure:
+                with patch(
+                    "src.observability.logging.structlog.configure"
+                ) as mock_configure:
                     configure_logging()
 
                     # Verify structlog.configure was called
@@ -64,7 +66,9 @@ class TestConfigureLogging:
         """Test logging configuration in production environment."""
         with patch("src.observability.logging.settings.environment", "production"):
             with patch("src.observability.logging.logging.basicConfig"):
-                with patch("src.observability.logging.structlog.configure") as mock_configure:
+                with patch(
+                    "src.observability.logging.structlog.configure"
+                ) as mock_configure:
                     configure_logging()
 
                     # Verify structlog.configure was called
@@ -73,7 +77,9 @@ class TestConfigureLogging:
     def test_configure_logging_sets_log_level(self):
         """Test that configure_logging sets the correct log level."""
         with patch("src.observability.logging.settings.log_level", "DEBUG"):
-            with patch("src.observability.logging.logging.basicConfig") as mock_basic_config:
+            with patch(
+                "src.observability.logging.logging.basicConfig"
+            ) as mock_basic_config:
                 with patch("src.observability.logging.structlog.configure"):
                     configure_logging()
 
@@ -126,7 +132,9 @@ class TestBindWorkflowContext:
         with patch(
             "src.observability.logging.structlog.contextvars.clear_contextvars"
         ) as mock_clear:
-            with patch("src.observability.logging.structlog.contextvars.bind_contextvars"):
+            with patch(
+                "src.observability.logging.structlog.contextvars.bind_contextvars"
+            ):
                 bind_workflow_context("wf-001", "trace-abc123")
 
                 mock_clear.assert_called_once()

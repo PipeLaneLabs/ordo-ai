@@ -42,7 +42,7 @@ class TestChatSessionInitialization:
         """Test chat start initializes session."""
         mock_user_session = MagicMock()
         mock_chainlit.user_session = mock_user_session
-        
+
         # Simulate on_chat_start
         session_data = {
             "session_id": "test-session-123",
@@ -51,7 +51,7 @@ class TestChatSessionInitialization:
             "budget_used": 0.0,
             "budget_limit": 100.0,
         }
-        
+
         assert session_data["session_id"] is not None
         assert session_data["workflow_id"] is None
         assert session_data["budget_used"] == 0.0
@@ -61,9 +61,9 @@ class TestChatSessionInitialization:
         """Test chat start sets budget limit from settings."""
         mock_user_session = MagicMock()
         mock_chainlit.user_session = mock_user_session
-        
+
         budget_limit = mock_settings.max_monthly_budget_usd
-        
+
         assert budget_limit == 100.0
 
     @pytest.mark.asyncio
@@ -71,10 +71,10 @@ class TestChatSessionInitialization:
         """Test chat start binds workflow context."""
         with patch("src.chainlit_app.app.bind_workflow_context") as mock_bind:
             session_id = "test-session-123"
-            
+
             # Simulate context binding
             mock_bind(workflow_id=session_id, trace_id=session_id)
-        
+
         mock_bind.assert_called()
 
 
@@ -91,7 +91,7 @@ class TestWorkflowProgressDisplay:
             "current_task": "implementation",
             "rejection_count": 0,
         }
-        
+
         assert workflow_state["current_phase"] == "development"
         assert workflow_state["current_agent"] == "SoftwareEngineer"
 
@@ -100,7 +100,7 @@ class TestWorkflowProgressDisplay:
         """Test updating phase display."""
         phases = ["planning", "design", "development", "testing", "delivery"]
         current_phase = phases[2]
-        
+
         assert current_phase == "development"
 
     @pytest.mark.asyncio
@@ -112,7 +112,7 @@ class TestWorkflowProgressDisplay:
             "progress": 45,
             "tokens_used": 1500,
         }
-        
+
         assert agent_status["agent_name"] == "SoftwareEngineer"
         assert agent_status["status"] == "executing"
 
@@ -129,7 +129,7 @@ class TestHumanApprovalGates:
             "message": "Security review required before deployment",
             "options": ["approve", "reject"],
         }
-        
+
         assert approval_request["gate_type"] == "security_review"
         assert "approve" in approval_request["options"]
 
@@ -142,7 +142,7 @@ class TestHumanApprovalGates:
             "reason": "Security review passed",
             "timestamp": datetime.now(tz=UTC).isoformat(),
         }
-        
+
         assert decision["decision"] == "approve"
 
     @pytest.mark.asyncio
@@ -154,7 +154,7 @@ class TestHumanApprovalGates:
             "reason": "Security vulnerabilities found",
             "timestamp": datetime.now(tz=UTC).isoformat(),
         }
-        
+
         assert decision["decision"] == "reject"
         assert "vulnerabilities" in decision["reason"]
 
@@ -167,7 +167,7 @@ class TestHumanApprovalGates:
             "timeout_seconds": 3600,
             "created_at": datetime.now(tz=UTC).isoformat(),
         }
-        
+
         assert approval_state["status"] == "awaiting_approval"
         assert approval_state["timeout_seconds"] == 3600
 
@@ -184,7 +184,7 @@ class TestBudgetVisualization:
             "remaining_budget_usd": 64.50,
             "usage_percent": 35.5,
         }
-        
+
         assert budget_info["usage_percent"] == 35.5
         assert budget_info["remaining_budget_usd"] == 64.50
 
@@ -197,7 +197,7 @@ class TestBudgetVisualization:
             "remaining_tokens": 5500,
             "usage_percent": 45.0,
         }
-        
+
         assert token_info["usage_percent"] == 45.0
 
     @pytest.mark.asyncio
@@ -210,7 +210,7 @@ class TestBudgetVisualization:
             "usage_percent": 85.0,
             "warning": "Budget usage above 80%",
         }
-        
+
         assert budget_info["usage_percent"] > 80
         assert "warning" in budget_info
 
@@ -224,7 +224,7 @@ class TestBudgetVisualization:
             "usage_percent": 100.0,
             "status": "exhausted",
         }
-        
+
         assert budget_info["status"] == "exhausted"
         assert budget_info["remaining_budget_usd"] == 0.0
 
@@ -242,7 +242,7 @@ class TestRealTimeUpdates:
             "agent": "SoftwareEngineer",
             "timestamp": datetime.now(tz=UTC).isoformat(),
         }
-        
+
         assert update["type"] == "workflow_update"
         assert update["phase"] == "development"
 
@@ -256,7 +256,7 @@ class TestRealTimeUpdates:
             "remaining_usd": 64.50,
             "timestamp": datetime.now(tz=UTC).isoformat(),
         }
-        
+
         assert update["type"] == "budget_update"
 
     @pytest.mark.asyncio
@@ -269,7 +269,7 @@ class TestRealTimeUpdates:
             "message": "Security review required",
             "timestamp": datetime.now(tz=UTC).isoformat(),
         }
-        
+
         assert update["type"] == "approval_request"
 
     @pytest.mark.asyncio
@@ -282,7 +282,7 @@ class TestRealTimeUpdates:
             "severity": "high",
             "timestamp": datetime.now(tz=UTC).isoformat(),
         }
-        
+
         assert update["type"] == "error"
         assert update["severity"] == "high"
 
@@ -299,7 +299,7 @@ class TestErrorHandling:
             "workflow_id": "wf-123",
             "timestamp": datetime.now(tz=UTC).isoformat(),
         }
-        
+
         assert error_info["error_type"] == "WorkflowError"
 
     @pytest.mark.asyncio
@@ -310,7 +310,7 @@ class TestErrorHandling:
             "message": "Failed to connect to backend",
             "timestamp": datetime.now(tz=UTC).isoformat(),
         }
-        
+
         assert error_info["error_type"] == "ConnectionError"
 
     @pytest.mark.asyncio
@@ -322,7 +322,7 @@ class TestErrorHandling:
             "timeout_seconds": 30,
             "timestamp": datetime.now(tz=UTC).isoformat(),
         }
-        
+
         assert error_info["error_type"] == "TimeoutError"
 
     @pytest.mark.asyncio
@@ -333,7 +333,7 @@ class TestErrorHandling:
             "message": "An error occurred during workflow execution",
             "action": "Please try again or contact support",
         }
-        
+
         assert "error" in error_display["title"].lower()
 
 
@@ -348,22 +348,22 @@ class TestChainlitIntegration:
             "session_id": "test-session-123",
             "workflow_id": None,
         }
-        
+
         # Start workflow
         session_data["workflow_id"] = "wf-123"
-        
+
         # Display progress
         progress = {
             "phase": "development",
             "agent": "SoftwareEngineer",
         }
-        
+
         # Update budget
         budget = {
             "used_usd": 25.0,
             "remaining_usd": 75.0,
         }
-        
+
         assert session_data["workflow_id"] == "wf-123"
         assert progress["phase"] == "development"
         assert budget["remaining_usd"] == 75.0
@@ -373,19 +373,19 @@ class TestChainlitIntegration:
         """Test workflow with approval gate."""
         # Initialize session
         session_data = {"session_id": "test-session-123"}
-        
+
         # Display approval request
         approval = {
             "gate_type": "security_review",
             "message": "Security review required",
         }
-        
+
         # Handle approval
         decision = {
             "decision": "approve",
             "reason": "Security review passed",
         }
-        
+
         assert approval["gate_type"] == "security_review"
         assert decision["decision"] == "approve"
 
@@ -394,21 +394,21 @@ class TestChainlitIntegration:
         """Test workflow with error recovery."""
         # Initialize session
         session_data = {"session_id": "test-session-123"}
-        
+
         # Workflow encounters error
         error = {
             "type": "error",
             "message": "Workflow execution failed",
         }
-        
+
         # Display error to user
         error_display = {
             "title": "Workflow Error",
             "message": error["message"],
         }
-        
+
         # User can retry
         retry_action = {"action": "retry"}
-        
+
         assert error["type"] == "error"
         assert retry_action["action"] == "retry"

@@ -96,18 +96,10 @@ class StaticAnalysisAgent(BaseAgent):
             black_task, ruff_task, mypy_task, radon_task, return_exceptions=True
         )
 
-        black_result_typed: subprocess.CompletedProcess[str] | Exception = (
-            black_result
-        )
-        ruff_result_typed: subprocess.CompletedProcess[str] | Exception = (
-            ruff_result
-        )
-        mypy_result_typed: subprocess.CompletedProcess[str] | Exception = (
-            mypy_result
-        )
-        radon_result_typed: subprocess.CompletedProcess[str] | Exception = (
-            radon_result
-        )
+        black_result_typed: subprocess.CompletedProcess[str] | Exception = black_result
+        ruff_result_typed: subprocess.CompletedProcess[str] | Exception = ruff_result
+        mypy_result_typed: subprocess.CompletedProcess[str] | Exception = mypy_result
+        radon_result_typed: subprocess.CompletedProcess[str] | Exception = radon_result
 
         results["black"] = (
             black_result_typed
@@ -180,9 +172,7 @@ class StaticAnalysisAgent(BaseAgent):
                 "stderr": str(e),
             }
 
-    async def _build_prompt(
-        self, state: WorkflowState, **_kwargs: object
-    ) -> str:
+    async def _build_prompt(self, state: WorkflowState, **_kwargs: object) -> str:
         """Build prompt with tool analysis results.
 
         Reads ARCHITECTURE.md for coding standards and incorporates

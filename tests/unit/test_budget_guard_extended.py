@@ -62,7 +62,7 @@ class TestBudgetExhaustion:
         """Test budget exhaustion with tokens."""
         sample_workflow_state["budget_used_tokens"] = 9999
         sample_workflow_state["budget_remaining_tokens"] = 1
-        
+
         with pytest.raises(BudgetExhaustedError):
             await budget_guard.check_budget(
                 workflow_state=sample_workflow_state,
@@ -74,7 +74,7 @@ class TestBudgetExhaustion:
         """Test budget exhaustion with cost."""
         sample_workflow_state["budget_used_usd"] = 99.5
         sample_workflow_state["budget_remaining_usd"] = 0.5
-        
+
         with pytest.raises(BudgetExhaustedError):
             await budget_guard.check_budget(
                 workflow_state=sample_workflow_state,
@@ -86,7 +86,7 @@ class TestBudgetExhaustion:
         """Test budget exactly exhausted."""
         sample_workflow_state["budget_used_tokens"] = 10000
         sample_workflow_state["budget_remaining_tokens"] = 0
-        
+
         with pytest.raises(BudgetExhaustedError):
             await budget_guard.check_budget(
                 workflow_state=sample_workflow_state,
@@ -94,17 +94,19 @@ class TestBudgetExhaustion:
             )
 
     @pytest.mark.asyncio
-    async def test_budget_near_exhaustion_warning(self, budget_guard, sample_workflow_state):
+    async def test_budget_near_exhaustion_warning(
+        self, budget_guard, sample_workflow_state
+    ):
         """Test budget near exhaustion warning."""
         sample_workflow_state["budget_used_tokens"] = 9500
         sample_workflow_state["budget_remaining_tokens"] = 500
-        
+
         with patch.object(budget_guard, "logger") as mock_logger:
             result = await budget_guard.check_budget(
                 workflow_state=sample_workflow_state,
                 tokens_required=100,
             )
-        
+
         # Should warn but not fail
         assert result is not None
 
@@ -113,11 +115,13 @@ class TestTokenLimitEnforcement:
     """Tests for token limit enforcement."""
 
     @pytest.mark.asyncio
-    async def test_enforce_workflow_token_limit(self, budget_guard, sample_workflow_state):
+    async def test_enforce_workflow_token_limit(
+        self, budget_guard, sample_workflow_state
+    ):
         """Test enforcing workflow token limit."""
         sample_workflow_state["budget_used_tokens"] = 4900
         sample_workflow_state["budget_remaining_tokens"] = 100
-        
+
         with pytest.raises(BudgetExhaustedError):
             await budget_guard.check_budget(
                 workflow_state=sample_workflow_state,
@@ -125,11 +129,13 @@ class TestTokenLimitEnforcement:
             )
 
     @pytest.mark.asyncio
-    async def test_enforce_global_token_limit(self, budget_guard, sample_workflow_state):
+    async def test_enforce_global_token_limit(
+        self, budget_guard, sample_workflow_state
+    ):
         """Test enforcing global token limit."""
         sample_workflow_state["budget_used_tokens"] = 9900
         sample_workflow_state["budget_remaining_tokens"] = 100
-        
+
         with pytest.raises(BudgetExhaustedError):
             await budget_guard.check_budget(
                 workflow_state=sample_workflow_state,
@@ -141,12 +147,12 @@ class TestTokenLimitEnforcement:
         """Test allowing request within token limit."""
         sample_workflow_state["budget_used_tokens"] = 5000
         sample_workflow_state["budget_remaining_tokens"] = 5000
-        
+
         result = await budget_guard.check_budget(
             workflow_state=sample_workflow_state,
             tokens_required=1000,
         )
-        
+
         assert result is not None
 
 
@@ -157,20 +163,22 @@ class TestCostTracking:
     async def test_track_cost_accumulation(self, budget_guard, sample_workflow_state):
         """Test tracking cost accumulation."""
         initial_cost = sample_workflow_state["budget_used_usd"]
-        
+
         result = await budget_guard.track_cost(
             workflow_state=sample_workflow_state,
             cost_usd=10.0,
         )
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
-    async def test_enforce_workflow_cost_limit(self, budget_guard, sample_workflow_state):
+    async def test_enforce_workflow_cost_limit(
+        self, budget_guard, sample_workflow_state
+    ):
         """Test enforcing workflow cost limit."""
         sample_workflow_state["budget_used_usd"] = 49.0
         sample_workflow_state["budget_remaining_usd"] = 1.0
-        
+
         with pytest.raises(BudgetExhaustedError):
             await budget_guard.check_budget(
                 workflow_state=sample_workflow_state,
@@ -178,11 +186,13 @@ class TestCostTracking:
             )
 
     @pytest.mark.asyncio
-    async def test_enforce_monthly_cost_limit(self, budget_guard, sample_workflow_state):
+    async def test_enforce_monthly_cost_limit(
+        self, budget_guard, sample_workflow_state
+    ):
         """Test enforcing monthly cost limit."""
         sample_workflow_state["budget_used_usd"] = 99.0
         sample_workflow_state["budget_remaining_usd"] = 1.0
-        
+
         with pytest.raises(BudgetExhaustedError):
             await budget_guard.check_budget(
                 workflow_state=sample_workflow_state,
@@ -196,7 +206,7 @@ class TestCostTracking:
             workflow_state=sample_workflow_state,
             cost_usd=0.001,
         )
-        
+
         assert result is not None
 
 
@@ -208,9 +218,9 @@ class TestBudgetRecovery:
         """Test resetting workflow budget."""
         sample_workflow_state["budget_used_tokens"] = 5000
         sample_workflow_state["budget_used_usd"] = 50.0
-        
+
         result = await budget_guard.reset_workflow_budget(sample_workflow_state)
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
@@ -218,12 +228,12 @@ class TestBudgetRecovery:
         """Test refunding tokens."""
         sample_workflow_state["budget_used_tokens"] = 1000
         sample_workflow_state["budget_remaining_tokens"] = 9000
-        
+
         result = await budget_guard.refund_tokens(
             workflow_state=sample_workflow_state,
             tokens=100,
         )
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
@@ -231,12 +241,12 @@ class TestBudgetRecovery:
         """Test refunding cost."""
         sample_workflow_state["budget_used_usd"] = 50.0
         sample_workflow_state["budget_remaining_usd"] = 50.0
-        
+
         result = await budget_guard.refund_cost(
             workflow_state=sample_workflow_state,
             cost_usd=5.0,
         )
-        
+
         assert result is not None
 
 
@@ -249,7 +259,7 @@ class TestStressScenarios:
         for i in range(10):
             sample_workflow_state["budget_used_tokens"] += 1000
             sample_workflow_state["budget_remaining_tokens"] -= 1000
-            
+
             if sample_workflow_state["budget_remaining_tokens"] <= 0:
                 with pytest.raises(BudgetExhaustedError):
                     await budget_guard.check_budget(
@@ -264,7 +274,7 @@ class TestStressScenarios:
         for i in range(20):
             sample_workflow_state["budget_used_usd"] += 5.0
             sample_workflow_state["budget_remaining_usd"] -= 5.0
-            
+
             if sample_workflow_state["budget_remaining_usd"] <= 0:
                 with pytest.raises(BudgetExhaustedError):
                     await budget_guard.check_budget(
@@ -277,16 +287,16 @@ class TestStressScenarios:
     async def test_concurrent_budget_checks(self, budget_guard, sample_workflow_state):
         """Test concurrent budget checks."""
         import asyncio
-        
+
         async def check_budget():
             return await budget_guard.check_budget(
                 workflow_state=sample_workflow_state,
                 tokens_required=100,
             )
-        
+
         tasks = [check_budget() for _ in range(5)]
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         # All should succeed or fail consistently
         assert len(results) == 5
 
@@ -298,26 +308,26 @@ class TestBudgetGuardErrorHandling:
     async def test_handle_invalid_budget_state(self, budget_guard):
         """Test handling invalid budget state."""
         invalid_state = {"budget_used_tokens": -100}
-        
+
         with patch.object(budget_guard, "logger"):
             result = await budget_guard.check_budget(
                 workflow_state=invalid_state,
                 tokens_required=100,
             )
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
     async def test_handle_missing_budget_fields(self, budget_guard):
         """Test handling missing budget fields."""
         incomplete_state = {"workflow_id": "test"}
-        
+
         with patch.object(budget_guard, "logger"):
             result = await budget_guard.check_budget(
                 workflow_state=incomplete_state,
                 tokens_required=100,
             )
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
@@ -328,7 +338,7 @@ class TestBudgetGuardErrorHandling:
                 workflow_state=sample_workflow_state,
                 cost_usd=-10.0,
             )
-        
+
         assert result is not None
 
 
@@ -343,45 +353,47 @@ class TestBudgetGuardIntegration:
             workflow_state=sample_workflow_state,
             tokens_required=1000,
         )
-        
+
         # Track cost
         result2 = await budget_guard.track_cost(
             workflow_state=sample_workflow_state,
             cost_usd=10.0,
         )
-        
+
         # Check remaining budget
         result3 = await budget_guard.check_budget(
             workflow_state=sample_workflow_state,
             tokens_required=500,
         )
-        
+
         assert result1 is not None
         assert result2 is not None
         assert result3 is not None
 
     @pytest.mark.asyncio
-    async def test_budget_exhaustion_recovery_flow(self, budget_guard, sample_workflow_state):
+    async def test_budget_exhaustion_recovery_flow(
+        self, budget_guard, sample_workflow_state
+    ):
         """Test budget exhaustion and recovery flow."""
         # Exhaust budget
         sample_workflow_state["budget_used_tokens"] = 10000
         sample_workflow_state["budget_remaining_tokens"] = 0
-        
+
         # Should fail
         with pytest.raises(BudgetExhaustedError):
             await budget_guard.check_budget(
                 workflow_state=sample_workflow_state,
                 tokens_required=100,
             )
-        
+
         # Reset budget
         result = await budget_guard.reset_workflow_budget(sample_workflow_state)
-        
+
         # Should succeed now
         result2 = await budget_guard.check_budget(
             workflow_state=sample_workflow_state,
             tokens_required=100,
         )
-        
+
         assert result is not None
         assert result2 is not None

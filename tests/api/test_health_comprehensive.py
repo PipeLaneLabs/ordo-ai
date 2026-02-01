@@ -44,7 +44,9 @@ class TestCheckPostgresHealth:
         with patch("src.api.health.settings.environment", "production"):
             with patch("src.api.health.settings.postgres_host", "localhost"):
                 with patch("src.api.health.settings.postgres_port", 5432):
-                    with patch("src.api.health.socket.create_connection") as mock_socket:
+                    with patch(
+                        "src.api.health.socket.create_connection"
+                    ) as mock_socket:
                         mock_socket.return_value = MagicMock()
                         result = check_postgres_health()
                         assert result == HealthStatus.HEALTHY
@@ -54,7 +56,9 @@ class TestCheckPostgresHealth:
         with patch("src.api.health.settings.environment", "production"):
             with patch("src.api.health.settings.postgres_host", "localhost"):
                 with patch("src.api.health.settings.postgres_port", 5432):
-                    with patch("src.api.health.socket.create_connection") as mock_socket:
+                    with patch(
+                        "src.api.health.socket.create_connection"
+                    ) as mock_socket:
                         mock_socket.side_effect = OSError("Connection refused")
                         result = check_postgres_health()
                         assert result == HealthStatus.UNHEALTHY
@@ -74,7 +78,9 @@ class TestCheckRedisHealth:
         with patch("src.api.health.settings.environment", "production"):
             with patch("src.api.health.settings.redis_host", "localhost"):
                 with patch("src.api.health.settings.redis_port", 6379):
-                    with patch("src.api.health.socket.create_connection") as mock_socket:
+                    with patch(
+                        "src.api.health.socket.create_connection"
+                    ) as mock_socket:
                         mock_socket.return_value = MagicMock()
                         result = check_redis_health()
                         assert result == HealthStatus.HEALTHY
@@ -84,7 +90,9 @@ class TestCheckRedisHealth:
         with patch("src.api.health.settings.environment", "production"):
             with patch("src.api.health.settings.redis_host", "localhost"):
                 with patch("src.api.health.settings.redis_port", 6379):
-                    with patch("src.api.health.socket.create_connection") as mock_socket:
+                    with patch(
+                        "src.api.health.socket.create_connection"
+                    ) as mock_socket:
                         mock_socket.side_effect = OSError("Connection refused")
                         result = check_redis_health()
                         assert result == HealthStatus.UNHEALTHY
@@ -102,9 +110,13 @@ class TestCheckMinioHealth:
     def test_check_minio_health_healthy_with_protocol(self):
         """Test MinIO health check when service is healthy with protocol."""
         with patch("src.api.health.settings.environment", "production"):
-            with patch("src.api.health.settings.minio_endpoint", "http://localhost:9000"):
+            with patch(
+                "src.api.health.settings.minio_endpoint", "http://localhost:9000"
+            ):
                 with patch("src.api.health.settings.minio_secure", False):
-                    with patch("src.api.health.socket.create_connection") as mock_socket:
+                    with patch(
+                        "src.api.health.socket.create_connection"
+                    ) as mock_socket:
                         mock_socket.return_value = MagicMock()
                         result = check_minio_health()
                         assert result == HealthStatus.HEALTHY
@@ -114,7 +126,9 @@ class TestCheckMinioHealth:
         with patch("src.api.health.settings.environment", "production"):
             with patch("src.api.health.settings.minio_endpoint", "localhost:9000"):
                 with patch("src.api.health.settings.minio_secure", False):
-                    with patch("src.api.health.socket.create_connection") as mock_socket:
+                    with patch(
+                        "src.api.health.socket.create_connection"
+                    ) as mock_socket:
                         mock_socket.return_value = MagicMock()
                         result = check_minio_health()
                         assert result == HealthStatus.HEALTHY
@@ -124,7 +138,9 @@ class TestCheckMinioHealth:
         with patch("src.api.health.settings.environment", "production"):
             with patch("src.api.health.settings.minio_endpoint", "localhost:9000"):
                 with patch("src.api.health.settings.minio_secure", False):
-                    with patch("src.api.health.socket.create_connection") as mock_socket:
+                    with patch(
+                        "src.api.health.socket.create_connection"
+                    ) as mock_socket:
                         mock_socket.side_effect = OSError("Connection refused")
                         result = check_minio_health()
                         assert result == HealthStatus.UNHEALTHY
@@ -142,7 +158,9 @@ class TestCheckMinioHealth:
         with patch("src.api.health.settings.environment", "production"):
             with patch("src.api.health.settings.minio_endpoint", "localhost"):
                 with patch("src.api.health.settings.minio_secure", True):
-                    with patch("src.api.health.socket.create_connection") as mock_socket:
+                    with patch(
+                        "src.api.health.socket.create_connection"
+                    ) as mock_socket:
                         mock_socket.return_value = MagicMock()
                         result = check_minio_health()
                         assert result == HealthStatus.HEALTHY
@@ -156,7 +174,9 @@ class TestCheckMinioHealth:
         with patch("src.api.health.settings.environment", "production"):
             with patch("src.api.health.settings.minio_endpoint", "localhost"):
                 with patch("src.api.health.settings.minio_secure", False):
-                    with patch("src.api.health.socket.create_connection") as mock_socket:
+                    with patch(
+                        "src.api.health.socket.create_connection"
+                    ) as mock_socket:
                         mock_socket.return_value = MagicMock()
                         result = check_minio_health()
                         assert result == HealthStatus.HEALTHY
@@ -174,7 +194,7 @@ class TestHealthCheckEndpoint:
         """Test basic health check endpoint."""
         with patch("src.api.health.bind_agent_context"):
             response = await health_check()
-            
+
             assert response.status == HealthStatus.HEALTHY
             assert response.timestamp is not None
             assert "application" in response.services
@@ -187,7 +207,7 @@ class TestHealthCheckEndpoint:
         """Test health check response structure."""
         with patch("src.api.health.bind_agent_context"):
             response = await health_check()
-            
+
             assert hasattr(response, "status")
             assert hasattr(response, "timestamp")
             assert hasattr(response, "services")
@@ -209,9 +229,9 @@ class TestReadinessCheckEndpoint:
                         mock_pg.return_value = HealthStatus.HEALTHY
                         mock_redis.return_value = HealthStatus.HEALTHY
                         mock_minio.return_value = HealthStatus.HEALTHY
-                        
+
                         response = await readiness_check()
-                        
+
                         assert response.status == HealthStatus.HEALTHY
                         assert response.dependencies["postgres"] == HealthStatus.HEALTHY
                         assert response.dependencies["redis"] == HealthStatus.HEALTHY
@@ -227,11 +247,13 @@ class TestReadinessCheckEndpoint:
                         mock_pg.return_value = HealthStatus.UNHEALTHY
                         mock_redis.return_value = HealthStatus.HEALTHY
                         mock_minio.return_value = HealthStatus.HEALTHY
-                        
+
                         response = await readiness_check()
-                        
+
                         assert response.status == HealthStatus.UNHEALTHY
-                        assert response.dependencies["postgres"] == HealthStatus.UNHEALTHY
+                        assert (
+                            response.dependencies["postgres"] == HealthStatus.UNHEALTHY
+                        )
 
     @pytest.mark.asyncio
     async def test_readiness_check_one_degraded(self):
@@ -243,11 +265,13 @@ class TestReadinessCheckEndpoint:
                         mock_pg.return_value = HealthStatus.DEGRADED
                         mock_redis.return_value = HealthStatus.HEALTHY
                         mock_minio.return_value = HealthStatus.HEALTHY
-                        
+
                         response = await readiness_check()
-                        
+
                         assert response.status == HealthStatus.DEGRADED
-                        assert response.dependencies["postgres"] == HealthStatus.DEGRADED
+                        assert (
+                            response.dependencies["postgres"] == HealthStatus.DEGRADED
+                        )
 
     @pytest.mark.asyncio
     async def test_readiness_check_response_structure(self):
@@ -259,9 +283,9 @@ class TestReadinessCheckEndpoint:
                         mock_pg.return_value = HealthStatus.HEALTHY
                         mock_redis.return_value = HealthStatus.HEALTHY
                         mock_minio.return_value = HealthStatus.HEALTHY
-                        
+
                         response = await readiness_check()
-                        
+
                         assert hasattr(response, "status")
                         assert hasattr(response, "timestamp")
                         assert hasattr(response, "dependencies")
@@ -280,9 +304,9 @@ class TestPostgresHealthCheckEndpoint:
         with patch("src.api.health.check_postgres_health") as mock_check:
             with patch("src.api.health.bind_agent_context"):
                 mock_check.return_value = HealthStatus.HEALTHY
-                
+
                 response = await postgres_health_check()
-                
+
                 assert response.status == HealthStatus.HEALTHY
                 assert "postgres" in response.services
                 assert response.services["postgres"] == HealthStatus.HEALTHY
@@ -293,9 +317,9 @@ class TestPostgresHealthCheckEndpoint:
         with patch("src.api.health.check_postgres_health") as mock_check:
             with patch("src.api.health.bind_agent_context"):
                 mock_check.return_value = HealthStatus.UNHEALTHY
-                
+
                 response = await postgres_health_check()
-                
+
                 assert response.status == HealthStatus.UNHEALTHY
                 assert response.services["postgres"] == HealthStatus.UNHEALTHY
 
@@ -309,9 +333,9 @@ class TestRedisHealthCheckEndpoint:
         with patch("src.api.health.check_redis_health") as mock_check:
             with patch("src.api.health.bind_agent_context"):
                 mock_check.return_value = HealthStatus.HEALTHY
-                
+
                 response = await redis_health_check()
-                
+
                 assert response.status == HealthStatus.HEALTHY
                 assert "redis" in response.services
                 assert response.services["redis"] == HealthStatus.HEALTHY
@@ -322,9 +346,9 @@ class TestRedisHealthCheckEndpoint:
         with patch("src.api.health.check_redis_health") as mock_check:
             with patch("src.api.health.bind_agent_context"):
                 mock_check.return_value = HealthStatus.UNHEALTHY
-                
+
                 response = await redis_health_check()
-                
+
                 assert response.status == HealthStatus.UNHEALTHY
                 assert response.services["redis"] == HealthStatus.UNHEALTHY
 
@@ -338,9 +362,9 @@ class TestMinioHealthCheckEndpoint:
         with patch("src.api.health.check_minio_health") as mock_check:
             with patch("src.api.health.bind_agent_context"):
                 mock_check.return_value = HealthStatus.HEALTHY
-                
+
                 response = await minio_health_check()
-                
+
                 assert response.status == HealthStatus.HEALTHY
                 assert "minio" in response.services
                 assert response.services["minio"] == HealthStatus.HEALTHY
@@ -351,9 +375,9 @@ class TestMinioHealthCheckEndpoint:
         with patch("src.api.health.check_minio_health") as mock_check:
             with patch("src.api.health.bind_agent_context"):
                 mock_check.return_value = HealthStatus.UNHEALTHY
-                
+
                 response = await minio_health_check()
-                
+
                 assert response.status == HealthStatus.UNHEALTHY
                 assert response.services["minio"] == HealthStatus.UNHEALTHY
 
@@ -371,9 +395,9 @@ class TestHealthCheckEdgeCases:
                         mock_pg.return_value = HealthStatus.UNHEALTHY
                         mock_redis.return_value = HealthStatus.UNHEALTHY
                         mock_minio.return_value = HealthStatus.UNHEALTHY
-                        
+
                         response = await readiness_check()
-                        
+
                         assert response.status == HealthStatus.UNHEALTHY
 
     @pytest.mark.asyncio
@@ -386,9 +410,9 @@ class TestHealthCheckEdgeCases:
                         mock_pg.return_value = HealthStatus.UNHEALTHY
                         mock_redis.return_value = HealthStatus.DEGRADED
                         mock_minio.return_value = HealthStatus.HEALTHY
-                        
+
                         response = await readiness_check()
-                        
+
                         # Unhealthy takes precedence
                         assert response.status == HealthStatus.UNHEALTHY
 
@@ -397,7 +421,9 @@ class TestHealthCheckEdgeCases:
         with patch("src.api.health.settings.environment", "production"):
             with patch("src.api.health.settings.minio_endpoint", "localhost:9001"):
                 with patch("src.api.health.settings.minio_secure", False):
-                    with patch("src.api.health.socket.create_connection") as mock_socket:
+                    with patch(
+                        "src.api.health.socket.create_connection"
+                    ) as mock_socket:
                         mock_socket.return_value = MagicMock()
                         result = check_minio_health()
                         assert result == HealthStatus.HEALTHY

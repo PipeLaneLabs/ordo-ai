@@ -88,7 +88,7 @@ Thumbs.db
 
 # Ignore all stray text files (Test logs, notes, etc.)
 *.txt
-!requirements.txt   # EXCEPT requirements.txt
+!requirements.txt
 
 # Ignore all Markdown files by default...
 *.md

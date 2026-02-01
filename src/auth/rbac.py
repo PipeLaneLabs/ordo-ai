@@ -91,12 +91,8 @@ def require_permission(required_permission: str) -> Callable[..., Any]:
         Decorator function that checks permissions
     """
 
-    def decorator(
-        func: Callable[..., Any]
-    ) -> Callable[..., Any]:
-        async def wrapper(
-            *args: object, **kwargs: object
-        ) -> object:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+        async def wrapper(*args: object, **kwargs: object) -> object:
             # Extract user from function arguments
             # This assumes the user object is passed as a keyword argument
             user = kwargs.get("user")

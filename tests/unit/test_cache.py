@@ -27,7 +27,9 @@ class TestRedisCacheConnect:
         mock_client = AsyncMock()
         mock_client.ping = AsyncMock()
 
-        with patch("src.storage.cache.redis.ConnectionPool.from_url", return_value=mock_pool):
+        with patch(
+            "src.storage.cache.redis.ConnectionPool.from_url", return_value=mock_pool
+        ):
             with patch("src.storage.cache.redis.Redis", return_value=mock_client):
                 cache = RedisCache()
                 await cache.connect()
@@ -263,7 +265,9 @@ class TestRedisCacheIncrement:
         """Test cache increment with Redis error."""
         import redis.asyncio as redis
 
-        cache.client.incrby = AsyncMock(side_effect=redis.RedisError("Increment failed"))
+        cache.client.incrby = AsyncMock(
+            side_effect=redis.RedisError("Increment failed")
+        )
 
         with pytest.raises(CacheError):
             await cache.increment("counter_key")
@@ -278,7 +282,9 @@ class TestRedisCacheRateLimit:
         cache.client.incr = AsyncMock(return_value=1)
         cache.client.expire = AsyncMock()
 
-        result = await cache.rate_limit("api:user:123", max_requests=50, window_seconds=60)
+        result = await cache.rate_limit(
+            "api:user:123", max_requests=50, window_seconds=60
+        )
 
         assert result is True
         cache.client.incr.assert_called_once_with("api:user:123")
@@ -290,7 +296,9 @@ class TestRedisCacheRateLimit:
         cache.client.incr = AsyncMock(return_value=51)
         cache.client.expire = AsyncMock()
 
-        result = await cache.rate_limit("api:user:123", max_requests=50, window_seconds=60)
+        result = await cache.rate_limit(
+            "api:user:123", max_requests=50, window_seconds=60
+        )
 
         assert result is False
 
@@ -300,7 +308,9 @@ class TestRedisCacheRateLimit:
         cache.client.incr = AsyncMock(return_value=50)
         cache.client.expire = AsyncMock()
 
-        result = await cache.rate_limit("api:user:123", max_requests=50, window_seconds=60)
+        result = await cache.rate_limit(
+            "api:user:123", max_requests=50, window_seconds=60
+        )
 
         assert result is True
 
@@ -443,7 +453,9 @@ class TestRedisCacheEdgeCases:
         cache.client.expire = AsyncMock()
 
         for i in range(5):
-            result = await cache.rate_limit("api:user:123", max_requests=5, window_seconds=60)
+            result = await cache.rate_limit(
+                "api:user:123", max_requests=5, window_seconds=60
+            )
             assert result is True
 
     @pytest.mark.anyio
@@ -453,10 +465,14 @@ class TestRedisCacheEdgeCases:
         cache.client.expire = AsyncMock()
 
         for i in range(5):
-            result = await cache.rate_limit("api:user:123", max_requests=5, window_seconds=60)
+            result = await cache.rate_limit(
+                "api:user:123", max_requests=5, window_seconds=60
+            )
             assert result is True
 
-        result = await cache.rate_limit("api:user:123", max_requests=5, window_seconds=60)
+        result = await cache.rate_limit(
+            "api:user:123", max_requests=5, window_seconds=60
+        )
         assert result is False
 
     @pytest.mark.anyio

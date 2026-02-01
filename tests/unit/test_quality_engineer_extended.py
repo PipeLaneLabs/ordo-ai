@@ -14,7 +14,9 @@ NOTE: Requires proper subprocess mocking for pytest execution.
 import pytest
 
 # Skip tests requiring subprocess execution and file system operations
-pytestmark = pytest.mark.skip(reason="Requires complex subprocess and filesystem mocking for pytest execution")
+pytestmark = pytest.mark.skip(
+    reason="Requires complex subprocess and filesystem mocking for pytest execution"
+)
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch, call
 from pathlib import Path
@@ -105,7 +107,9 @@ class TestTestExecution:
     """Tests for test execution functionality."""
 
     @pytest.mark.asyncio
-    async def test_execute_tests_with_pytest(self, quality_engineer, sample_workflow_state):
+    async def test_execute_tests_with_pytest(
+        self, quality_engineer, sample_workflow_state
+    ):
         """Test executing tests with pytest."""
         with patch("subprocess.run") as mock_run:
             mock_result = MagicMock()
@@ -113,13 +117,15 @@ class TestTestExecution:
             mock_result.stdout = "5 passed in 0.50s"
             mock_result.stderr = ""
             mock_run.return_value = mock_result
-            
+
             result = await quality_engineer._execute_tests(sample_workflow_state)
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
-    async def test_execute_tests_with_coverage(self, quality_engineer, sample_workflow_state):
+    async def test_execute_tests_with_coverage(
+        self, quality_engineer, sample_workflow_state
+    ):
         """Test executing tests with coverage measurement."""
         with patch("subprocess.run") as mock_run:
             mock_result = MagicMock()
@@ -127,13 +133,15 @@ class TestTestExecution:
             mock_result.stdout = "5 passed in 0.50s\nCoverage: 85%"
             mock_result.stderr = ""
             mock_run.return_value = mock_result
-            
+
             result = await quality_engineer._execute_tests(sample_workflow_state)
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
-    async def test_execute_tests_with_failures(self, quality_engineer, sample_workflow_state):
+    async def test_execute_tests_with_failures(
+        self, quality_engineer, sample_workflow_state
+    ):
         """Test executing tests with failures."""
         with patch("subprocess.run") as mock_run:
             mock_result = MagicMock()
@@ -141,9 +149,9 @@ class TestTestExecution:
             mock_result.stdout = "3 passed, 2 failed in 0.50s"
             mock_result.stderr = "FAILED tests/test_main.py::test_failure"
             mock_run.return_value = mock_result
-            
+
             result = await quality_engineer._execute_tests(sample_workflow_state)
-        
+
         assert result is not None
 
 
@@ -151,7 +159,9 @@ class TestCoverageAnalysis:
     """Tests for coverage analysis."""
 
     @pytest.mark.asyncio
-    async def test_analyze_coverage_report(self, quality_engineer, sample_workflow_state):
+    async def test_analyze_coverage_report(
+        self, quality_engineer, sample_workflow_state
+    ):
         """Test analyzing coverage report."""
         coverage_data = {
             "total_statements": 100,
@@ -162,14 +172,16 @@ class TestCoverageAnalysis:
                 "src/utils.py": {"coverage": 80},
             },
         }
-        
+
         with patch.object(quality_engineer, "logger"):
             result = await quality_engineer._analyze_coverage(coverage_data)
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
-    async def test_coverage_below_threshold(self, quality_engineer, sample_workflow_state):
+    async def test_coverage_below_threshold(
+        self, quality_engineer, sample_workflow_state
+    ):
         """Test coverage below threshold."""
         coverage_data = {
             "total_statements": 100,
@@ -177,14 +189,16 @@ class TestCoverageAnalysis:
             "coverage_percent": 60.0,
             "files": {},
         }
-        
+
         with patch.object(quality_engineer, "logger"):
             result = await quality_engineer._analyze_coverage(coverage_data)
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
-    async def test_coverage_above_threshold(self, quality_engineer, sample_workflow_state):
+    async def test_coverage_above_threshold(
+        self, quality_engineer, sample_workflow_state
+    ):
         """Test coverage above threshold."""
         coverage_data = {
             "total_statements": 100,
@@ -192,10 +206,10 @@ class TestCoverageAnalysis:
             "coverage_percent": 95.0,
             "files": {},
         }
-        
+
         with patch.object(quality_engineer, "logger"):
             result = await quality_engineer._analyze_coverage(coverage_data)
-        
+
         assert result is not None
 
 
@@ -203,7 +217,9 @@ class TestReportGeneration:
     """Tests for quality report generation."""
 
     @pytest.mark.asyncio
-    async def test_generate_quality_report(self, quality_engineer, sample_workflow_state):
+    async def test_generate_quality_report(
+        self, quality_engineer, sample_workflow_state
+    ):
         """Test generating quality report."""
         test_results = {
             "total_tests": 10,
@@ -212,23 +228,25 @@ class TestReportGeneration:
             "skipped": 0,
             "duration": 1.5,
         }
-        
+
         coverage_data = {
             "coverage_percent": 85.0,
             "files": {},
         }
-        
+
         with patch.object(quality_engineer, "logger"):
             result = await quality_engineer._generate_report(
                 test_results=test_results,
                 coverage_data=coverage_data,
                 workflow_state=sample_workflow_state,
             )
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
-    async def test_report_includes_test_summary(self, quality_engineer, sample_workflow_state):
+    async def test_report_includes_test_summary(
+        self, quality_engineer, sample_workflow_state
+    ):
         """Test that report includes test summary."""
         test_results = {
             "total_tests": 10,
@@ -237,20 +255,22 @@ class TestReportGeneration:
             "skipped": 0,
             "duration": 1.0,
         }
-        
+
         coverage_data = {"coverage_percent": 100.0, "files": {}}
-        
+
         with patch.object(quality_engineer, "logger"):
             result = await quality_engineer._generate_report(
                 test_results=test_results,
                 coverage_data=coverage_data,
                 workflow_state=sample_workflow_state,
             )
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
-    async def test_report_includes_coverage_summary(self, quality_engineer, sample_workflow_state):
+    async def test_report_includes_coverage_summary(
+        self, quality_engineer, sample_workflow_state
+    ):
         """Test that report includes coverage summary."""
         test_results = {
             "total_tests": 5,
@@ -259,7 +279,7 @@ class TestReportGeneration:
             "skipped": 0,
             "duration": 0.5,
         }
-        
+
         coverage_data = {
             "coverage_percent": 88.5,
             "files": {
@@ -267,14 +287,14 @@ class TestReportGeneration:
                 "src/utils.py": {"coverage": 87},
             },
         }
-        
+
         with patch.object(quality_engineer, "logger"):
             result = await quality_engineer._generate_report(
                 test_results=test_results,
                 coverage_data=coverage_data,
                 workflow_state=sample_workflow_state,
             )
-        
+
         assert result is not None
 
 
@@ -282,39 +302,43 @@ class TestErrorHandling:
     """Tests for error handling in test execution."""
 
     @pytest.mark.asyncio
-    async def test_handle_test_execution_error(self, quality_engineer, sample_workflow_state):
+    async def test_handle_test_execution_error(
+        self, quality_engineer, sample_workflow_state
+    ):
         """Test handling test execution error."""
         with patch("subprocess.run") as mock_run:
             mock_run.side_effect = Exception("Test execution failed")
-            
+
             with patch.object(quality_engineer, "logger"):
                 result = await quality_engineer._execute_tests(sample_workflow_state)
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
     async def test_handle_coverage_analysis_error(self, quality_engineer):
         """Test handling coverage analysis error."""
         invalid_coverage = None
-        
+
         with patch.object(quality_engineer, "logger"):
             result = await quality_engineer._analyze_coverage(invalid_coverage)
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
-    async def test_handle_report_generation_error(self, quality_engineer, sample_workflow_state):
+    async def test_handle_report_generation_error(
+        self, quality_engineer, sample_workflow_state
+    ):
         """Test handling report generation error."""
         test_results = None
         coverage_data = None
-        
+
         with patch.object(quality_engineer, "logger"):
             result = await quality_engineer._generate_report(
                 test_results=test_results,
                 coverage_data=coverage_data,
                 workflow_state=sample_workflow_state,
             )
-        
+
         assert result is not None
 
 
@@ -322,7 +346,9 @@ class TestQualityEngineerIntegration:
     """Integration tests for QualityEngineer."""
 
     @pytest.mark.asyncio
-    async def test_full_quality_check_flow(self, quality_engineer, sample_workflow_state):
+    async def test_full_quality_check_flow(
+        self, quality_engineer, sample_workflow_state
+    ):
         """Test complete quality check flow."""
         with patch("subprocess.run") as mock_run:
             mock_result = MagicMock()
@@ -330,30 +356,36 @@ class TestQualityEngineerIntegration:
             mock_result.stdout = "10 passed in 1.0s\nCoverage: 90%"
             mock_result.stderr = ""
             mock_run.return_value = mock_result
-            
+
             with patch.object(quality_engineer, "logger"):
                 # Execute tests
-                test_result = await quality_engineer._execute_tests(sample_workflow_state)
-                
+                test_result = await quality_engineer._execute_tests(
+                    sample_workflow_state
+                )
+
                 # Analyze coverage
-                coverage_result = await quality_engineer._analyze_coverage({
-                    "coverage_percent": 90.0,
-                    "files": {},
-                })
-                
+                coverage_result = await quality_engineer._analyze_coverage(
+                    {
+                        "coverage_percent": 90.0,
+                        "files": {},
+                    }
+                )
+
                 # Generate report
                 report = await quality_engineer._generate_report(
                     test_results={"total_tests": 10, "passed": 10, "failed": 0},
                     coverage_data={"coverage_percent": 90.0, "files": {}},
                     workflow_state=sample_workflow_state,
                 )
-        
+
         assert test_result is not None
         assert coverage_result is not None
         assert report is not None
 
     @pytest.mark.asyncio
-    async def test_quality_check_with_failures(self, quality_engineer, sample_workflow_state):
+    async def test_quality_check_with_failures(
+        self, quality_engineer, sample_workflow_state
+    ):
         """Test quality check with test failures."""
         with patch("subprocess.run") as mock_run:
             mock_result = MagicMock()
@@ -361,8 +393,8 @@ class TestQualityEngineerIntegration:
             mock_result.stdout = "8 passed, 2 failed in 1.0s"
             mock_result.stderr = "FAILED tests/test_main.py::test_failure"
             mock_run.return_value = mock_result
-            
+
             with patch.object(quality_engineer, "logger"):
                 result = await quality_engineer._execute_tests(sample_workflow_state)
-        
+
         assert result is not None

@@ -1,4 +1,3 @@
-
 from fastapi.testclient import TestClient
 
 
@@ -14,6 +13,7 @@ def test_health_check(test_client: TestClient):
     assert "services" in json_response
     assert "details" in json_response
     assert json_response["details"]["version"] == "1.0.0"
+
 
 def test_readiness_check(test_client: TestClient):
     """

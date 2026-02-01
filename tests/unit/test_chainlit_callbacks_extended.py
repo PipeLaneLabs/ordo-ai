@@ -32,7 +32,7 @@ class TestMessageCallbacks:
             "author": "user",
             "timestamp": datetime.now(tz=UTC).isoformat(),
         }
-        
+
         assert message_data["content"] == "Start workflow"
         assert message_data["author"] == "user"
 
@@ -40,13 +40,13 @@ class TestMessageCallbacks:
     async def test_process_user_input(self, mock_chainlit):
         """Test processing user input."""
         user_input = "Generate documentation for my project"
-        
+
         processed = {
             "original": user_input,
             "intent": "documentation_generation",
             "parameters": {"project": "my project"},
         }
-        
+
         assert processed["intent"] == "documentation_generation"
 
     @pytest.mark.asyncio
@@ -57,7 +57,7 @@ class TestMessageCallbacks:
             "author": "assistant",
             "timestamp": datetime.now(tz=UTC).isoformat(),
         }
-        
+
         assert message["author"] == "assistant"
 
     @pytest.mark.asyncio
@@ -68,7 +68,7 @@ class TestMessageCallbacks:
             "error_type": "ValueError",
             "timestamp": datetime.now(tz=UTC).isoformat(),
         }
-        
+
         assert error_message["error_type"] == "ValueError"
 
 
@@ -84,7 +84,7 @@ class TestUserFeedbackHandling:
             "comment": "Good workflow execution",
             "timestamp": datetime.now(tz=UTC).isoformat(),
         }
-        
+
         assert feedback["rating"] == 4
         assert "Good" in feedback["comment"]
 
@@ -96,7 +96,7 @@ class TestUserFeedbackHandling:
             "rating": 5,
             "message": "Excellent service",
         }
-        
+
         assert feedback["type"] == "positive"
         assert feedback["rating"] == 5
 
@@ -109,7 +109,7 @@ class TestUserFeedbackHandling:
             "message": "Poor performance",
             "issue": "Slow execution",
         }
-        
+
         assert feedback["type"] == "negative"
         assert "Slow" in feedback["issue"]
 
@@ -123,7 +123,7 @@ class TestUserFeedbackHandling:
             "stored": True,
             "timestamp": datetime.now(tz=UTC).isoformat(),
         }
-        
+
         assert feedback_record["stored"] is True
 
 
@@ -139,7 +139,7 @@ class TestWorkflowStateUpdates:
             "new_phase": "design",
             "timestamp": datetime.now(tz=UTC).isoformat(),
         }
-        
+
         assert state_update["new_phase"] == "design"
 
     @pytest.mark.asyncio
@@ -151,7 +151,7 @@ class TestWorkflowStateUpdates:
             "status": "executing",
             "progress": 50,
         }
-        
+
         assert state_update["status"] == "executing"
         assert state_update["progress"] == 50
 
@@ -164,7 +164,7 @@ class TestWorkflowStateUpdates:
             "budget_remaining_usd": 64.50,
             "tokens_used": 4500,
         }
-        
+
         assert state_update["budget_used_usd"] == 35.50
 
     @pytest.mark.asyncio
@@ -178,7 +178,7 @@ class TestWorkflowStateUpdates:
                 "agent": "SoftwareEngineer",
             },
         }
-        
+
         assert update["type"] == "state_update"
 
 
@@ -194,7 +194,7 @@ class TestErrorCallbacks:
             "workflow_id": "wf-123",
             "timestamp": datetime.now(tz=UTC).isoformat(),
         }
-        
+
         assert error_data["error_type"] == "WorkflowError"
 
     @pytest.mark.asyncio
@@ -205,7 +205,7 @@ class TestErrorCallbacks:
             "field": "user_request",
             "message": "Invalid input format",
         }
-        
+
         assert error["type"] == "validation_error"
 
     @pytest.mark.asyncio
@@ -216,7 +216,7 @@ class TestErrorCallbacks:
             "operation": "workflow_execution",
             "timeout_seconds": 300,
         }
-        
+
         assert error["type"] == "timeout_error"
 
     @pytest.mark.asyncio
@@ -227,7 +227,7 @@ class TestErrorCallbacks:
             "message": "An error occurred during execution",
             "action": "Please try again",
         }
-        
+
         assert "Error" in error_display["title"]
 
 
@@ -242,7 +242,7 @@ class TestSessionManagement:
             "user_id": "user-456",
             "created_at": datetime.now(tz=UTC).isoformat(),
         }
-        
+
         assert session["session_id"] is not None
 
     @pytest.mark.asyncio
@@ -253,7 +253,7 @@ class TestSessionManagement:
             "duration_seconds": 3600,
             "ended_at": datetime.now(tz=UTC).isoformat(),
         }
-        
+
         assert session["duration_seconds"] == 3600
 
     @pytest.mark.asyncio
@@ -265,7 +265,7 @@ class TestSessionManagement:
             "total_budget_used": 50.0,
             "stored": True,
         }
-        
+
         assert session_data["stored"] is True
         assert len(session_data["workflows"]) == 2
 
@@ -277,7 +277,7 @@ class TestSessionManagement:
             "workflows": ["wf-123"],
             "retrieved": True,
         }
-        
+
         assert session_data["retrieved"] is True
 
 
@@ -289,19 +289,19 @@ class TestCallbackIntegration:
         """Test complete workflow callback flow."""
         # Session start
         session = {"session_id": "sess-123"}
-        
+
         # User sends message
         message = {"content": "Start workflow"}
-        
+
         # Workflow state updates
         state_update = {"phase": "development"}
-        
+
         # Feedback collection
         feedback = {"rating": 4}
-        
+
         # Session end
         session_end = {"duration_seconds": 3600}
-        
+
         assert session["session_id"] is not None
         assert message["content"] == "Start workflow"
         assert state_update["phase"] == "development"
@@ -312,19 +312,19 @@ class TestCallbackIntegration:
         """Test workflow with error callback."""
         # Session start
         session = {"session_id": "sess-123"}
-        
+
         # Workflow encounters error
         error = {"type": "error", "message": "Execution failed"}
-        
+
         # Error displayed to user
         error_display = {"title": "Error", "message": error["message"]}
-        
+
         # User provides feedback
         feedback = {"type": "negative", "rating": 1}
-        
+
         # Session end
         session_end = {"duration_seconds": 600}
-        
+
         assert error["type"] == "error"
         assert feedback["type"] == "negative"
 
@@ -333,19 +333,19 @@ class TestCallbackIntegration:
         """Test workflow with approval callback."""
         # Session start
         session = {"session_id": "sess-123"}
-        
+
         # Approval request
         approval = {"gate_type": "security_review"}
-        
+
         # User approves
         decision = {"decision": "approve"}
-        
+
         # Workflow continues
         state_update = {"phase": "testing"}
-        
+
         # Positive feedback
         feedback = {"rating": 5}
-        
+
         assert approval["gate_type"] == "security_review"
         assert decision["decision"] == "approve"
         assert feedback["rating"] == 5

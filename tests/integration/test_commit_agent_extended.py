@@ -15,7 +15,9 @@ from unittest.mock import AsyncMock, MagicMock, patch, call
 from pathlib import Path
 
 # Skip all tests in this module - requires actual git repository setup
-pytestmark = pytest.mark.skip(reason="Requires git repository initialization and proper subprocess mocking")
+pytestmark = pytest.mark.skip(
+    reason="Requires git repository initialization and proper subprocess mocking"
+)
 
 from src.agents.tier_5.commit_agent import CommitAgent
 from src.config import Settings
@@ -115,28 +117,28 @@ class TestGitOperations:
             mock_result.stdout = ""
             mock_result.stderr = ""
             mock_run.return_value = mock_result
-            
+
             result = await commit_agent._git_add_files(sample_workflow_state)
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
     async def test_git_commit_with_message(self, commit_agent, sample_workflow_state):
         """Test committing changes with message."""
         commit_message = "feat: Add new feature implementation"
-        
+
         with patch("subprocess.run") as mock_run:
             mock_result = MagicMock()
             mock_result.returncode = 0
             mock_result.stdout = "[main abc1234] feat: Add new feature implementation"
             mock_result.stderr = ""
             mock_run.return_value = mock_result
-            
+
             result = await commit_agent._git_commit(
                 workflow_state=sample_workflow_state,
                 message=commit_message,
             )
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
@@ -148,9 +150,9 @@ class TestGitOperations:
             mock_result.stdout = "Pushing to origin..."
             mock_result.stderr = ""
             mock_run.return_value = mock_result
-            
+
             result = await commit_agent._git_push(sample_workflow_state)
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
@@ -162,9 +164,9 @@ class TestGitOperations:
             mock_result.stdout = "On branch main\nModified: src/main.py"
             mock_result.stderr = ""
             mock_run.return_value = mock_result
-            
+
             result = await commit_agent._git_status(sample_workflow_state)
-        
+
         assert result is not None
 
 
@@ -181,15 +183,17 @@ class TestCommitMessageGeneration:
             latency_ms=50,
             provider="test",
         )
-        
+
         commit_agent.llm_client.generate = AsyncMock(return_value=llm_response)
-        
+
         result = await commit_agent._generate_commit_message(sample_workflow_state)
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
-    async def test_commit_message_follows_convention(self, commit_agent, sample_workflow_state):
+    async def test_commit_message_follows_convention(
+        self, commit_agent, sample_workflow_state
+    ):
         """Test that commit message follows conventional commits."""
         llm_response = LLMResponse(
             content="feat: Add user authentication module\n\nImplements JWT-based auth",
@@ -198,15 +202,17 @@ class TestCommitMessageGeneration:
             latency_ms=60,
             provider="test",
         )
-        
+
         commit_agent.llm_client.generate = AsyncMock(return_value=llm_response)
-        
+
         result = await commit_agent._generate_commit_message(sample_workflow_state)
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
-    async def test_commit_message_includes_scope(self, commit_agent, sample_workflow_state):
+    async def test_commit_message_includes_scope(
+        self, commit_agent, sample_workflow_state
+    ):
         """Test that commit message includes scope."""
         llm_response = LLMResponse(
             content="feat(auth): Add JWT token validation",
@@ -215,11 +221,11 @@ class TestCommitMessageGeneration:
             latency_ms=45,
             provider="test",
         )
-        
+
         commit_agent.llm_client.generate = AsyncMock(return_value=llm_response)
-        
+
         result = await commit_agent._generate_commit_message(sample_workflow_state)
-        
+
         assert result is not None
 
 
@@ -230,38 +236,38 @@ class TestBranchManagement:
     async def test_create_feature_branch(self, commit_agent, sample_workflow_state):
         """Test creating feature branch."""
         branch_name = "feature/new-auth-system"
-        
+
         with patch("subprocess.run") as mock_run:
             mock_result = MagicMock()
             mock_result.returncode = 0
             mock_result.stdout = f"Switched to a new branch '{branch_name}'"
             mock_result.stderr = ""
             mock_run.return_value = mock_result
-            
+
             result = await commit_agent._create_branch(
                 workflow_state=sample_workflow_state,
                 branch_name=branch_name,
             )
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
     async def test_switch_to_branch(self, commit_agent, sample_workflow_state):
         """Test switching to existing branch."""
         branch_name = "develop"
-        
+
         with patch("subprocess.run") as mock_run:
             mock_result = MagicMock()
             mock_result.returncode = 0
             mock_result.stdout = f"Switched to branch '{branch_name}'"
             mock_result.stderr = ""
             mock_run.return_value = mock_result
-            
+
             result = await commit_agent._switch_branch(
                 workflow_state=sample_workflow_state,
                 branch_name=branch_name,
             )
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
@@ -269,20 +275,20 @@ class TestBranchManagement:
         """Test merging branch."""
         source_branch = "feature/new-auth"
         target_branch = "main"
-        
+
         with patch("subprocess.run") as mock_run:
             mock_result = MagicMock()
             mock_result.returncode = 0
             mock_result.stdout = f"Merge made by the 'recursive' strategy"
             mock_result.stderr = ""
             mock_run.return_value = mock_result
-            
+
             result = await commit_agent._merge_branch(
                 workflow_state=sample_workflow_state,
                 source_branch=source_branch,
                 target_branch=target_branch,
             )
-        
+
         assert result is not None
 
 
@@ -294,10 +300,10 @@ class TestErrorHandling:
         """Test handling git add error."""
         with patch("subprocess.run") as mock_run:
             mock_run.side_effect = Exception("Git add failed")
-            
+
             with patch.object(commit_agent, "logger"):
                 result = await commit_agent._git_add_files(sample_workflow_state)
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
@@ -305,13 +311,13 @@ class TestErrorHandling:
         """Test handling git commit error."""
         with patch("subprocess.run") as mock_run:
             mock_run.side_effect = Exception("Git commit failed")
-            
+
             with patch.object(commit_agent, "logger"):
                 result = await commit_agent._git_commit(
                     workflow_state=sample_workflow_state,
                     message="test commit",
                 )
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
@@ -319,10 +325,10 @@ class TestErrorHandling:
         """Test handling git push error."""
         with patch("subprocess.run") as mock_run:
             mock_run.side_effect = Exception("Git push failed")
-            
+
             with patch.object(commit_agent, "logger"):
                 result = await commit_agent._git_push(sample_workflow_state)
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
@@ -334,14 +340,14 @@ class TestErrorHandling:
             mock_result.stdout = ""
             mock_result.stderr = "CONFLICT (content): Merge conflict in src/main.py"
             mock_run.return_value = mock_result
-            
+
             with patch.object(commit_agent, "logger"):
                 result = await commit_agent._merge_branch(
                     workflow_state=sample_workflow_state,
                     source_branch="feature/test",
                     target_branch="main",
                 )
-        
+
         assert result is not None
 
 
@@ -349,13 +355,15 @@ class TestRepositoryValidation:
     """Tests for repository state validation."""
 
     @pytest.mark.asyncio
-    async def test_validate_repository_exists(self, commit_agent, sample_workflow_state):
+    async def test_validate_repository_exists(
+        self, commit_agent, sample_workflow_state
+    ):
         """Test validating repository exists."""
         with patch("pathlib.Path.exists") as mock_exists:
             mock_exists.return_value = True
-            
+
             result = await commit_agent._validate_repository(sample_workflow_state)
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
@@ -367,13 +375,15 @@ class TestRepositoryValidation:
             mock_result.stdout = ""
             mock_result.stderr = ""
             mock_run.return_value = mock_result
-            
+
             result = await commit_agent._validate_git_initialized(sample_workflow_state)
-        
+
         assert result is not None
 
     @pytest.mark.asyncio
-    async def test_validate_no_uncommitted_changes(self, commit_agent, sample_workflow_state):
+    async def test_validate_no_uncommitted_changes(
+        self, commit_agent, sample_workflow_state
+    ):
         """Test validating no uncommitted changes."""
         with patch("subprocess.run") as mock_run:
             mock_result = MagicMock()
@@ -381,9 +391,11 @@ class TestRepositoryValidation:
             mock_result.stdout = "On branch main\nnothing to commit, working tree clean"
             mock_result.stderr = ""
             mock_run.return_value = mock_result
-            
-            result = await commit_agent._validate_clean_working_tree(sample_workflow_state)
-        
+
+            result = await commit_agent._validate_clean_working_tree(
+                sample_workflow_state
+            )
+
         assert result is not None
 
 
@@ -400,32 +412,34 @@ class TestCommitAgentIntegration:
             latency_ms=50,
             provider="test",
         )
-        
+
         commit_agent.llm_client.generate = AsyncMock(return_value=llm_response)
-        
+
         with patch("subprocess.run") as mock_run:
             mock_result = MagicMock()
             mock_result.returncode = 0
             mock_result.stdout = "Success"
             mock_result.stderr = ""
             mock_run.return_value = mock_result
-            
+
             with patch.object(commit_agent, "logger"):
                 # Generate message
-                message = await commit_agent._generate_commit_message(sample_workflow_state)
-                
+                message = await commit_agent._generate_commit_message(
+                    sample_workflow_state
+                )
+
                 # Add files
                 add_result = await commit_agent._git_add_files(sample_workflow_state)
-                
+
                 # Commit
                 commit_result = await commit_agent._git_commit(
                     workflow_state=sample_workflow_state,
                     message=message or "feat: New feature",
                 )
-                
+
                 # Push
                 push_result = await commit_agent._git_push(sample_workflow_state)
-        
+
         assert message is not None
         assert add_result is not None
         assert commit_result is not None

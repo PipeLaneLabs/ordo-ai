@@ -356,7 +356,9 @@ class TestListAllPermissions:
         all_perms = list_all_permissions()
         assert len(all_perms) == 3
 
-    @pytest.mark.skip(reason="Test isolation issue - PERMISSIONS dict modified across tests")
+    @pytest.mark.skip(
+        reason="Test isolation issue - PERMISSIONS dict modified across tests"
+    )
     def test_list_all_permissions_is_copy_isolated(self) -> None:
         """Test list_all_permissions returns a copy (isolated test)."""
         pass
@@ -436,7 +438,9 @@ class TestRBACEdgeCases:
         with pytest.raises((PermissionError, ConfigurationError)):
             await protected_function(user=user)
 
-    @pytest.mark.skip(reason="Test isolation issue - PERMISSIONS dict modified across tests")
+    @pytest.mark.skip(
+        reason="Test isolation issue - PERMISSIONS dict modified across tests"
+    )
     def test_permissions_immutability(self) -> None:
         """Test that get_role_permissions returns a copy."""
         # Save original state

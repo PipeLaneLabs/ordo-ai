@@ -1,5 +1,3 @@
-
-
 import jwt
 import pytest
 from fastapi.testclient import TestClient
@@ -22,6 +20,7 @@ def api_client_factory():
 
     return _factory
 
+
 def test_jwt_creation_and_validation():
     """
     Tests that a JWT token can be created and validated successfully.
@@ -33,6 +32,7 @@ def test_jwt_creation_and_validation():
     payload = jwt_service.verify_token(token)
     assert payload["sub"] == user_id
     assert payload["roles"] == roles
+
 
 def test_jwt_expired():
     """
@@ -46,6 +46,7 @@ def test_jwt_expired():
     with freeze_time("2023-01-01 13:00:01"):
         with pytest.raises(jwt.ExpiredSignatureError):
             jwt_service.verify_token(token)
+
 
 def test_jwt_invalid_signature():
     """
@@ -61,6 +62,7 @@ def test_jwt_invalid_signature():
     with pytest.raises(jwt.InvalidTokenError):
         jwt_service.verify_token(tampered_token)
 
+
 def test_rbac_developer_permissions(api_client_factory):
     """
     Tests that a developer has the correct permissions.
@@ -69,13 +71,15 @@ def test_rbac_developer_permissions(api_client_factory):
     client = api_client_factory(user)
     try:
         # This should succeed
-        response = client.post("/workflow/start", json={"user_request": "this is a valid test request"})
+        response = client.post(
+            "/workflow/start", json={"user_request": "this is a valid test request"}
+        )
         assert response.status_code == 200
         workflow_id = response.json()["workflow_id"]
 
         # This should fail
         response = client.delete(f"/workflow/{workflow_id}")
-        assert response.status_code == 404 # 404 because the endpoint does not exist
+        assert response.status_code == 404  # 404 because the endpoint does not exist
     finally:
         app.dependency_overrides = {}
 
@@ -146,6 +150,7 @@ def test_jwt_custom_expiration():
 
     # Create token with 30 minute expiration
     from datetime import timedelta
+
     token = jwt_service.create_access_token(user_id, roles, timedelta(minutes=30))
 
     payload = jwt_service.verify_token(token)

@@ -314,11 +314,7 @@ Generate a VALIDATION_REPORT.md with:
             flags=re.IGNORECASE,
         )
         match_result = decision_match or status_match
-        decision = (
-            match_result.group(1).upper()
-            if match_result is not None
-            else ""
-        )
+        decision = match_result.group(1).upper() if match_result is not None else ""
 
         blocking_count_match = re.search(
             r"\*\*Blocking Issues:\*\*\s*(\d+)",

@@ -246,7 +246,7 @@ class BudgetGuard:
         """
         # Handle legacy parameter names - cost_usd is an alias for cost_required
         cost_param = cost_usd or cost_required or estimated_cost_usd or 0.0
-        
+
         # Handle legacy parameter names
         if workflow_state is not None:
             # Legacy: called with workflow_state
@@ -258,7 +258,9 @@ class BudgetGuard:
         else:
             # New style: called with workflow_id
             if workflow_id is None:
-                raise ValueError("Either workflow_state or workflow_id must be provided")
+                raise ValueError(
+                    "Either workflow_state or workflow_id must be provided"
+                )
 
             await self._ensure_cache_connected()
 
@@ -420,7 +422,6 @@ class BudgetGuard:
                     fallback="in-memory tracking",
                 )
                 # Continue without Redis - fall back to in-memory tracking
-
 
     def record_usage(
         self,

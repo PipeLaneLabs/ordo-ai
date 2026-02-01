@@ -389,9 +389,7 @@ class ArtifactStorage:
                 artifact_path=artifact_path,
                 error=str(e),
             )
-            raise StorageError(
-                f"Failed to generate artifact URL: {e}"
-            ) from e
+            raise StorageError(f"Failed to generate artifact URL: {e}") from e
 
 
 # Global artifact storage instance (lazy-loaded to avoid connection

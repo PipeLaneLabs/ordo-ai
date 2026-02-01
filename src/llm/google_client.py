@@ -171,9 +171,7 @@ class GoogleClient(BaseLLMClient):
         # Rough estimate: 4 characters per token
         return len(text) // 4
 
-    def calculate_cost(
-        self, _tokens_prompt: int, _tokens_completion: int
-    ) -> float:
+    def calculate_cost(self, _tokens_prompt: int, _tokens_completion: int) -> float:
         """Calculate cost in USD for token usage.
 
         Args:

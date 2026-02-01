@@ -50,9 +50,7 @@ class QualityEngineerAgent(BaseAgent):
 
     _last_pytest_run_at: float | None = None
 
-    async def _build_prompt(
-        self, state: WorkflowState, **_kwargs: object
-    ) -> str:
+    async def _build_prompt(self, state: WorkflowState, **_kwargs: object) -> str:
         """Build prompt with code context and requirements.
 
         Reads source code, REQUIREMENTS.md, ARCHITECTURE.md, and TASKS.md

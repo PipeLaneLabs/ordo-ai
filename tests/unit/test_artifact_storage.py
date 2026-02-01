@@ -74,9 +74,10 @@ class TestArtifactStorageInit:
             )
         )
 
-        with patch(
-            "src.storage.artifact_storage.Minio", return_value=mock_client
-        ), pytest.raises(StorageError):
+        with (
+            patch("src.storage.artifact_storage.Minio", return_value=mock_client),
+            pytest.raises(StorageError),
+        ):
             ArtifactStorage()
 
 

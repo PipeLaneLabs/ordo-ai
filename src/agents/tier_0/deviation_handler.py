@@ -600,4 +600,3 @@ Respond with JSON:
             return "None"
 
         return "\n".join(f"- **{k}:** {v}" for k, v in data.items())
-

@@ -42,9 +42,7 @@ class SoftwareEngineerAgent(BaseAgent):
         token_budget: 16,000 tokens (highest allocation)
     """
 
-    async def _build_prompt(
-        self, state: WorkflowState, **_kwargs: object
-    ) -> str:
+    async def _build_prompt(self, state: WorkflowState, **_kwargs: object) -> str:
         """Build prompt for code generation.
 
         Reads project context from TASKS.md, ARCHITECTURE.md, DEPENDENCIES.md,

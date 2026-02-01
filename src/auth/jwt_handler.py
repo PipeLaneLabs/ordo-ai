@@ -21,9 +21,10 @@ except ImportError:
         # Fallback for PyJWT 2.8+
         class ExpiredSignatureError(Exception):
             pass
-        
+
         class InvalidTokenError(Exception):
             pass
+
 
 from pydantic import BaseModel
 
