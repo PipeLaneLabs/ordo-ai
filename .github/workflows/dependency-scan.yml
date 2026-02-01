@@ -101,22 +101,13 @@ jobs:
               body: comment
             });
 
-      - name: Fail on critical vulnerabilities
+      - name: Security Audit (pip-audit)
         run: |
-          pip install safety
-          safety check --json > safety-report.json
-          python -c "
-          import json
-          import sys
-          with open('safety-report.json') as f:
-              vulns = json.load(f)
-          critical = [v for v in vulns if v.get('severity', '').upper() in ['CRITICAL', 'HIGH']]
-          if critical:
-              print(f'Found {len(critical)} critical/high vulnerabilities')
-              for v in critical:
-                  print(f\"  - {v['package']}: {v['vulnerability']}\")
-              sys.exit(1)
-          "
+          pip install pip-audit
+          # This runs the audit using the official OSV database.
+          # It automatically exits with Code 1 (Fail) if ANY vulnerability is found.
+          # --desc: Prints the description so you know how to fix it.
+          pip-audit --desc
 
   license-check:
     runs-on: ubuntu-latest
