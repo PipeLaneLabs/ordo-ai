@@ -1,0 +1,238 @@
+[tool.poetry]
+name = "multi-tier-agent-ecosystem"
+version = "1.0.0"
+description = "A production-ready, LangGraph-native multi-agent system for automated software development lifecycle"
+authors = ["Dependency Resolver Agent"]
+license = "MIT"
+packages = [{ include = "src" }]
+
+[tool.poetry.dependencies]
+python = ">=3.12,<3.13"  # Force Python 3.12.x only (LangGraph compatibility)
+
+# Core Orchestration (LangGraph Stack)
+langgraph = "^0.2.60"
+langchain = "^0.3.0"
+langchain-openai = "^0.2.0"
+langchain-google-genai = "^2.0.0"
+
+# Backend Framework
+fastapi = ">=0.110.1,<0.113"  # Pinned by chainlit compatibility
+uvicorn = {extras = ["standard"], version = ">=0.25.0,<0.26.0"}  # Pinned by chainlit
+pydantic = "^2.10.0"
+pydantic-settings = "^2.7.0"
+
+# Frontend UI
+chainlit = "^1.3.0"
+
+# Database & Storage
+asyncpg = "^0.30.0"
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
+redis = {extras = ["hiredis"], version = "^5.2.0"}
+minio = "^7.2.0"
+
+# Authentication & Security
+pyjwt = "^2.10.0"
+cryptography = "^44.0.0"
+python-multipart = ">=0.0.9,<0.0.10"  # Pinned by chainlit dependency
+
+# Observability
+structlog = "^24.4.0"
+prometheus-client = "^0.21.0"
+
+# Utilities
+python-dotenv = "^1.0.1"
+aiofiles = ">=23.1.0,<24.0.0"  # Pinned by chainlit dependency
+httpx = "^0.28.0"
+
+[tool.poetry.group.dev.dependencies]
+# Testing
+pytest = "^8.3.0"
+pytest-asyncio = "^0.24.0"
+pytest-cov = "^6.0.0"
+pytest-mock = "^3.14.0"
+freezegun = "^1.5.1"
+
+# Code Quality
+black = "^24.10.0"
+ruff = "^0.8.0"
+mypy = "^1.13.0"
+radon = "^5.1.0"
+pre-commit = "^4.0.0"
+
+# Security Scanning
+pip-audit = "^2.7.0"
+safety = "^3.3.0"
+types-aiofiles = "^25.1.0.20251011"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+
+# ============================================================================
+# CODE QUALITY TOOL CONFIGURATIONS
+# ============================================================================
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+exclude = [
+    ".eggs",
+    ".git",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "archived",
+    "examples",
+    "scripts",
+    "debug_imports.py",
+    "debug_regex.py",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "C",   # flake8-comprehensions
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "N",   # pep8-naming
+    "ANN", # flake8-annotations
+    "S",   # flake8-bandit (security)
+    "A",   # flake8-builtins
+    "COM", # flake8-commas
+    "DTZ", # flake8-datetimez
+    "T20", # flake8-print
+    "SIM", # flake8-simplify
+    "ARG", # flake8-unused-arguments
+    "PTH", # flake8-use-pathlib
+    "RUF", # Ruff-specific rules
+]
+ignore = [
+    "ANN101", # Missing type annotation for self
+    "ANN102", # Missing type annotation for cls
+    "COM812", # Trailing comma missing (conflicts with black)
+    "S101",   # Use of assert (allowed in tests)
+    "B008",   # Do not perform function call in argument defaults (FastAPI Depends pattern)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "S101",   # Allow assert in tests
+    "ANN",    # Don't require annotations in tests
+    "ARG",    # Allow unused arguments in test fixtures
+]
+"__init__.py" = ["F401"]  # Allow unused imports in __init__.py
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+force-single-line = false
+lines-after-imports = 2
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+check_untyped_defs = true
+no_implicit_reexport = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+strict_equality = true
+strict_concatenate = true
+
+# Allow some flexibility
+allow_subclassing_any = true
+allow_untyped_calls = false
+allow_untyped_decorators = true
+
+# Third-party packages without stubs
+[[tool.mypy.overrides]]
+module = [
+    "chainlit.*",
+    "minio.*",
+    "langgraph.*",
+    "langchain.*",
+    "prometheus_client.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=src",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--cov-fail-under=70",  # 70% coverage per ADR-005
+]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "e2e: marks tests as end-to-end tests",
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/.venv/*",
+    "*/site-packages/*",
+]
+branch = true
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"

@@ -1,0 +1,100 @@
+# Environment Variables (CRITICAL - Contains Secrets)
+.env
+.env.*
+!.env.example
+
+# TLS Certificates (Regenerate with mkcert)
+certs/*.pem
+certs/*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+
+## Ignore coverage reports
+coverage.xml
+coverage.json
+
+## Ignore local debug scripts
+debug_*.py
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.kilocode/
+
+# Docker
+*.log
+docker-compose.override.yml
+
+# Database
+checkpoints/*.db
+*.sqlite
+
+# Artifacts
+data/
+artifacts/
+generated_artifacts/
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Project-specific
+.chainlit/
+
+# --- NEW ADDITIONS ---
+
+# Ignore all stray text files (Test logs, notes, etc.)
+*.txt
+!requirements.txt   # EXCEPT requirements.txt
+
+# Ignore all Markdown files by default...
+*.md
+
+# ...BUT force-include the important documentation:
+!README.md
+!DEVELOPER_GUIDE.md
+!docs/*.md          # Allow everything inside the docs/ folder
+!.github/*.md       # Allow templates inside .github/

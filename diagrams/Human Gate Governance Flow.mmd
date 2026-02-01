@@ -1,0 +1,156 @@
+---
+config:
+  layout: dagre
+  theme: base
+  themeVariables:
+    fontSize: 14px
+---
+flowchart TB
+    Start(("🚀 START<br>PROJECT")) --> Orchestrator["🎯 Orchestration Controller<br>(LangGraph State Manager)"]
+    Orchestrator --> T1_ReqAgent["📝 Requirements & Strategy Agent"]
+    T1_ReqAgent --> T1_Requirements[("📄 REQUIREMENTS.md")]
+    T1_Requirements --> T1_StratAgent["✅ Strategy Validator Agent"]
+    T1_StratAgent --> T1_ValidationReport[("📊 VALIDATION_REPORT.md")]
+    T1_ValidationReport --> T1_StratDecision{"Validation<br>Status?"}
+    T1_StratDecision -- ❌ REJECTED<br>(Blocking Issues) --> T1_ReqAgent
+    T1_StratDecision -- "⚠️ NEEDS REFINEMENT<br>(Non-blocking Issues)" --> T1_ReqAgent
+    T1_StratDecision -- ✅ APPROVED --> T1_ArchAgent["🏛️ Solution Architect Agent"]
+    T1_ArchAgent --> T1_Architecture[("🏗️ ARCHITECTURE.md")]
+    T1_Architecture --> QG1{"👤 HUMAN GATE 1<br>Approve Plan?<br>(Optional)"}
+    QG1 -- ❌ REJECT --> T1_ReqAgent
+    QG1 -- ✅ APPROVE --> T2_PlanAgent["📋 Implementation Planner Agent"]
+    T2_PlanAgent --> T2_Tasks[("✅ TASKS.md<br>+ Config Files")]
+    T2_Tasks --> T2_ParallelStart{{"⚡ PARALLEL<br>EXECUTION"}}
+    T2_ParallelStart --> T2_DepAgent["🔗 Dependency Resolver Agent"] & T2_InfraAgent["🏗️ Infrastructure Setup Agent"] & T2_ObsAgent["📊 Observability Agent"]
+    T2_DepAgent --> T2_Dependencies[("📦 DEPENDENCIES.md<br>requirements.txt")]
+    T2_InfraAgent --> T2_InfraConfig[("⚙️ INFRASTRUCTURE.md<br>DEVELOPER_GUIDE.md<br>docker-compose.yml")]
+    T2_ObsAgent --> T2_ObsConfig[("📈 OBSERVABILITY.md")]
+    T2_Dependencies --> T2_ParallelEnd{{"🔄 SYNC<br>POINT"}}
+    T2_InfraConfig --> T2_ParallelEnd
+    T2_ObsConfig --> T2_ParallelEnd
+    T2_ParallelEnd --> T2_DepCheck{"Dependency<br>Conflicts?"}
+    T2_DepCheck -- ❌ YES<br>(Conflicts Found) --> DevHandler["⚠️ Deviation Handler<br>(Root Cause Analyzer)"]
+    T2_DepCheck -- ✅ NO<br>(Clean) --> QG2{"👤 HUMAN GATE 2<br>Environment Ready?<br>(Optional)"}
+    QG2 -- ❌ REJECT --> T2_InfraAgent
+    QG2 -- ✅ APPROVE --> T3_SWEAgent["💻 Software Engineer Agent"]
+    T3_SWEAgent --> T3_CodeFiles[("💾 CODE_FILES/**<br>*.py, *.js, *.java")]
+    T3_CodeFiles --> T3_StaticAgent["⚡ Static Analysis Agent<br>(Fast 10s Check)"]
+    T3_StaticAgent --> T3_ComplianceLog[("📋 COMPLIANCE_LOG.md")]
+    T3_ComplianceLog --> T3_StaticDecision{"Syntax/Style/<br>Type Check<br>Pass?"}
+    T3_StaticDecision -- ❌ FAIL<br>(Syntax/Style/Type) --> T3_SWEAgent
+    T3_StaticDecision -- ✅ PASS --> T3_QualityAgent["🧪 Quality Engineer Agent"]
+    T3_QualityAgent --> T3_TestFiles[("🧪 TEST_FILES/**<br>test_*.py")]
+    T3_TestFiles --> T3_QualityReport[("📊 QUALITY_REPORT.md")]
+    T3_QualityReport --> T3_TestGate{"All Tests<br>Pass?"}
+    T3_TestGate -- ❌ FAIL --> DevHandler
+    T3_TestGate -- ✅ PASS --> T3_CoverageGate{"Coverage<br>&gt;= 85%?"}
+    T3_CoverageGate -- ❌ FAIL<br>(&lt; 85%) --> DevHandler
+    T3_CoverageGate -- ✅ PASS --> QG3{"👤 HUMAN GATE 3<br>Code Complete?<br>(Optional)"}
+    QG3 -- ❌ REJECT --> T3_SWEAgent
+    QG3 -- ✅ APPROVE --> T4_ParallelStart{{"⚡ PARALLEL<br>VALIDATION"}}
+    T4_ParallelStart --> T4_SecAgent["🔒 Security Validator Agent"] & T4_ProdAgent["✨ Product Validator Agent"]
+    T4_SecAgent --> T4_SecurityReport[("🛡️ SECURITY_REPORT.md<br>CRISIS.md")]
+    T4_ProdAgent --> T4_AcceptanceReport[("✅ ACCEPTANCE_REPORT.md<br>Traceability Matrix")]
+    T4_SecurityReport --> T4_ParallelEnd{{"🔄 VALIDATION<br>SYNC"}}
+    T4_AcceptanceReport --> T4_ParallelEnd
+    T4_ParallelEnd --> T4_SecurityGate{"Security<br>Vulnerabilities<br>Found?"} & T4_ProductGate{"Requirements<br>Met?"}
+    T4_SecurityGate -- ❌ FAIL<br>(Vulnerabilities) --> DevHandler
+    T4_SecurityGate -- ✅ PASS --> T4_BothCheck{"Both<br>Security &amp; Product<br>Pass?"}
+    T4_ProductGate -- ❌ FAIL<br>(Spec Gap) --> DevHandler
+    T4_ProductGate -- ✅ PASS --> T4_BothCheck
+    T4_BothCheck -- ✅ Both Pass --> QG4{"👤 HUMAN GATE 4<br>Validation Sign-off?<br>(Optional)"}
+    T4_BothCheck -- ❌ Either Fail --> DevHandler
+    QG4 -- ❌ REJECT --> DevHandler
+    QG4 -- ✅ APPROVE --> T5_DocsAgent["📚 Documentation Agent"]
+    T5_DocsAgent --> T5_DocFiles[("📖 README.md<br>API_DOCS.md<br>CHANGELOG.md<br>DEVELOPER_GUIDE.md")]
+    T5_DocFiles --> T5_DeployAgent["🚀 Deployment Agent"]
+    T5_DeployAgent --> T5_DeployConfig[("📦 DEPLOYMENT.md<br>RELEASE_NOTES.md<br>Dockerfile<br>k8s manifests")]
+    T5_DeployConfig --> T5_StagingTest{"☁️ Staging<br>Smoke Tests<br>+ Rollback Test<br>Pass?"}
+    T5_StagingTest -- ❌ FAIL --> DevHandler
+    T5_StagingTest -- ✅ PASS --> T5_CommitAgent["🔄 Commit Agent<br>(Optional - Git Ops)"]
+    T5_CommitAgent --> T5_CommitLog[("📝 COMMIT_LOG.md<br>Git commits")]
+    T5_CommitLog --> QG5{"👤 HUMAN GATE 5<br>Push to Production?"}
+    QG5 -- ❌ REJECT --> T5_DeployAgent
+    QG5 -- ✅ APPROVE --> EndState(("🎉 PRODUCTION<br>LIVE"))
+    DevHandler --> DevLog[("📋 DEVIATION_LOG.md")]
+    DevLog --> LoopCounter{"Loop Count<br>&gt; 3?"}
+    LoopCounter -- ⚠️ YES<br>(&gt; 3 iterations) --> HumanEscalate["🚨 HUMAN ESCALATION<br>(Critical Blocker)"]
+    LoopCounter -- ✅ NO<br>(≤ 3 iterations) --> RouteDecision{"🔍 ROOT CAUSE<br>ANALYSIS"}
+    RouteDecision -- 🐛 Code Bug --> T3_SWEAgent
+    RouteDecision -- 📋 Spec Ambiguity<br>or Gap --> T1_ReqAgent
+    RouteDecision -- 🏗️ Architectural Flaw<br>or Constraint --> T1_ArchAgent
+    RouteDecision -- ⚙️ Config Issue<br>or Env Failure --> T2_InfraAgent
+    RouteDecision -- 📦 Dependency Conflict<br>or Missing Pkg --> T2_DepAgent
+    RouteDecision -- 🧪 Test Issue<br>or Coverage Gap --> T3_QualityAgent
+    RouteDecision -- 📊 Observability Gap<br>or Missing Metrics --> T2_ObsAgent
+    RouteDecision -- 🔧 Tool Config Error<br>(pyproject/eslint) --> T2_PlanAgent
+    RouteDecision -- 🔒 Security Vulnerability<br>(Critical) --> T4_SecAgent
+    RouteDecision -- ✨ Product/UX Gap<br>or Req Mismatch --> T4_ProdAgent
+    Orchestrator -. 👁️ Monitors .-> T1_ReqAgent & T2_PlanAgent & T3_SWEAgent & T4_ParallelStart & T5_DocsAgent
+    Orchestrator -. 👁️ Tracks State .-> DevHandler
+
+     Start:::startEnd
+     Orchestrator:::orchestration
+     T1_ReqAgent:::agent
+     T1_Requirements:::artifact
+     T1_StratAgent:::agent
+     T1_ValidationReport:::artifact
+     T1_StratDecision:::decision
+     T1_ArchAgent:::agent
+     T1_Architecture:::artifact
+     QG1:::humanGate
+     T2_PlanAgent:::agent
+     T2_Tasks:::artifact
+     T2_ParallelStart:::parallel
+     T2_DepAgent:::agent
+     T2_InfraAgent:::agent
+     T2_ObsAgent:::agent
+     T2_Dependencies:::artifact
+     T2_InfraConfig:::artifact
+     T2_ObsConfig:::artifact
+     T2_ParallelEnd:::parallel
+     T2_DepCheck:::decision
+     DevHandler:::deviation
+     QG2:::humanGate
+     T3_SWEAgent:::agent
+     T3_CodeFiles:::artifact
+     T3_StaticAgent:::agent
+     T3_ComplianceLog:::artifact
+     T3_StaticDecision:::decision
+     T3_QualityAgent:::agent
+     T3_TestFiles:::artifact
+     T3_QualityReport:::artifact
+     T3_TestGate:::decision
+     T3_CoverageGate:::decision
+     QG3:::humanGate
+     T4_ParallelStart:::parallel
+     T4_SecAgent:::agent
+     T4_ProdAgent:::agent
+     T4_SecurityReport:::artifact
+     T4_AcceptanceReport:::artifact
+     T4_ParallelEnd:::parallel
+     T4_SecurityGate:::decision
+     T4_ProductGate:::decision
+     T4_BothCheck:::decision
+     QG4:::humanGate
+     T5_DocsAgent:::agent
+     T5_DocFiles:::artifact
+     T5_DeployAgent:::agent
+     T5_DeployConfig:::artifact
+     T5_StagingTest:::decision
+     T5_CommitAgent:::agent
+     T5_CommitLog:::artifact
+     QG5:::humanGate
+     EndState:::startEnd
+     DevLog:::artifact
+     LoopCounter:::decision
+     HumanEscalate:::humanGate
+     RouteDecision:::decision
+    classDef startEnd fill:#4CAF50,stroke:#2E7D32,stroke-width:4px,color:#fff,font-weight:bold
+    classDef agent fill:#2196F3,stroke:#1565C0,stroke-width:2px,color:#fff
+    classDef artifact fill:#FFF59D,stroke:#F57F17,stroke-width:2px,color:#000
+    classDef decision fill:#FF9800,stroke:#E65100,stroke-width:2px,color:#fff
+    classDef humanGate fill:#F44336,stroke:#B71C1C,stroke-width:3px,color:#fff,font-weight:bold
+    classDef deviation fill:#E91E63,stroke:#880E4F,stroke-width:3px,color:#fff,font-weight:bold
+    classDef parallel fill:#9C27B0,stroke:#4A148C,stroke-width:2px,color:#fff
+    classDef orchestration fill:#009688,stroke:#004D40,stroke-width:3px,color:#fff,font-weight:bold
