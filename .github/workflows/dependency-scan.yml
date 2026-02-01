@@ -65,7 +65,7 @@ jobs:
       - name: Generate SBOM
         run: |
           pip install cyclonedx-bom
-          cyclonedx-bom -o sbom.xml
+          python -m cyclonedx_bom -o sbom.xml
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
