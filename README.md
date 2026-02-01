@@ -60,7 +60,7 @@ docker-compose exec agent-api bash scripts/health_check.sh
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Chainlit Web UI                          │
-│              (Conversational Interface)                      │
+│              (Conversational Interface)                     │
 └────────────────────┬────────────────────────────────────────┘
                      │
 ┌────────────────────▼────────────────────────────────────────┐
@@ -98,7 +98,6 @@ docker-compose exec agent-api bash scripts/health_check.sh
 - **[docs/API_REFERENCE.md](docs/API_REFERENCE.md)** - Complete API documentation
 - **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - System design and constraints
-- **[REQUIREMENTS.md](REQUIREMENTS.md)** - Functional and non-functional requirements
 
 ## 🛠️ Development
 
