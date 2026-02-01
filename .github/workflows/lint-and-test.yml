@@ -80,6 +80,20 @@ jobs:
           pip install pytest pytest-cov pytest-asyncio
 
       - name: Run unit tests
+        env:
+          # Fake keys so Pydantic settings don't crash
+          OPENROUTER_API_KEY: "sk-fake-key-for-testing"
+          GOOGLE_API_KEY: "fake-google-key"
+          JWT_SECRET_KEY: "fake-super-secret-key-for-testing-only"
+          POSTGRES_PASSWORD: "fake-password"
+          MINIO_SECRET_KEY: "fake-minio-key"
+          # Database connection settings for the test service
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: agent_ecosystem_test
+          POSTGRES_USER: agent_user
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
         run: |
           pytest tests/unit/ -v --cov=src --cov-report=xml --cov-report=term
 
