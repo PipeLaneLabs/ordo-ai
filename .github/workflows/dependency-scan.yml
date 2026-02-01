@@ -63,7 +63,7 @@ jobs:
       - name: Generate SBOM
         uses: CycloneDX/gh-python-generate-sbom@v2
         with:
-          output-file: sbom.xml
+          output: sbom.xml
           python-version: '3.12'
 
       - name: Upload SBOM
