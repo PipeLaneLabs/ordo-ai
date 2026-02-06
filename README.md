@@ -11,7 +11,7 @@ A multi-agent orchestration system built with LangGraph, FastAPI, and PostgreSQL
 ## 🧪 Project Health & Testing
 
 | Component | Status | Notes |
-|-----------|--------|---------------|-------|
+|-----------|--------|-------|
 | Agent Orchestration | 🚧 WIP | LangGraph logic implemented; validation pending |
 | API Backend | ✅ Functional | FastAPI endpoints structured; auth needs testing |
 | Database/State | ✅ Functional | Postgres schema ready; migration scripts need verification |
