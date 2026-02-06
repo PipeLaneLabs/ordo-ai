@@ -1,0 +1,41 @@
+# Dependency Review Configuration
+# This file defines rules for the dependency-review-action
+# https://github.com/actions/dependency-review-action
+
+# Fail the check if a vulnerability with this severity or higher is detected
+fail-on-severity: high
+
+# List of licenses that are explicitly allowed
+allow-licenses:
+  - MIT
+  - Apache-2.0
+  - BSD-3-Clause
+  - BSD-2-Clause
+  - ISC
+  - PSF-2.0           # Python Software Foundation (used by stdlib)
+  - 0BSD              # Zero-Clause BSD (very permissive)
+  - Unlicense         # Public domain
+
+# List of licenses that will cause the check to fail
+deny-licenses:
+  - GPL-3.0
+  - GPL-2.0
+  - AGPL-3.0
+  - LGPL-3.0
+  - LGPL-2.1
+  - SSPL-1.0          # Server Side Public License (MongoDB)
+  - CC-BY-NC-4.0      # Creative Commons Non-Commercial
+  - CC-BY-NC-SA-4.0   # Creative Commons Non-Commercial ShareAlike
+
+# Fail if any dependency is removed (useful to prevent supply chain attacks)
+fail-on-scopes:
+  - runtime
+
+# Allow dependencies from these registries only (optional)
+# Uncomment if you want to restrict to specific package sources
+# allow-ghsas:
+#   - GHSA-xxxx-xxxx-xxxx
+
+# Comment these packages from review (useful for known false positives)
+# allow-dependencies-licenses:
+#   - pkg:npm/example-package

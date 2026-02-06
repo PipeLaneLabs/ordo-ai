@@ -2,43 +2,57 @@ name: Lint and Test
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   lint:
     runs-on: ubuntu-latest
-    name: Lint Code
-
+    name: Code Quality Checks
+    
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
+      
+      - name: Set up Python 3.12
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
-          cache: 'pip'
-
-      - name: Install dependencies
+      
+      - name: Install Poetry
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install black ruff mypy
-
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+      
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-
+      
+      - name: Install dependencies
+        run: poetry install --no-root --with dev
+      
       - name: Run Black formatter check
-        run: black --check src/ tests/
-
+        run: poetry run black --check src/ tests/
+      
       - name: Run Ruff linter
-        run: ruff check src/ tests/
-
+        run: poetry run ruff check src/ tests/
+      
       - name: Run MyPy type checker
-        run: mypy src/ --ignore-missing-imports
+        run: poetry run mypy src/ --strict
 
   test:
     runs-on: ubuntu-latest
-    name: Run Tests
-
+    name: Test Suite
+    
     services:
       postgres:
         image: postgres:16-alpine
@@ -53,7 +67,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-
+      
       redis:
         image: redis:7-alpine
         options: >-
@@ -63,31 +77,45 @@ jobs:
           --health-retries 5
         ports:
           - 6379:6379
-
+    
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
+      
+      - name: Set up Python 3.12
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
-          cache: 'pip'
-
-      - name: Install dependencies
+      
+      - name: Install Poetry
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest pytest-cov pytest-asyncio
-
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+      
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-
+      
+      - name: Install dependencies
+        run: poetry install --no-root --with dev
+      
       - name: Run unit tests
         env:
-          # Fake keys so Pydantic settings don't crash
+          # Fake keys for Pydantic settings validation
           OPENROUTER_API_KEY: "sk-fake-key-for-testing"
           GOOGLE_API_KEY: "fake-google-key"
           JWT_SECRET_KEY: "fake-super-secret-key-for-testing-only"
           POSTGRES_PASSWORD: "fake-password"
           MINIO_SECRET_KEY: "fake-minio-key"
-          # Database connection settings for the test service
+          # Database connection for test services
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
           POSTGRES_DB: agent_ecosystem_test
@@ -95,8 +123,12 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
         run: |
-          pytest tests/unit/ -v --cov=src --cov-report=xml --cov-report=term
-
+          poetry run pytest tests/unit/ -v \
+            --cov=src \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=70
+      
       - name: Run integration tests
         env:
           POSTGRES_HOST: localhost
@@ -106,10 +138,15 @@ jobs:
           POSTGRES_PASSWORD: agent_password_secure_123
           REDIS_HOST: localhost
           REDIS_PORT: 6379
+          # Fake API keys
+          OPENROUTER_API_KEY: "sk-fake-key-for-testing"
+          GOOGLE_API_KEY: "fake-google-key"
+          JWT_SECRET_KEY: "fake-super-secret-key-for-testing-only"
+          MINIO_SECRET_KEY: "fake-minio-key"
         run: |
-          pytest tests/integration/ -v
-
-      - name: Upload coverage reports
+          poetry run pytest tests/integration/ -v
+      
+      - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
           files: ./coverage.xml
@@ -119,31 +156,52 @@ jobs:
 
   security:
     runs-on: ubuntu-latest
-    name: Security Checks
-
+    name: Security Scans (Bandit)
+    
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
+      
+      - name: Set up Python 3.12
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
-          cache: 'pip'
-
-      - name: Install dependencies
+      
+      - name: Install Poetry
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install bandit safety
-
-      - name: Run Bandit security check
-        run: bandit -r src/ -f json -o bandit-report.json || true
-
-      - name: Run Safety check
-        run: safety check --json || true
-
-      - name: Check for secrets
-        uses: trufflesecurity/trufflehog@main
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+      
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
         with:
-          path: ./
-          extra_args: --debug
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-
+      
+      - name: Install dependencies
+        run: poetry install --no-root --with dev
+      
+      - name: Run Bandit security scanner
+        run: |
+          poetry run pip install bandit
+          poetry run bandit -r src/ -ll -f json -o bandit-report.json
+      
+      - name: Display Bandit results
+        if: always()
+        run: |
+          if [ -f bandit-report.json ]; then
+            cat bandit-report.json
+          fi
+      
+      - name: Upload Bandit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-security-report
+          path: bandit-report.json

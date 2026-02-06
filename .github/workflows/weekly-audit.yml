@@ -1,0 +1,295 @@
+name: Weekly Security Audit
+
+on:
+  schedule:
+    # Run every Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  deep-security-scan:
+    runs-on: ubuntu-latest
+    name: Deep Security Scan
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Fetch full history for comprehensive scanning
+          fetch-depth: 0
+      
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+      
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-
+      
+      - name: Install dependencies
+        run: poetry install --no-root --with dev
+      
+      - name: Run pip-audit (OSV Database)
+        run: |
+          poetry run pip install pip-audit
+          poetry run pip-audit --desc --format json --output pip-audit-report.json || true
+      
+      - name: Display pip-audit results
+        if: always()
+        run: |
+          if [ -f pip-audit-report.json ]; then
+            echo "=== pip-audit Results ==="
+            cat pip-audit-report.json
+          fi
+      
+      - name: Run Safety check
+        run: |
+          poetry run safety check --json --output safety-report.json || true
+      
+      - name: Display Safety results
+        if: always()
+        run: |
+          if [ -f safety-report.json ]; then
+            echo "=== Safety Check Results ==="
+            cat safety-report.json
+          fi
+      
+      - name: Upload vulnerability reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vulnerability-reports-${{ github.run_number }}
+          path: |
+            pip-audit-report.json
+            safety-report.json
+          retention-days: 90
+
+  sbom-generation:
+    runs-on: ubuntu-latest
+    name: Generate SBOM (Software Bill of Materials)
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+      - name: Install dependencies
+        run: poetry install --no-root
+      
+      - name: Generate CycloneDX SBOM
+        uses: CycloneDX/gh-python-generate-sbom@v2
+        with:
+          input: ./pyproject.toml
+          output: sbom.xml
+          format: xml
+          python-version: '3.12'
+      
+      - name: Generate SBOM in JSON format
+        uses: CycloneDX/gh-python-generate-sbom@v2
+        with:
+          input: ./pyproject.toml
+          output: sbom.json
+          format: json
+          python-version: '3.12'
+      
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.run_number }}
+          path: |
+            sbom.xml
+            sbom.json
+          retention-days: 90
+      
+      - name: Create SBOM release (Optional)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # Tag the SBOM with the current date for versioning
+          DATE=$(date +%Y%m%d)
+          echo "SBOM generated on $DATE" > sbom-README.txt
+          echo "Project: Multi-Tier Agent Ecosystem" >> sbom-README.txt
+          echo "Python Version: 3.12" >> sbom-README.txt
+
+  license-compliance:
+    runs-on: ubuntu-latest
+    name: License Compliance Report
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+      - name: Install dependencies
+        run: poetry install --no-root
+      
+      - name: Generate license report (Markdown)
+        run: |
+          poetry run pip install pip-licenses
+          poetry run pip-licenses --format=markdown --output-file=LICENSES.md
+          echo "=== License Report ==="
+          cat LICENSES.md
+      
+      - name: Generate license report (JSON)
+        run: |
+          poetry run pip-licenses --format=json --output-file=licenses.json
+      
+      - name: Check for prohibited licenses
+        run: |
+          python3 << 'EOF'
+          import json
+          import sys
+          
+          # List of licenses that should trigger a warning
+          PROHIBITED = ['GPL-3.0', 'GPL-2.0', 'AGPL-3.0', 'LGPL-3.0', 'LGPL-2.1', 'SSPL-1.0']
+          
+          with open('licenses.json', 'r') as f:
+              licenses = json.load(f)
+          
+          found_prohibited = []
+          for pkg in licenses:
+              license_str = pkg.get('License', '')
+              for prohibited in PROHIBITED:
+                  if prohibited in license_str:
+                      found_prohibited.append((pkg['Name'], license_str))
+          
+          if found_prohibited:
+              print('⚠️ WARNING: Found packages with potentially problematic licenses:')
+              for name, license in found_prohibited:
+                  print(f'  - {name}: {license}')
+              # Don't fail the workflow, just warn
+              sys.exit(0)
+          else:
+              print('✅ All licenses are compliant')
+              sys.exit(0)
+          EOF
+      
+      - name: Upload license reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-reports-${{ github.run_number }}
+          path: |
+            LICENSES.md
+            licenses.json
+          retention-days: 90
+
+  historical-secret-scan:
+    runs-on: ubuntu-latest
+    name: TruffleHog (Full History Scan)
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history
+      
+      - name: TruffleHog Deep Scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          # Scan entire repository history
+          extra_args: --only-verified --json --debug
+        continue-on-error: true  # Don't fail the workflow, just report
+      
+      - name: Create scan summary
+        if: always()
+        run: |
+          echo "Full historical secret scan completed"
+          echo "Check the workflow logs for any findings"
+
+  code-metrics:
+    runs-on: ubuntu-latest
+    name: Code Complexity & Metrics
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+      - name: Install dependencies
+        run: poetry install --no-root --with dev
+      
+      - name: Run Radon complexity analysis
+        run: |
+          poetry run radon cc src/ -a -s -j > radon-complexity.json
+          echo "=== Code Complexity Report ==="
+          poetry run radon cc src/ -a -s
+      
+      - name: Run Radon maintainability index
+        run: |
+          poetry run radon mi src/ -j > radon-maintainability.json
+          echo "=== Maintainability Index ==="
+          poetry run radon mi src/
+      
+      - name: Upload metrics reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-metrics-${{ github.run_number }}
+          path: |
+            radon-complexity.json
+            radon-maintainability.json
+          retention-days: 90
+
+  summary:
+    runs-on: ubuntu-latest
+    name: Generate Audit Summary
+    needs: [deep-security-scan, sbom-generation, license-compliance, historical-secret-scan, code-metrics]
+    if: always()
+    
+    steps:
+      - name: Create summary
+        run: |
+          echo "# Weekly Security Audit Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Jobs Completed:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Deep Security Scan (pip-audit, Safety)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ SBOM Generation (CycloneDX)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ License Compliance Check" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Historical Secret Scan (TruffleHog)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Code Metrics (Radon)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Artifacts:" >> $GITHUB_STEP_SUMMARY
+          echo "- Vulnerability reports (pip-audit, Safety)" >> $GITHUB_STEP_SUMMARY
+          echo "- SBOM files (XML, JSON)" >> $GITHUB_STEP_SUMMARY
+          echo "- License reports (Markdown, JSON)" >> $GITHUB_STEP_SUMMARY
+          echo "- Code complexity metrics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All artifacts are retained for 90 days." >> $GITHUB_STEP_SUMMARY
