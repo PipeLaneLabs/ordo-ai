@@ -10,13 +10,13 @@ A multi-agent orchestration system built with LangGraph, FastAPI, and PostgreSQL
 
 ## 🧪 Project Health & Testing
 
-| Component | Status | Test Coverage | Notes |
+| Component | Status | Notes |
 |-----------|--------|---------------|-------|
-| Agent Orchestration | 🚧 WIP | ❌ 0% | LangGraph logic implemented; validation pending |
-| API Backend | ✅ Functional | ⚠️ Partial | FastAPI endpoints structured; auth needs testing |
-| Database/State | ✅ Functional | ❌ 0% | Postgres schema ready; migration scripts need verification |
-| Observability | ✅ Functional | ⚠️ Manual | Prometheus/Grafana stacks are containerized |
-| Human-in-the-loop | 🚧 WIP | ❌ 0% | Approval gates under development |
+| Agent Orchestration | 🚧 WIP | LangGraph logic implemented; validation pending |
+| API Backend | ✅ Functional | FastAPI endpoints structured; auth needs testing |
+| Database/State | ✅ Functional | Postgres schema ready; migration scripts need verification |
+| Observability | ✅ Functional | Prometheus/Grafana stacks are containerized |
+| Human-in-the-loop | 🚧 WIP | Approval gates under development |
 
 ---
 
