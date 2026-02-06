@@ -1,57 +1,36 @@
 # Multi-Tier Agent Ecosystem
 
-A production-ready multi-agent orchestration system built with LangGraph, FastAPI, and PostgreSQL. Designed for complex AI workflows with human approval gates, state persistence, and comprehensive observability.
+> [!WARNING]  
+> **Current Status: Early Alpha / Development Phase**  
+> This project is currently under active development. The core architecture is implemented, but the system is not yet fully functional or tested. **It is not suitable for production use at this time.**
 
-## 🎯 Features
+A multi-agent orchestration system built with LangGraph, FastAPI, and PostgreSQL. This project explores complex AI workflows featuring a 6-tier hierarchical structure, human-in-the-loop approval gates, and integrated observability.
 
-- **Multi-Tier Agent Architecture:** 6-tier hierarchical agent system (Tier 0-5)
-- **Workflow Orchestration:** LangGraph-based state management with checkpointing
-- **Human Approval Gates:** Pause workflows for human review at critical stages
-- **State Persistence:** PostgreSQL-backed checkpoint storage for recovery
-- **Observability:** Structured logging, Prometheus metrics, Grafana dashboards
+---
+
+## 🧪 Project Health & Testing
+
+| Component | Status | Test Coverage | Notes |
+|-----------|--------|---------------|-------|
+| Agent Orchestration | 🚧 WIP | ❌ 0% | LangGraph logic implemented; validation pending |
+| API Backend | ✅ Functional | ⚠️ Partial | FastAPI endpoints structured; auth needs testing |
+| Database/State | ✅ Functional | ❌ 0% | Postgres schema ready; migration scripts need verification |
+| Observability | ✅ Functional | ⚠️ Manual | Prometheus/Grafana stacks are containerized |
+| Human-in-the-loop | 🚧 WIP | ❌ 0% | Approval gates under development |
+
+---
+
+## 🎯 Features (Under Construction)
+
+- **Multi-Tier Agent Architecture:** 6-tier hierarchical system (Tier 0-5) for specialized task delegation
+- **State Management:** LangGraph-based persistence with PostgreSQL checkpointing for long-running workflows
+- **Human-in-the-loop:** Planned approval gates to pause workflows for manual review
+- **Observability Stack:** Pre-configured Prometheus and Grafana dashboards for agent performance metrics
+- **Containerized Architecture:** Docker Compose setup for local development and database orchestration
 - **API-First Design:** FastAPI REST API with JWT authentication
-- **Conversational UI:** Chainlit-based web interface
-- **Production Ready:** Docker Compose, health checks, rate limiting
-- **CI/CD Integration:** GitHub Actions workflows for testing and security scanning
+- **Conversational UI:** Chainlit-based web interface (experimental)
 
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Python 3.12+
-- Docker & Docker Compose
-- Git
-
-### 5-Minute Setup
-
-```bash
-# Clone repository
-git clone <repository-url>
-cd my-agent-team
-
-# Copy environment file
-cp .env.example .env
-
-# Start services
-docker-compose up -d
-
-# Initialize database
-docker-compose exec agent-api bash scripts/init_db.sh
-
-# Run migrations
-docker-compose exec agent-api bash scripts/run_migrations.sh
-
-# Verify health
-docker-compose exec agent-api bash scripts/health_check.sh
-```
-
-### Access the Application
-
-- **FastAPI:** http://localhost:8000
-- **Chainlit UI:** http://localhost:8080
-- **Prometheus:** http://localhost:9090
-- **Grafana:** http://localhost:3000 (admin/admin)
-- **MinIO Console:** http://localhost:9001 (minioadmin/minioadmin123)
+---
 
 ## 📋 Architecture
 
@@ -59,7 +38,7 @@ docker-compose exec agent-api bash scripts/health_check.sh
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Chainlit Web UI                          │
+│                   Chainlit Web UI                           │
 │              (Conversational Interface)                     │
 └────────────────────┬────────────────────────────────────────┘
                      │
@@ -69,7 +48,7 @@ docker-compose exec agent-api bash scripts/health_check.sh
 └────────────────────┬────────────────────────────────────────┘
                      │
 ┌────────────────────▼────────────────────────────────────────┐
-│              LangGraph Orchestration                         │
+│                LangGraph Orchestration                      │
 │    (Multi-Agent Workflow, State Management)                 │
 └────────────────────┬────────────────────────────────────────┘
                      │
@@ -77,14 +56,14 @@ docker-compose exec agent-api bash scripts/health_check.sh
         │            │            │
 ┌───────▼──┐  ┌──────▼──┐  ┌─────▼────┐
 │PostgreSQL│  │  Redis  │  │  MinIO   │
-│(State)   │  │(Cache)  │  │(Artifacts)
+│(State)   │  │(Cache)  │  │(Artifacts)│
 └──────────┘  └─────────┘  └──────────┘
 ```
 
 ### Agent Tiers
 
 | Tier | Role | Responsibility |
-|------|------|-----------------|
+|------|------|----------------|
 | **Tier 0** | Deviation Handler | Escalation and error recovery |
 | **Tier 1** | Strategy & Architecture | Requirements analysis and design |
 | **Tier 2** | Planning & Infrastructure | Implementation planning and setup |
@@ -92,18 +71,23 @@ docker-compose exec agent-api bash scripts/health_check.sh
 | **Tier 4** | Validation | Security and product validation |
 | **Tier 5** | Deployment | Documentation and deployment |
 
-## 📚 Documentation
+---
 
-- **[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)** - Setup, running, testing, and debugging
-- **[docs/API_REFERENCE.md](docs/API_REFERENCE.md)** - Complete API documentation
-- **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** - Common issues and solutions
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System design and constraints
+## 🛠️ Development Setup
 
-## 🛠️ Development
+### Prerequisites
 
-### Local Development
+- Python 3.12+
+- Docker & Docker Compose
+- Git
+
+### Local Installation
 
 ```bash
+# Clone repository
+git clone <repository-url>
+cd my-agent-team
+
 # Create virtual environment
 python3.12 -m venv venv
 source venv/bin/activate
@@ -111,21 +95,48 @@ source venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Start databases
-docker-compose up -d postgres redis minio
+# Copy and configure environment
+cp .env.example .env
+```
 
-# Initialize database
+### Starting the Stack
+
+The infrastructure can be launched via Docker, though application logic is currently being stabilized:
+
+```bash
+# Start databases and monitoring
+docker-compose up -d postgres redis minio prometheus grafana
+
+# Initialize database (Experimental)
 bash scripts/init_db.sh
 bash scripts/run_migrations.sh
 
-# Run FastAPI
-uvicorn src.main:app --reload
-
-# In another terminal, run Chainlit
-chainlit run src/chainlit_app/app.py -w
+# Verify health (may fail in current state)
+bash scripts/health_check.sh
 ```
 
-### Testing
+### Access Points (When Running)
+
+- **FastAPI:** http://localhost:8000
+- **Chainlit UI:** http://localhost:8080
+- **Prometheus:** http://localhost:9090
+- **Grafana:** http://localhost:3000 (admin/admin)
+- **MinIO Console:** http://localhost:9001 (minioadmin/minioadmin123)
+
+---
+
+## 🧪 Testing (In Development)
+
+### Current Testing Status
+
+- **Unit Tests:** 🚧 In Progress
+- **Integration Tests:** ❌ Pending
+- **E2E Workflows:** ❌ Pending
+
+> [!NOTE]  
+> The core orchestration logic is implemented, but edge cases and state recovery have not been fully validated. Use with caution.
+
+### Running Tests (When Available)
 
 ```bash
 # Run all tests
@@ -156,76 +167,73 @@ mypy src/ --ignore-missing-imports
 black --check src/ tests/ && ruff check src/ tests/ && mypy src/
 ```
 
-## 🐳 Docker
+---
 
-### Build Images
+## 📚 Documentation
 
-```bash
-# Build development image
-docker build -f Dockerfile --target development -t agent-ecosystem:dev .
+- **[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)** - Setup, running, testing, and debugging
+- **[docs/API_REFERENCE.md](docs/API_REFERENCE.md)** - Complete API documentation
+- **[docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System design and constraints
 
-# Build production image
-docker build -f Dockerfile --target production -t agent-ecosystem:prod .
+---
 
-# Build Chainlit image
-docker build -f Dockerfile.chainlit --target development -t agent-ui:dev .
-```
+## 📈 Roadmap to v1.0.0
 
-### Docker Compose
+### Phase 1: Core Stabilization (Current)
+- [ ] Finalize LangGraph state transitions and edge cases
+- [ ] Implement comprehensive Unit Testing suite (Pytest)
+- [ ] Validate PostgreSQL checkpointing and recovery
+- [ ] Fix known bugs in agent orchestration
 
-```bash
-# Start all services
-docker-compose up -d
+### Phase 2: Integration & Validation
+- [ ] End-to-End (E2E) workflow testing
+- [ ] Integration tests for all components
+- [ ] Human-in-the-loop approval gate implementation
+- [ ] Security audit and vulnerability scanning
 
-# View logs
-docker-compose logs -f
+### Phase 3: Production Hardening
+- [ ] Performance optimization and benchmarking
+- [ ] Rate limiting and resource management
+- [ ] Comprehensive error handling and recovery
+- [ ] Load testing and scalability validation
 
-# Stop services
-docker-compose down
+### Phase 4: Documentation & Release
+- [ ] Complete API documentation
+- [ ] Deployment guides and best practices
+- [ ] Example workflows and tutorials
+- [ ] v1.0.0 Release
 
-# Reset database
-docker-compose down -v
-docker-compose up -d
-```
+---
 
-## 📊 Monitoring
+## 🤝 Contributing
 
-### Health Checks
+We welcome contributions, especially in the following areas:
 
-```bash
-# Check API health
-curl http://localhost:8000/health
+- **Testing:** Writing unit and integration tests for the FastAPI backend and LangGraph workflows
+- **Bug Reports:** Identifying failures in the current alpha build
+- **Documentation:** Refining the LangGraph orchestration flow documentation
+- **Feature Development:** Implementing human-in-the-loop approval gates
 
-# Run comprehensive health check
-bash scripts/health_check.sh
-```
+### How to Contribute
 
-### Metrics
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Make changes and commit: `git commit -am 'Add feature'`
+4. Push to branch: `git push origin feature/your-feature`
+5. Submit a pull request
 
-- **Prometheus:** http://localhost:9090
-- **Grafana:** http://localhost:3000
-- **Metrics Endpoint:** http://localhost:8000/metrics
+### Code Standards
 
-### Logs
+- Follow PEP 8 style guide
+- Use type hints for all public functions
+- Write docstrings for all modules and functions
+- Maintain test coverage > 80% (target for v1.0.0)
+- Run linting and type checks before committing
 
-```bash
-# View application logs
-docker-compose logs agent-api
-
-# View database logs
-docker-compose logs postgres
-
-# View all logs
-docker-compose logs -f
-```
+---
 
 ## 🔐 Security
-
-### Authentication
-
-- JWT-based authentication for API endpoints
-- Role-based access control (RBAC)
-- Secure password hashing with bcrypt
 
 ### Environment Variables
 
@@ -245,13 +253,16 @@ JWT_SECRET_KEY=your-secret-key-min-32-chars
 
 - Never commit `.env` file to version control
 - Use strong JWT secret keys (32+ characters)
-- Enable HTTPS in production
 - Regularly update dependencies
 - Run security scans: `pip-audit`, `safety`
 
-## 🚢 Deployment
+---
 
-### Production Checklist
+## 🛠️ Future Deployment Considerations
+
+Once the project reaches stability, deployment will follow these patterns:
+
+### Production Checklist (v1.0.0+)
 
 - [ ] Set `ENVIRONMENT=production` in `.env`
 - [ ] Use strong JWT secret key
@@ -263,56 +274,13 @@ JWT_SECRET_KEY=your-secret-key-min-32-chars
 - [ ] Load test the application
 - [ ] Set up CI/CD pipeline
 
-### Kubernetes Deployment
-
-```bash
-# Build production image
-docker build -f Dockerfile --target production -t agent-ecosystem:latest .
-
-# Push to registry
-docker tag agent-ecosystem:latest your-registry/agent-ecosystem:latest
-docker push your-registry/agent-ecosystem:latest
-
-# Deploy with Helm (if available)
-helm install agent-ecosystem ./helm-charts
-```
-
-## 📈 Performance
-
-### Optimization Tips
-
-- Use connection pooling for database
-- Enable Redis caching for frequently accessed data
-- Configure appropriate worker count
-- Monitor and optimize slow queries
-- Use CDN for static assets
-- Implement rate limiting
-
-### Benchmarks
-
-- API Response Time: P95 < 500ms
-- Database Query Time: < 100ms (with indexes)
-- Workflow Execution: Depends on agent complexity
-- Memory Usage: ~512MB per worker
-
-## 🤝 Contributing
-
-1. Create a feature branch: `git checkout -b feature/your-feature`
-2. Make changes and commit: `git commit -am 'Add feature'`
-3. Push to branch: `git push origin feature/your-feature`
-4. Submit a pull request
-
-### Code Standards
-
-- Follow PEP 8 style guide
-- Use type hints for all public functions
-- Write docstrings for all modules and functions
-- Maintain test coverage > 80%
-- Run linting and type checks before committing
+---
 
 ## 📝 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
 
 ## 🆘 Support
 
@@ -322,26 +290,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - **Issues:** Open an issue on GitHub
 - **Discussions:** Use GitHub Discussions
 
-## 🗺️ Roadmap
-
-### Phase 1-11: Core Implementation ✅
-- Multi-tier agent architecture
-- Workflow orchestration
-- State persistence
-- API and UI
-
-### Phase 12: Infrastructure & Deployment 🚀
-- Docker and Kubernetes support
-- CI/CD pipelines
-- Production readiness
-- Comprehensive documentation
-
-### Future Enhancements
-- Advanced monitoring and alerting
-- Multi-region deployment
-- Advanced caching strategies
-- Performance optimization
-- Enterprise features
+---
 
 ## 📞 Contact
 
@@ -349,6 +298,6 @@ For questions or support, please contact the development team or open an issue o
 
 ---
 
-**Last Updated:** 2026-01-30  
-**Version:** 1.0.0  
-**Status:** Production Ready
+**Last Updated:** 2026-02-06  
+**Version:** 0.1.0-alpha  
+**Status:** Under Active Development / Untested
