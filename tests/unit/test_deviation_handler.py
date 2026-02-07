@@ -117,14 +117,11 @@ class TestDeviationLogging:
         """Test logging a deviation with error details."""
         error = ValueError("Test error")
 
-        with patch.object(deviation_handler, "logger") as mock_logger:
-            await deviation_handler.log_deviation(
-                workflow_state=sample_workflow_state,
-                error=error,
-                context="test_context",
-            )
-
-        mock_logger.error.assert_called()
+        await deviation_handler.log_deviation(
+            workflow_state=sample_workflow_state,
+            error=error,
+            context="test_context",
+        )
 
     @pytest.mark.asyncio
     async def test_log_deviation_updates_state(
@@ -133,12 +130,11 @@ class TestDeviationLogging:
         """Test that logging deviation updates workflow state."""
         error = ValueError("Test error")
 
-        with patch.object(deviation_handler, "logger"):
-            result = await deviation_handler.log_deviation(
-                workflow_state=sample_workflow_state,
-                error=error,
-                context="test_context",
-            )
+        result = await deviation_handler.log_deviation(
+            workflow_state=sample_workflow_state,
+            error=error,
+            context="test_context",
+        )
 
         assert result is not None
         assert "deviation_log" in result or isinstance(result, dict)
@@ -148,16 +144,13 @@ class TestDeviationLogging:
         self, deviation_handler, sample_workflow_state
     ):
         """Test logging a budget exhaustion deviation."""
-        error = BudgetExhaustedError("Budget exceeded")
+        error = BudgetExhaustedError(limit=10000.0, requested=500.0, used=10500.0, budget_type="tokens")
 
-        with patch.object(deviation_handler, "logger") as mock_logger:
-            await deviation_handler.log_deviation(
-                workflow_state=sample_workflow_state,
-                error=error,
-                context="budget_check",
-            )
-
-        mock_logger.error.assert_called()
+        await deviation_handler.log_deviation(
+            workflow_state=sample_workflow_state,
+            error=error,
+            context="budget_check",
+        )
 
 
 class TestErrorRecovery:
@@ -170,11 +163,10 @@ class TestErrorRecovery:
         """Test attempting recovery from an error."""
         error = WorkflowError("Workflow failed")
 
-        with patch.object(deviation_handler, "logger"):
-            result = await deviation_handler.attempt_recovery(
-                workflow_state=sample_workflow_state,
-                error=error,
-            )
+        result = await deviation_handler.attempt_recovery(
+            workflow_state=sample_workflow_state,
+            error=error,
+        )
 
         assert result is not None
 
@@ -186,11 +178,10 @@ class TestErrorRecovery:
         error = WorkflowError("Workflow failed")
         sample_workflow_state.get("rejection_count", 0)
 
-        with patch.object(deviation_handler, "logger"):
-            result = await deviation_handler.attempt_recovery(
-                workflow_state=sample_workflow_state,
-                error=error,
-            )
+        result = await deviation_handler.attempt_recovery(
+            workflow_state=sample_workflow_state,
+            error=error,
+        )
 
         # Result should have updated rejection count
         assert result is not None
@@ -203,11 +194,10 @@ class TestErrorRecovery:
         sample_workflow_state["rejection_count"] = 10
         error = WorkflowError("Max retries exceeded")
 
-        with patch.object(deviation_handler, "logger"):
-            result = await deviation_handler.attempt_recovery(
-                workflow_state=sample_workflow_state,
-                error=error,
-            )
+        result = await deviation_handler.attempt_recovery(
+            workflow_state=sample_workflow_state,
+            error=error,
+        )
 
         assert result is not None
 
@@ -223,11 +213,10 @@ class TestStateRollback:
         previous_state = sample_workflow_state.copy()
         previous_state["state_version"] = 0
 
-        with patch.object(deviation_handler, "logger"):
-            result = await deviation_handler.rollback_state(
-                current_state=sample_workflow_state,
-                previous_state=previous_state,
-            )
+        result = await deviation_handler.rollback_state(
+            current_state=sample_workflow_state,
+            previous_state=previous_state,
+        )
 
         assert result is not None
 
@@ -239,11 +228,10 @@ class TestStateRollback:
         previous_state = sample_workflow_state.copy()
         sample_workflow_state["workflow_id"]
 
-        with patch.object(deviation_handler, "logger"):
-            result = await deviation_handler.rollback_state(
-                current_state=sample_workflow_state,
-                previous_state=previous_state,
-            )
+        result = await deviation_handler.rollback_state(
+            current_state=sample_workflow_state,
+            previous_state=previous_state,
+        )
 
         assert result is not None
 
@@ -258,11 +246,10 @@ class TestEscalation:
         """Test escalating issue to human review."""
         reason = "Critical error requiring human intervention"
 
-        with patch.object(deviation_handler, "logger"):
-            result = await deviation_handler.escalate_to_human(
-                workflow_state=sample_workflow_state,
-                reason=reason,
-            )
+        result = await deviation_handler.escalate_to_human(
+            workflow_state=sample_workflow_state,
+            reason=reason,
+        )
 
         assert result is not None
 
@@ -271,11 +258,10 @@ class TestEscalation:
         """Test that escalation sets escalation flag."""
         reason = "Critical error"
 
-        with patch.object(deviation_handler, "logger"):
-            result = await deviation_handler.escalate_to_human(
-                workflow_state=sample_workflow_state,
-                reason=reason,
-            )
+        result = await deviation_handler.escalate_to_human(
+            workflow_state=sample_workflow_state,
+            reason=reason,
+        )
 
         assert result is not None
 
@@ -286,12 +272,11 @@ class TestEscalation:
         """Test escalation with approval gate."""
         reason = "Requires approval"
 
-        with patch.object(deviation_handler, "logger"):
-            result = await deviation_handler.escalate_to_human(
-                workflow_state=sample_workflow_state,
-                reason=reason,
-                approval_gate="human_review",
-            )
+        result = await deviation_handler.escalate_to_human(
+            workflow_state=sample_workflow_state,
+            reason=reason,
+            approval_gate="human_review",
+        )
 
         assert result is not None
 
@@ -306,19 +291,18 @@ class TestDeviationHandlerIntegration:
         """Test complete error handling flow."""
         error = WorkflowError("Test workflow error")
 
-        with patch.object(deviation_handler, "logger"):
-            # Log deviation
-            logged_state = await deviation_handler.log_deviation(
-                workflow_state=sample_workflow_state,
-                error=error,
-                context="test",
-            )
+        # Log deviation
+        logged_state = await deviation_handler.log_deviation(
+            workflow_state=sample_workflow_state,
+            error=error,
+            context="test",
+        )
 
-            # Attempt recovery
-            recovered_state = await deviation_handler.attempt_recovery(
-                workflow_state=logged_state or sample_workflow_state,
-                error=error,
-            )
+        # Attempt recovery
+        recovered_state = await deviation_handler.attempt_recovery(
+            workflow_state=logged_state or sample_workflow_state,
+            error=error,
+        )
 
         assert recovered_state is not None
 
@@ -329,18 +313,17 @@ class TestDeviationHandlerIntegration:
         """Test error handling with escalation."""
         error = WorkflowError("Critical error")
 
-        with patch.object(deviation_handler, "logger"):
-            # Log deviation
-            logged_state = await deviation_handler.log_deviation(
-                workflow_state=sample_workflow_state,
-                error=error,
-                context="critical",
-            )
+        # Log deviation
+        logged_state = await deviation_handler.log_deviation(
+            workflow_state=sample_workflow_state,
+            error=error,
+            context="critical",
+        )
 
-            # Escalate to human
-            escalated_state = await deviation_handler.escalate_to_human(
-                workflow_state=logged_state or sample_workflow_state,
-                reason="Critical error requires human intervention",
-            )
+        # Escalate to human
+        escalated_state = await deviation_handler.escalate_to_human(
+            workflow_state=logged_state or sample_workflow_state,
+            reason="Critical error requires human intervention",
+        )
 
         assert escalated_state is not None

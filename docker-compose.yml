@@ -1,4 +1,7 @@
-version: '3.8'
+# ============================================================================
+# Multi-Tier Agent Ecosystem - Docker Compose Configuration
+# ============================================================================
+# Uses .env.docker for container-specific settings
 
 services:
   # ============================================================================
@@ -116,6 +119,8 @@ services:
       target: development
     container_name: agent-api
     restart: unless-stopped
+    env_file:
+      - .env.docker
     depends_on:
       postgres:
         condition: service_healthy
@@ -191,6 +196,8 @@ services:
       target: development
     container_name: agent-ui
     restart: unless-stopped
+    env_file:
+      - .env.docker
     depends_on:
       agent-api:
         condition: service_healthy
