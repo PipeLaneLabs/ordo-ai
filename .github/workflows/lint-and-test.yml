@@ -1,8 +1,10 @@
+# ==========================================================
+# 🧪 LINT AND TEST (Fast Feedback)
+# ==========================================================
 name: Lint and Test
-
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, 'feature/**', 'task/**']
   pull_request:
     branches: [main, develop]
 

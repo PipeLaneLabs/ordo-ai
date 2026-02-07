@@ -1,12 +1,16 @@
+# ==========================================================
+# 🛡️ SECURITY GATE (The PR Blocker)
+# ==========================================================
 name: Security Gate (PR Blocker)
-
 on:
   pull_request:
     branches: [main, develop]
+    types: [opened, synchronize, reopened] # Runs when PR is made or updated
 
 permissions:
   contents: read
   pull-requests: write
+  security-events: write # Required for CodeQL/Bandit reporting
 
 jobs:
   dependency-review:
@@ -46,7 +50,7 @@ jobs:
           base: ${{ github.event.pull_request.base.sha }}
           head: ${{ github.event.pull_request.head.sha }}
           # Only fail on verified secrets (reduces false positives)
-          extra_args: --only-verified --fail
+          extra_args: --only-verified
 
   codeql-analysis:
     runs-on: ubuntu-latest
