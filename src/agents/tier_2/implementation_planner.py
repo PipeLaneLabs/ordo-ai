@@ -50,8 +50,8 @@ class ImplementationPlannerAgent(BaseAgent):
 
     async def _build_prompt(
         self,
-        _state: WorkflowState,
-        **_kwargs: object,
+        state: WorkflowState,  # noqa: ARG002
+        **kwargs: object,  # noqa: ARG002
     ) -> str:
         """Build task planning prompt for LLM.
 

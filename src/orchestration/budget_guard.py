@@ -362,7 +362,10 @@ class BudgetGuard:
 
         # Check budget first
         check_result = await self.check_budget(
-            operation_name, estimated_tokens, estimated_cost_usd, workflow_id
+            workflow_state=None,
+            operation_name=operation_name,
+            estimated_tokens=estimated_tokens,
+            estimated_cost_usd=estimated_cost_usd,
         )
 
         # Reserve budget in Redis
@@ -389,7 +392,9 @@ class BudgetGuard:
 
         import json
 
-        await self.cache.set(budget_key, json.dumps(new_budget), ttl=86400)  # 24h TTL
+        await self.cache.set(
+            budget_key, json.dumps(new_budget), ttl_seconds=86400
+        )  # 24h TTL
 
         logger.info(
             "budget_reserved_async",

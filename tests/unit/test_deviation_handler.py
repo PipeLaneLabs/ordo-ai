@@ -9,7 +9,7 @@ Tests cover:
 - Escalation handling
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -144,7 +144,9 @@ class TestDeviationLogging:
         self, deviation_handler, sample_workflow_state
     ):
         """Test logging a budget exhaustion deviation."""
-        error = BudgetExhaustedError(limit=10000.0, requested=500.0, used=10500.0, budget_type="tokens")
+        error = BudgetExhaustedError(
+            limit=10000.0, requested=500.0, used=10500.0, budget_type="tokens"
+        )
 
         await deviation_handler.log_deviation(
             workflow_state=sample_workflow_state,

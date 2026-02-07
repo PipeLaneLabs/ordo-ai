@@ -45,7 +45,10 @@ class TestArtifactStorageInit:
 
             mock_client.make_bucket.assert_called_once()
             # In test environment, bucket name should be agent-artifacts-test
-            assert storage_instance.bucket_name in ["agent-artifacts", "agent-artifacts-test"]
+            assert storage_instance.bucket_name in [
+                "agent-artifacts",
+                "agent-artifacts-test",
+            ]
 
     def test_init_skips_bucket_creation_if_exists(self):
         """Test that __init__ skips bucket creation if it already exists."""

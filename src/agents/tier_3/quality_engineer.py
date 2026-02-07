@@ -10,9 +10,10 @@ import asyncio
 import os
 import re
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from venv import logger
 
 from src.agents.base_agent import BaseAgent
 from src.llm.base_client import LLMResponse
@@ -331,16 +332,18 @@ Begin test generation now.
                         context += "\n... (truncated, too many files)\n"
                         return context
 
-                    path = os.path.join(root, file)
+                    from pathlib import Path
+
+                    path = Path(root) / file
                     try:
-                        async with self._open_file_async(path) as f:
+                        async with self._open_file_async(str(path)) as f:
                             content = await f.read()
                             context += (
                                 f"\n### File: {path}\n```python\n{content}\n```\n"
                             )
                             file_count += 1
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.warning(f"Failed to process file: {e}")
 
         return context
 
@@ -363,12 +366,12 @@ Begin test generation now.
                     context += (
                         f"\n### Existing Test: {test_file}\n```python\n{content}\n```\n"
                     )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Failed to process file: {e}")
 
         return context
 
-    def _open_file_async(self, path: str) -> object:
+    def _open_file_async(self, path: str) -> Any:
         """Open file asynchronously for reading.
 
         Args:
@@ -433,13 +436,13 @@ Begin test generation now.
         try:
             import json
 
-            with open("coverage.json") as f:
+            with Path("coverage.json").open() as f:
                 coverage_data = json.load(f)
                 return float(
                     coverage_data.get("totals", {}).get("percent_covered", 0.0)
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Failed to read coverage.json: {e}")
 
         return 0.0
 
@@ -479,7 +482,7 @@ Begin test generation now.
 
         return f"""# Quality Report
 
-**Generated:** {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+**Generated:** {datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")}
 **Status:** {status}
 
 ## Test Execution Summary
