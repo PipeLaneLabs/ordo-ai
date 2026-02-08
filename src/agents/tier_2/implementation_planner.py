@@ -71,8 +71,7 @@ class ImplementationPlannerAgent(BaseAgent):
                 "ARCHITECTURE.md not found - Solution Architect must run first"
             )
 
-        # Add '  # nosec' to the end of the f-string start line to disable bandit security warning
-        prompt = f"""# Implementation Planning Task  # nosec
+        prompt = f"""# Implementation Planning Task
 
 ## Architecture Document
 {architecture}

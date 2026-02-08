@@ -199,8 +199,8 @@ jobs:
       - name: Run Bandit security scanner
         run: |
           poetry run pip install bandit
-          # Now that we fixed the code with '# nosec', we can run this strictly
-          poetry run bandit -r src/ -ll -f json -o bandit-report.json
+          # Use .bandit config to skip B608 false positives (f-strings for LLM prompts, not SQL)
+          poetry run bandit -r src/ -ll -c .bandit -f json -o bandit-report.json
       
       - name: Display Bandit results
         if: always()

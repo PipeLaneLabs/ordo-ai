@@ -251,6 +251,14 @@ exclude_lines = [
 directory = "htmlcov"
 
 # ============================================================================
+# SECURITY SCANNING CONFIGURATION
+# ============================================================================
+
+[tool.bandit]
+# Skip B608 (hardcoded SQL expressions) as this project uses f-strings for LLM prompts, not SQL
+skips = ["B608"]
+
+# ============================================================================
 # RELEASE AUTOMATION CONFIGURATION (Added for Phase 3)
 # ============================================================================
 
