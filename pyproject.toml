@@ -22,13 +22,13 @@ langchain-openai = "^0.2.0"
 langchain-google-genai = "^2.0.0"
 
 # Backend Framework
-fastapi = ">=0.110.1,<0.113"  # Pinned by chainlit compatibility
-uvicorn = {extras = ["standard"], version = ">=0.25.0,<0.26.0"}  # Pinned by chainlit
+fastapi = "^0.115.0"  # Upgraded for Chainlit 2.x compatibility
+uvicorn = {extras = ["standard"], version = "^0.32.0"}  # Upgraded for Chainlit 2.x
 pydantic = "^2.10.0"
 pydantic-settings = "^2.7.0"
 
 # Frontend UI
-chainlit = "^1.3.0"
+chainlit = "^2.0.0"  # Upgraded for Pydantic 2.10+ compatibility
 
 # Database & Storage
 asyncpg = "^0.30.0"
@@ -39,7 +39,7 @@ minio = "^7.2.0"
 # Authentication & Security
 pyjwt = "^2.10.0"
 cryptography = "^44.0.0"
-python-multipart = ">=0.0.9,<0.0.10"  # Pinned by chainlit dependency
+python-multipart = "^0.0.18"  # Upgraded for Chainlit 2.x
 
 # Observability
 structlog = "^24.4.0"

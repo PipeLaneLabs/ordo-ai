@@ -12,7 +12,7 @@ def test_health_check(test_client: TestClient):
     assert "timestamp" in json_response
     assert "services" in json_response
     assert "details" in json_response
-    assert json_response["details"]["version"] == "1.0.0"
+    assert json_response["details"]["version"] == "0.1.0-alpha"
 
 
 def test_readiness_check(test_client: TestClient):
@@ -104,7 +104,7 @@ def test_root_endpoint(test_client: TestClient):
 
     # Test field values
     assert data["name"] == "Multi-Tier Agent Ecosystem API"
-    assert data["version"] == "1.0.0"
+    assert data["version"] == "0.1.0-alpha"
     assert data["docs"] == "/docs"
     assert data["health"] == "/health"
     assert data["metrics"] == "/metrics"

@@ -48,7 +48,7 @@ def sample_workflow_state():
         "workflow_id": "test-123",
         "budget_used_tokens": 0,
         "budget_used_usd": 0.0,
-        "budget_remaining_tokens": 10000,
+        "budget_remaining_tokens": 5000,  # Match max_tokens_per_workflow
         "budget_remaining_usd": 100.0,
     }
 
@@ -59,7 +59,7 @@ class TestBudgetExhaustion:
     @pytest.mark.asyncio
     async def test_budget_exhaustion_tokens(self, budget_guard, sample_workflow_state):
         """Test budget exhaustion with tokens."""
-        sample_workflow_state["budget_used_tokens"] = 9999
+        sample_workflow_state["budget_used_tokens"] = 4999  # Just under 5000 limit
         sample_workflow_state["budget_remaining_tokens"] = 1
 
         with pytest.raises(BudgetExhaustedError):
@@ -83,7 +83,7 @@ class TestBudgetExhaustion:
     @pytest.mark.asyncio
     async def test_budget_exactly_exhausted(self, budget_guard, sample_workflow_state):
         """Test budget exactly exhausted."""
-        sample_workflow_state["budget_used_tokens"] = 10000
+        sample_workflow_state["budget_used_tokens"] = 5000  # Exactly at limit
         sample_workflow_state["budget_remaining_tokens"] = 0
 
         with pytest.raises(BudgetExhaustedError):
@@ -97,7 +97,7 @@ class TestBudgetExhaustion:
         self, budget_guard, sample_workflow_state
     ):
         """Test budget near exhaustion warning."""
-        sample_workflow_state["budget_used_tokens"] = 9500
+        sample_workflow_state["budget_used_tokens"] = 4500  # 90% of 5000 limit
         sample_workflow_state["budget_remaining_tokens"] = 500
 
         # Should succeed but log warning
@@ -133,7 +133,7 @@ class TestTokenLimitEnforcement:
         self, budget_guard, sample_workflow_state
     ):
         """Test enforcing global token limit."""
-        sample_workflow_state["budget_used_tokens"] = 9900
+        sample_workflow_state["budget_used_tokens"] = 4900  # Close to 5000 limit
         sample_workflow_state["budget_remaining_tokens"] = 100
 
         with pytest.raises(BudgetExhaustedError):
@@ -145,8 +145,8 @@ class TestTokenLimitEnforcement:
     @pytest.mark.asyncio
     async def test_allow_within_token_limit(self, budget_guard, sample_workflow_state):
         """Test allowing request within token limit."""
-        sample_workflow_state["budget_used_tokens"] = 4000
-        sample_workflow_state["budget_remaining_tokens"] = 6000
+        sample_workflow_state["budget_used_tokens"] = 3000  # Well under 5000 limit
+        sample_workflow_state["budget_remaining_tokens"] = 2000
 
         result = await budget_guard.check_budget(
             workflow_state=sample_workflow_state,
@@ -318,7 +318,11 @@ class TestBudgetGuardErrorHandling:
     @pytest.mark.asyncio
     async def test_handle_invalid_budget_state(self, budget_guard):
         """Test handling invalid budget state."""
-        invalid_state = {"budget_used_tokens": -100}
+        invalid_state = {
+            "workflow_id": "test-invalid",
+            "budget_used_tokens": -100,
+            "budget_used_usd": 0.0,
+        }
 
         result = await budget_guard.check_budget(
             workflow_state=invalid_state,
@@ -330,7 +334,11 @@ class TestBudgetGuardErrorHandling:
     @pytest.mark.asyncio
     async def test_handle_missing_budget_fields(self, budget_guard):
         """Test handling missing budget fields."""
-        incomplete_state = {"workflow_id": "test"}
+        incomplete_state = {
+            "workflow_id": "test",
+            "budget_used_tokens": 0,
+            "budget_used_usd": 0.0,
+        }
 
         result = await budget_guard.check_budget(
             workflow_state=incomplete_state,

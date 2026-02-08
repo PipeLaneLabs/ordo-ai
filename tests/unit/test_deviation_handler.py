@@ -15,7 +15,11 @@ import pytest
 
 from src.agents.tier_0.deviation_handler import DeviationHandlerAgent
 from src.config import Settings
-from src.exceptions import BudgetExhaustedError, WorkflowError
+from src.exceptions import (
+    BudgetExhaustedError,
+    HumanApprovalTimeoutError,
+    WorkflowError,
+)
 from src.llm.base_client import BaseLLMClient
 from src.orchestration.budget_guard import BudgetGuard
 
@@ -37,6 +41,7 @@ def mock_settings():
     """Create mock settings."""
     settings = MagicMock(spec=Settings)
     settings.environment = "test"
+    settings.human_approval_timeout = 300  # 5 minutes default
     return settings
 
 
@@ -118,9 +123,9 @@ class TestDeviationLogging:
         error = ValueError("Test error")
 
         await deviation_handler.log_deviation(
-            workflow_state=sample_workflow_state,
+            state=sample_workflow_state,
             error=error,
-            context="test_context",
+            agent_name="test_context",
         )
 
     @pytest.mark.asyncio
@@ -131,9 +136,9 @@ class TestDeviationLogging:
         error = ValueError("Test error")
 
         result = await deviation_handler.log_deviation(
-            workflow_state=sample_workflow_state,
+            state=sample_workflow_state,
             error=error,
-            context="test_context",
+            agent_name="test_context",
         )
 
         assert result is not None
@@ -149,9 +154,9 @@ class TestDeviationLogging:
         )
 
         await deviation_handler.log_deviation(
-            workflow_state=sample_workflow_state,
+            state=sample_workflow_state,
             error=error,
-            context="budget_check",
+            agent_name="budget_check",
         )
 
 
@@ -166,7 +171,7 @@ class TestErrorRecovery:
         error = WorkflowError("Workflow failed")
 
         result = await deviation_handler.attempt_recovery(
-            workflow_state=sample_workflow_state,
+            state=sample_workflow_state,
             error=error,
         )
 
@@ -181,7 +186,7 @@ class TestErrorRecovery:
         sample_workflow_state.get("rejection_count", 0)
 
         result = await deviation_handler.attempt_recovery(
-            workflow_state=sample_workflow_state,
+            state=sample_workflow_state,
             error=error,
         )
 
@@ -197,7 +202,7 @@ class TestErrorRecovery:
         error = WorkflowError("Max retries exceeded")
 
         result = await deviation_handler.attempt_recovery(
-            workflow_state=sample_workflow_state,
+            state=sample_workflow_state,
             error=error,
         )
 
@@ -216,8 +221,7 @@ class TestStateRollback:
         previous_state["state_version"] = 0
 
         result = await deviation_handler.rollback_state(
-            current_state=sample_workflow_state,
-            previous_state=previous_state,
+            state=sample_workflow_state,
         )
 
         assert result is not None
@@ -227,12 +231,8 @@ class TestStateRollback:
         self, deviation_handler, sample_workflow_state
     ):
         """Test that rollback preserves workflow ID."""
-        previous_state = sample_workflow_state.copy()
-        sample_workflow_state["workflow_id"]
-
         result = await deviation_handler.rollback_state(
-            current_state=sample_workflow_state,
-            previous_state=previous_state,
+            state=sample_workflow_state,
         )
 
         assert result is not None
@@ -248,24 +248,28 @@ class TestEscalation:
         """Test escalating issue to human review."""
         reason = "Critical error requiring human intervention"
 
-        result = await deviation_handler.escalate_to_human(
-            workflow_state=sample_workflow_state,
-            reason=reason,
-        )
+        # escalate_to_human always raises HumanApprovalTimeoutError
+        with pytest.raises(HumanApprovalTimeoutError):
+            await deviation_handler.escalate_to_human(
+                state=sample_workflow_state,
+                reason=reason,
+            )
 
-        assert result is not None
+        assert sample_workflow_state is not None
 
     @pytest.mark.asyncio
     async def test_escalation_sets_flag(self, deviation_handler, sample_workflow_state):
         """Test that escalation sets escalation flag."""
         reason = "Critical error"
 
-        result = await deviation_handler.escalate_to_human(
-            workflow_state=sample_workflow_state,
-            reason=reason,
-        )
+        # escalate_to_human always raises HumanApprovalTimeoutError
+        with pytest.raises(HumanApprovalTimeoutError):
+            await deviation_handler.escalate_to_human(
+                state=sample_workflow_state,
+                reason=reason,
+            )
 
-        assert result is not None
+        assert sample_workflow_state is not None
 
     @pytest.mark.asyncio
     async def test_escalation_with_approval_gate(
@@ -274,13 +278,16 @@ class TestEscalation:
         """Test escalation with approval gate."""
         reason = "Requires approval"
 
-        result = await deviation_handler.escalate_to_human(
-            workflow_state=sample_workflow_state,
-            reason=reason,
-            approval_gate="human_review",
-        )
+        # escalate_to_human always raises HumanApprovalTimeoutError
+        with pytest.raises(HumanApprovalTimeoutError) as exc_info:
+            await deviation_handler.escalate_to_human(
+                state=sample_workflow_state,
+                reason=reason,
+                details={"approval_gate": "human_review"},
+            )
 
-        assert result is not None
+        # Verify exception contains the details
+        assert "approval_gate" in exc_info.value.details
 
 
 class TestDeviationHandlerIntegration:
@@ -295,14 +302,14 @@ class TestDeviationHandlerIntegration:
 
         # Log deviation
         logged_state = await deviation_handler.log_deviation(
-            workflow_state=sample_workflow_state,
+            state=sample_workflow_state,
             error=error,
-            context="test",
+            agent_name="test",
         )
 
         # Attempt recovery
         recovered_state = await deviation_handler.attempt_recovery(
-            workflow_state=logged_state or sample_workflow_state,
+            state=logged_state or sample_workflow_state,
             error=error,
         )
 
@@ -317,15 +324,16 @@ class TestDeviationHandlerIntegration:
 
         # Log deviation
         logged_state = await deviation_handler.log_deviation(
-            workflow_state=sample_workflow_state,
+            state=sample_workflow_state,
             error=error,
-            context="critical",
+            agent_name="critical",
         )
 
-        # Escalate to human
-        escalated_state = await deviation_handler.escalate_to_human(
-            workflow_state=logged_state or sample_workflow_state,
-            reason="Critical error requires human intervention",
-        )
+        # Escalate to human - always raises HumanApprovalTimeoutError
+        with pytest.raises(HumanApprovalTimeoutError):
+            await deviation_handler.escalate_to_human(
+                state=logged_state or sample_workflow_state,
+                reason="Critical error requires human intervention",
+            )
 
-        assert escalated_state is not None
+        assert logged_state is not None

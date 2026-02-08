@@ -133,7 +133,10 @@ class CheckpointManager(BaseCheckpointSaver):  # type: ignore
             },
         )
 
-        updated_config: RunnableConfig = {**config}
+        # TypedDict doesn't officially support extra keys, but LangGraph uses them
+        updated_config = cast(
+            RunnableConfig, {**config, "checkpoint_id": checkpoint_id}
+        )
         return updated_config
 
     async def alist(

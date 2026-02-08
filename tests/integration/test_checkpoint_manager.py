@@ -352,7 +352,7 @@ class TestCheckpointManagerAlist:
 
         # Act
         checkpoints = []
-        async for checkpoint_tuple in manager.alist(config, _limit=5):
+        async for checkpoint_tuple in manager.alist(config, limit=5):
             checkpoints.append(checkpoint_tuple)
 
         # Assert

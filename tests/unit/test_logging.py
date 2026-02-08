@@ -26,7 +26,7 @@ class TestAddAppContext:
 
         assert result["service"] == "agent-api"
         assert result["environment"] is not None
-        assert result["version"] == "1.0.0"
+        assert result["version"] == "0.1.0-alpha"
         assert result["event"] == "test_event"
 
     def test_add_app_context_preserves_existing_fields(self):

@@ -71,7 +71,7 @@ class ImplementationPlannerAgent(BaseAgent):
                 "ARCHITECTURE.md not found - Solution Architect must run first"
             )
 
-        prompt = f"""# Implementation Planning Task
+        prompt = f"""# Implementation Planning Task  # nosec B608 (false positive - LLM prompt, not SQL)
 
 ## Architecture Document
 {architecture}

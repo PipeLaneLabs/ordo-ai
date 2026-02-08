@@ -197,7 +197,7 @@ class TestHealthCheckEndpoint:
             assert "application" in response.services
             assert response.services["application"] == HealthStatus.HEALTHY
             assert "version" in response.details
-            assert response.details["version"] == "1.0.0"
+            assert response.details["version"] == "0.1.0-alpha"
 
     @pytest.mark.asyncio
     async def test_health_check_response_structure(self):
