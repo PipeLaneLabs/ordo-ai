@@ -44,49 +44,51 @@ class TestConfigureLogging:
 
     def test_configure_logging_sets_up_structlog(self):
         """Test that configure_logging sets up structlog."""
-        with patch("src.observability.logging.logging.basicConfig"):
-            with patch("src.observability.logging.structlog.configure"):
-                configure_logging()
+        with (
+            patch("src.observability.logging.logging.basicConfig"),
+            patch("src.observability.logging.structlog.configure"),
+        ):
+            configure_logging()
 
-                # Should not raise any errors
+            # Should not raise any errors
 
     def test_configure_logging_with_development_environment(self):
         """Test logging configuration in development environment."""
-        with patch("src.observability.logging.settings.environment", "development"):
-            with patch("src.observability.logging.logging.basicConfig"):
-                with patch(
-                    "src.observability.logging.structlog.configure"
-                ) as mock_configure:
-                    configure_logging()
+        with (
+            patch("src.observability.logging.settings.environment", "development"),
+            patch("src.observability.logging.logging.basicConfig"),
+            patch("src.observability.logging.structlog.configure") as mock_configure,
+        ):
+            configure_logging()
 
-                    # Verify structlog.configure was called
-                    mock_configure.assert_called_once()
+            # Verify structlog.configure was called
+            mock_configure.assert_called_once()
 
     def test_configure_logging_with_production_environment(self):
         """Test logging configuration in production environment."""
-        with patch("src.observability.logging.settings.environment", "production"):
-            with patch("src.observability.logging.logging.basicConfig"):
-                with patch(
-                    "src.observability.logging.structlog.configure"
-                ) as mock_configure:
-                    configure_logging()
+        with (
+            patch("src.observability.logging.settings.environment", "production"),
+            patch("src.observability.logging.logging.basicConfig"),
+            patch("src.observability.logging.structlog.configure") as mock_configure,
+        ):
+            configure_logging()
 
-                    # Verify structlog.configure was called
-                    mock_configure.assert_called_once()
+            # Verify structlog.configure was called
+            mock_configure.assert_called_once()
 
     def test_configure_logging_sets_log_level(self):
         """Test that configure_logging sets the correct log level."""
-        with patch("src.observability.logging.settings.log_level", "DEBUG"):
-            with patch(
-                "src.observability.logging.logging.basicConfig"
-            ) as mock_basic_config:
-                with patch("src.observability.logging.structlog.configure"):
-                    configure_logging()
+        with (
+            patch("src.observability.logging.settings.log_level", "DEBUG"),
+            patch("src.observability.logging.logging.basicConfig") as mock_basic_config,
+            patch("src.observability.logging.structlog.configure"),
+        ):
+            configure_logging()
 
-                    # Verify basicConfig was called with DEBUG level
-                    mock_basic_config.assert_called_once()
-                    call_kwargs = mock_basic_config.call_args[1]
-                    assert call_kwargs["level"] == logging.DEBUG
+            # Verify basicConfig was called with DEBUG level
+            mock_basic_config.assert_called_once()
+            call_kwargs = mock_basic_config.call_args[1]
+            assert call_kwargs["level"] == logging.DEBUG
 
 
 class TestGetLogger:
@@ -116,23 +118,26 @@ class TestBindWorkflowContext:
 
     def test_bind_workflow_context_sets_context_vars(self):
         """Test that bind_workflow_context sets context variables."""
-        with patch("src.observability.logging.structlog.contextvars.clear_contextvars"):
-            with patch(
+        with (
+            patch("src.observability.logging.structlog.contextvars.clear_contextvars"),
+            patch(
                 "src.observability.logging.structlog.contextvars.bind_contextvars"
-            ) as mock_bind:
-                bind_workflow_context("wf-001", "trace-abc123")
+            ) as mock_bind,
+        ):
+            bind_workflow_context("wf-001", "trace-abc123")
 
-                mock_bind.assert_called_once_with(
-                    workflow_id="wf-001",
-                    trace_id="trace-abc123",
-                )
+            mock_bind.assert_called_once_with(
+                workflow_id="wf-001",
+                trace_id="trace-abc123",
+            )
 
     def test_bind_workflow_context_clears_previous_context(self):
         """Test that bind_workflow_context clears previous context."""
-        with patch(
-            "src.observability.logging.structlog.contextvars.clear_contextvars"
-        ) as mock_clear, patch(
-            "src.observability.logging.structlog.contextvars.bind_contextvars"
+        with (
+            patch(
+                "src.observability.logging.structlog.contextvars.clear_contextvars"
+            ) as mock_clear,
+            patch("src.observability.logging.structlog.contextvars.bind_contextvars"),
         ):
             bind_workflow_context("wf-001", "trace-abc123")
 
@@ -309,13 +314,15 @@ class TestLoggingEdgeCases:
 
     def test_bind_workflow_context_with_special_characters(self):
         """Test bind_workflow_context with special characters in IDs."""
-        with patch("src.observability.logging.structlog.contextvars.clear_contextvars"):
-            with patch(
+        with (
+            patch("src.observability.logging.structlog.contextvars.clear_contextvars"),
+            patch(
                 "src.observability.logging.structlog.contextvars.bind_contextvars"
-            ) as mock_bind:
-                bind_workflow_context("wf-2026-01-26-abc123", "trace-xyz-789")
+            ) as mock_bind,
+        ):
+            bind_workflow_context("wf-2026-01-26-abc123", "trace-xyz-789")
 
-                mock_bind.assert_called_once()
+            mock_bind.assert_called_once()
 
     def test_bind_task_context_with_long_names(self):
         """Test bind_task_context with long task names."""
@@ -361,24 +368,24 @@ class TestLoggingIntegration:
 
     def test_workflow_context_propagation(self):
         """Test that workflow context propagates through logger calls."""
-        with patch("src.observability.logging.structlog.contextvars.clear_contextvars"):
-            with patch(
-                "src.observability.logging.structlog.contextvars.bind_contextvars"
-            ):
-                bind_workflow_context("wf-001", "trace-123")
-                logger = get_logger(__name__)
+        with (
+            patch("src.observability.logging.structlog.contextvars.clear_contextvars"),
+            patch("src.observability.logging.structlog.contextvars.bind_contextvars"),
+        ):
+            bind_workflow_context("wf-001", "trace-123")
+            logger = get_logger(__name__)
 
-                # Logger should be available
-                assert logger is not None
+            # Logger should be available
+            assert logger is not None
 
     def test_multiple_context_bindings(self):
         """Test multiple context bindings in sequence."""
-        with patch("src.observability.logging.structlog.contextvars.clear_contextvars"):
-            with patch(
-                "src.observability.logging.structlog.contextvars.bind_contextvars"
-            ):
-                bind_workflow_context("wf-001", "trace-123")
-                bind_agent_context("software_engineer", 3)
-                bind_task_context("TASK-025", "Implement feature", "src/main.py")
+        with (
+            patch("src.observability.logging.structlog.contextvars.clear_contextvars"),
+            patch("src.observability.logging.structlog.contextvars.bind_contextvars"),
+        ):
+            bind_workflow_context("wf-001", "trace-123")
+            bind_agent_context("software_engineer", 3)
+            bind_task_context("TASK-025", "Implement feature", "src/main.py")
 
-                # Should not raise errors
+            # Should not raise errors

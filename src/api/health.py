@@ -112,7 +112,7 @@ async def health_check() -> HealthCheckResponse:
         status=HealthStatus.HEALTHY,
         timestamp=datetime.now(tz=UTC),
         services={"application": HealthStatus.HEALTHY},
-        details={"version": "1.0.0", "environment": settings.environment},
+        details={"version": "0.1.0-alpha", "environment": settings.environment},
     )
 
     logger.debug("Basic health check completed", extra={"status": response.status})

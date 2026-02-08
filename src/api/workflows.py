@@ -19,15 +19,7 @@ from fastapi.security import OAuth2PasswordBearer
 try:
     from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 except ImportError:
-    try:
-        from jwt import ExpiredSignatureError, InvalidTokenError
-    except ImportError:
-        # Fallback for PyJWT 2.8+
-        class ExpiredSignatureError(Exception):
-            pass
-
-        class InvalidTokenError(Exception):
-            pass
+    from jwt import ExpiredSignatureError, InvalidTokenError
 
 
 from pydantic import BaseModel

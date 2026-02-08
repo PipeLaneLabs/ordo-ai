@@ -6,6 +6,7 @@ Implements tier routing, quality gates, and budget enforcement.
 
 from datetime import UTC, datetime
 
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
@@ -272,15 +273,21 @@ class OrchestrationController:
         }
 
         # Execute workflow
-        config = {"workflow_id": workflow_id}
+        config: RunnableConfig = {"configurable": {"workflow_id": workflow_id}}
         final_state = initial_state
 
         if self.graph is None:
             raise RuntimeError("Graph not compiled")
 
         iteration = 0
-        async for state in self.graph.astream(initial_state, config):
-            final_state = state
+        async for state_update in self.graph.astream(initial_state, config):
+            # Extract the actual state from the update
+            if isinstance(state_update, dict):
+                # Get the last key's value which contains the state
+                for key_val in state_update.values():
+                    if isinstance(key_val, dict) and "workflow_id" in key_val:
+                        final_state = key_val  # type: ignore[assignment]
+                        break
             iteration += 1
 
             # Check budget

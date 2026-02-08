@@ -51,8 +51,8 @@ class ObservabilityAgent(BaseAgent):
 
     async def _build_prompt(
         self,
-        _state: WorkflowState,
-        **_kwargs: object,
+        state: WorkflowState,  # noqa: ARG002
+        **kwargs: object,  # noqa: ARG002
     ) -> str:
         """Build observability strategy prompt for LLM.
 

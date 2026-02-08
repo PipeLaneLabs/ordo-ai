@@ -27,7 +27,7 @@ from src.observability.logging import bind_workflow_context
 logger = logging.getLogger(__name__)
 
 
-@cl.on_chat_start
+@cl.on_chat_start  # type: ignore[untyped-decorator]
 async def on_chat_start() -> None:
     """Initialize chat session with workflow context.
 
@@ -72,7 +72,7 @@ Type your request or select an action below.
     await cl.Message(content=welcome_msg).send()  # type: ignore[no-untyped-call]
 
 
-@cl.on_message
+@cl.on_message  # type: ignore[untyped-decorator]
 async def on_message(message: cl.Message) -> None:
     """Handle incoming chat messages.
 
@@ -423,7 +423,7 @@ All tiers executed successfully. Your workflow is ready for review!
     )
 
 
-@cl.on_chat_end
+@cl.on_chat_end  # type: ignore[untyped-decorator]
 async def on_chat_end() -> None:
     """Handle chat session termination.
 

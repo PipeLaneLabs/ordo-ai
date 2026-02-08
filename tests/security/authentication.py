@@ -43,9 +43,11 @@ def test_jwt_expired():
     with freeze_time("2023-01-01 12:00:00"):
         token = jwt_service.create_access_token(user_id, roles)
 
-    with freeze_time("2023-01-01 13:00:01"):
-        with pytest.raises(jwt.ExpiredSignatureError):
-            jwt_service.verify_token(token)
+    with (
+        freeze_time("2023-01-01 13:00:01"),
+        pytest.raises(jwt.ExpiredSignatureError),
+    ):
+        jwt_service.verify_token(token)
 
 
 def test_jwt_invalid_signature():

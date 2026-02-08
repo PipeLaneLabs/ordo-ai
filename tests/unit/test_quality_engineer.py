@@ -172,8 +172,9 @@ def test_b():
         provider="openrouter",
     )
 
-    with patch.object(quality_engineer, "_write_file", new=AsyncMock()):
-        with patch.object(
+    with (
+        patch.object(quality_engineer, "_write_file", new=AsyncMock()),
+        patch.object(
             quality_engineer,
             "_run_pytest",
             new=AsyncMock(
@@ -183,12 +184,13 @@ def test_b():
                     "stderr": "",
                 }
             ),
-        ):
-            result = await quality_engineer._parse_output(response, {})
+        ),
+    ):
+        result = await quality_engineer._parse_output(response, {})
 
-            assert len(result["files_created"]) == 2
-            assert "tests/unit/test_a.py" in result["files_created"]
-            assert "tests/unit/test_b.py" in result["files_created"]
+        assert len(result["files_created"]) == 2
+        assert "tests/unit/test_a.py" in result["files_created"]
+        assert "tests/unit/test_b.py" in result["files_created"]
 
 
 @pytest.mark.asyncio
@@ -210,8 +212,9 @@ def test_a():
         provider="openrouter",
     )
 
-    with patch.object(quality_engineer, "_write_file", new=AsyncMock()):
-        with patch.object(
+    with (
+        patch.object(quality_engineer, "_write_file", new=AsyncMock()),
+        patch.object(
             quality_engineer,
             "_run_pytest",
             new=AsyncMock(
@@ -221,12 +224,13 @@ def test_a():
                     "stderr": "",
                 }
             ),
-        ):
-            result = await quality_engineer._parse_output(response, {})
+        ),
+    ):
+        result = await quality_engineer._parse_output(response, {})
 
-            assert len(result["files_created"]) == 1
-            assert "tests/unit/test_a.py" in result["files_created"]
-            assert "src/main.py" not in result["files_created"]
+        assert len(result["files_created"]) == 1
+        assert "tests/unit/test_a.py" in result["files_created"]
+        assert "src/main.py" not in result["files_created"]
 
 
 @pytest.mark.asyncio
@@ -268,14 +272,18 @@ async def test_build_prompt_includes_requirements(quality_engineer):
     """Test prompt includes REQUIREMENTS.md content."""
     state = {"current_phase": "development"}
 
-    with patch.object(
-        quality_engineer,
-        "_read_if_exists",
-        new=AsyncMock(return_value="Requirements content"),
-    ), patch.object(
-        quality_engineer, "_read_src_files", new=AsyncMock(return_value="")
-    ), patch.object(
-        quality_engineer, "_read_existing_tests", new=AsyncMock(return_value="")
+    with (
+        patch.object(
+            quality_engineer,
+            "_read_if_exists",
+            new=AsyncMock(return_value="Requirements content"),
+        ),
+        patch.object(
+            quality_engineer, "_read_src_files", new=AsyncMock(return_value="")
+        ),
+        patch.object(
+            quality_engineer, "_read_existing_tests", new=AsyncMock(return_value="")
+        ),
     ):
         prompt = await quality_engineer._build_prompt(state)
 

@@ -6,7 +6,7 @@ All agents read from and write to this shared state schema.
 """
 
 from datetime import UTC, datetime
-from typing import Literal, NotRequired, TypedDict
+from typing import Any, Literal, NotRequired, TypedDict
 
 
 class WorkflowState(TypedDict):
@@ -94,6 +94,19 @@ class WorkflowState(TypedDict):
     # ========== Checkpoint Management ==========
     checkpoint_id: NotRequired[str]  # Current checkpoint ID (optional)
     previous_checkpoint_id: NotRequired[str]  # Previous checkpoint (for rollback)
+
+    # ========== Additional State (Dynamic) ==========
+    tool_results: NotRequired[dict[str, dict[str, Any]]]  # Static analysis tool results
+    deviations: NotRequired[list[dict[str, Any]]]  # Deviation entries
+    last_error: NotRequired[str]  # Last error message
+    retry_count: NotRequired[int]  # Retry attempt counter
+    last_retry_timestamp: NotRequired[str]  # Last retry timestamp
+    rollback_performed: NotRequired[bool]  # Whether rollback was performed
+    rollback_timestamp: NotRequired[str]  # Rollback timestamp
+    requires_human_approval: NotRequired[bool]  # Requires human approval (escalation)
+    approval_reason: NotRequired[str]  # Reason for approval requirement
+    escalation_details: NotRequired[dict[str, Any]]  # Escalation details
+    escalation_timestamp: NotRequired[str]  # Escalation timestamp
 
     # ========== Timestamps ==========
     created_at: str  # ISO 8601 workflow creation time

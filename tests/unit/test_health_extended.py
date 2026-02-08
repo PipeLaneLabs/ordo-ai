@@ -34,20 +34,22 @@ class TestHealthCheckEndpoint:
     @pytest.mark.asyncio
     async def test_health_check_all_services_healthy(self):
         """Test health check when all services are healthy."""
-        with patch("src.api.health.check_database") as mock_db:
-            with patch("src.api.health.check_cache") as mock_cache:
-                mock_db.return_value = {"status": "healthy"}
-                mock_cache.return_value = {"status": "healthy"}
+        with (
+            patch("src.api.health.check_database") as mock_db,
+            patch("src.api.health.check_cache") as mock_cache,
+        ):
+            mock_db.return_value = {"status": "healthy"}
+            mock_cache.return_value = {"status": "healthy"}
 
-                # Simulate endpoint call
-                result = {
-                    "status": "healthy",
-                    "timestamp": datetime.now(tz=UTC).isoformat(),
-                    "services": {
-                        "database": {"status": "healthy"},
-                        "cache": {"status": "healthy"},
-                    },
-                }
+            # Simulate endpoint call
+            result = {
+                "status": "healthy",
+                "timestamp": datetime.now(tz=UTC).isoformat(),
+                "services": {
+                    "database": {"status": "healthy"},
+                    "cache": {"status": "healthy"},
+                },
+            }
 
         assert result["status"] == "healthy"
         assert result["services"]["database"]["status"] == "healthy"
@@ -56,19 +58,21 @@ class TestHealthCheckEndpoint:
     @pytest.mark.asyncio
     async def test_health_check_database_degraded(self):
         """Test health check when database is degraded."""
-        with patch("src.api.health.check_database") as mock_db:
-            with patch("src.api.health.check_cache") as mock_cache:
-                mock_db.return_value = {"status": "degraded", "latency_ms": 5000}
-                mock_cache.return_value = {"status": "healthy"}
+        with (
+            patch("src.api.health.check_database") as mock_db,
+            patch("src.api.health.check_cache") as mock_cache,
+        ):
+            mock_db.return_value = {"status": "degraded", "latency_ms": 5000}
+            mock_cache.return_value = {"status": "healthy"}
 
-                result = {
-                    "status": "degraded",
-                    "timestamp": datetime.now(tz=UTC).isoformat(),
-                    "services": {
-                        "database": {"status": "degraded", "latency_ms": 5000},
-                        "cache": {"status": "healthy"},
-                    },
-                }
+            result = {
+                "status": "degraded",
+                "timestamp": datetime.now(tz=UTC).isoformat(),
+                "services": {
+                    "database": {"status": "degraded", "latency_ms": 5000},
+                    "cache": {"status": "healthy"},
+                },
+            }
 
         assert result["status"] == "degraded"
         assert result["services"]["database"]["status"] == "degraded"
@@ -76,25 +80,27 @@ class TestHealthCheckEndpoint:
     @pytest.mark.asyncio
     async def test_health_check_cache_unavailable(self):
         """Test health check when cache is unavailable."""
-        with patch("src.api.health.check_database") as mock_db:
-            with patch("src.api.health.check_cache") as mock_cache:
-                mock_db.return_value = {"status": "healthy"}
-                mock_cache.return_value = {
-                    "status": "unavailable",
-                    "error": "Connection refused",
-                }
+        with (
+            patch("src.api.health.check_database") as mock_db,
+            patch("src.api.health.check_cache") as mock_cache,
+        ):
+            mock_db.return_value = {"status": "healthy"}
+            mock_cache.return_value = {
+                "status": "unavailable",
+                "error": "Connection refused",
+            }
 
-                result = {
-                    "status": "degraded",
-                    "timestamp": datetime.now(tz=UTC).isoformat(),
-                    "services": {
-                        "database": {"status": "healthy"},
-                        "cache": {
-                            "status": "unavailable",
-                            "error": "Connection refused",
-                        },
+            result = {
+                "status": "degraded",
+                "timestamp": datetime.now(tz=UTC).isoformat(),
+                "services": {
+                    "database": {"status": "healthy"},
+                    "cache": {
+                        "status": "unavailable",
+                        "error": "Connection refused",
                     },
-                }
+                },
+            }
 
         assert result["status"] == "degraded"
         assert result["services"]["cache"]["status"] == "unavailable"
@@ -102,31 +108,33 @@ class TestHealthCheckEndpoint:
     @pytest.mark.asyncio
     async def test_health_check_all_services_down(self):
         """Test health check when all services are down."""
-        with patch("src.api.health.check_database") as mock_db:
-            with patch("src.api.health.check_cache") as mock_cache:
-                mock_db.return_value = {
-                    "status": "unavailable",
-                    "error": "Connection refused",
-                }
-                mock_cache.return_value = {
-                    "status": "unavailable",
-                    "error": "Connection refused",
-                }
+        with (
+            patch("src.api.health.check_database") as mock_db,
+            patch("src.api.health.check_cache") as mock_cache,
+        ):
+            mock_db.return_value = {
+                "status": "unavailable",
+                "error": "Connection refused",
+            }
+            mock_cache.return_value = {
+                "status": "unavailable",
+                "error": "Connection refused",
+            }
 
-                result = {
-                    "status": "unhealthy",
-                    "timestamp": datetime.now(tz=UTC).isoformat(),
-                    "services": {
-                        "database": {
-                            "status": "unavailable",
-                            "error": "Connection refused",
-                        },
-                        "cache": {
-                            "status": "unavailable",
-                            "error": "Connection refused",
-                        },
+            result = {
+                "status": "unhealthy",
+                "timestamp": datetime.now(tz=UTC).isoformat(),
+                "services": {
+                    "database": {
+                        "status": "unavailable",
+                        "error": "Connection refused",
                     },
-                }
+                    "cache": {
+                        "status": "unavailable",
+                        "error": "Connection refused",
+                    },
+                },
+            }
 
         assert result["status"] == "unhealthy"
 
@@ -350,21 +358,23 @@ class TestHealthCheckEdgeCases:
     @pytest.mark.asyncio
     async def test_health_check_with_partial_service_failure(self):
         """Test health check with partial service failure."""
-        with patch("src.api.health.check_database") as mock_db:
-            with patch("src.api.health.check_cache") as mock_cache:
-                with patch("src.api.health.check_storage") as mock_storage:
-                    mock_db.return_value = {"status": "healthy"}
-                    mock_cache.return_value = {"status": "healthy"}
-                    mock_storage.return_value = {"status": "unavailable"}
+        with (
+            patch("src.api.health.check_database") as mock_db,
+            patch("src.api.health.check_cache") as mock_cache,
+            patch("src.api.health.check_storage") as mock_storage,
+        ):
+            mock_db.return_value = {"status": "healthy"}
+            mock_cache.return_value = {"status": "healthy"}
+            mock_storage.return_value = {"status": "unavailable"}
 
-                    result = {
-                        "status": "degraded",
-                        "services": {
-                            "database": {"status": "healthy"},
-                            "cache": {"status": "healthy"},
-                            "storage": {"status": "unavailable"},
-                        },
-                    }
+            result = {
+                "status": "degraded",
+                "services": {
+                    "database": {"status": "healthy"},
+                    "cache": {"status": "healthy"},
+                    "storage": {"status": "unavailable"},
+                },
+            }
 
         assert result["status"] == "degraded"
         assert result["services"]["storage"]["status"] == "unavailable"

@@ -146,9 +146,11 @@ class TestStartWorkflow:
         )
         user = {"sub": "user123", "roles": ["admin"]}
 
-        with patch("src.api.workflows.bind_workflow_context"):
-            with patch("src.api.workflows.bind_agent_context"):
-                response = await start_workflow(request, user)
+        with (
+            patch("src.api.workflows.bind_workflow_context"),
+            patch("src.api.workflows.bind_agent_context"),
+        ):
+            response = await start_workflow(request, user)
 
         assert response.status == WorkflowStatus.PENDING
         assert response.current_phase == "initialization"
@@ -170,9 +172,11 @@ class TestStartWorkflow:
             )
             user = {"sub": "user123", "roles": ["admin"]}
 
-            with patch("src.api.workflows.bind_workflow_context"):
-                with patch("src.api.workflows.bind_agent_context"):
-                    response = await start_workflow(request, user)
+            with (
+                patch("src.api.workflows.bind_workflow_context"),
+                patch("src.api.workflows.bind_agent_context"),
+            ):
+                response = await start_workflow(request, user)
 
             assert response.status == WorkflowStatus.PENDING
 
@@ -184,18 +188,17 @@ class TestStartWorkflow:
         )
         user = {"sub": "user123", "roles": ["admin"]}
 
-        with patch("src.api.workflows.bind_workflow_context"):
-            with patch("src.api.workflows.bind_agent_context"):
-                with patch("src.api.workflows.datetime") as mock_datetime:
-                    mock_datetime.now.side_effect = RuntimeError("Unexpected error")
+        with (
+            patch("src.api.workflows.bind_workflow_context"),
+            patch("src.api.workflows.bind_agent_context"),
+            patch("src.api.workflows.datetime") as mock_datetime,
+        ):
+            mock_datetime.now.side_effect = RuntimeError("Unexpected error")
 
-                    with pytest.raises(HTTPException) as exc_info:
-                        await start_workflow(request, user)
+            with pytest.raises(HTTPException) as exc_info:
+                await start_workflow(request, user)
 
-                    assert (
-                        exc_info.value.status_code
-                        == status.HTTP_500_INTERNAL_SERVER_ERROR
-                    )
+            assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
 
 
 class TestGetWorkflowStatus:
@@ -216,9 +219,11 @@ class TestGetWorkflowStatus:
 
         user = {"sub": "user123", "roles": ["admin"]}
 
-        with patch("src.api.workflows.bind_workflow_context"):
-            with patch("src.api.workflows.bind_agent_context"):
-                response = await get_workflow_status(workflow_id, user)
+        with (
+            patch("src.api.workflows.bind_workflow_context"),
+            patch("src.api.workflows.bind_agent_context"),
+        ):
+            response = await get_workflow_status(workflow_id, user)
 
         assert response == mock_status
 
@@ -229,10 +234,12 @@ class TestGetWorkflowStatus:
         workflow_id = uuid.uuid4()
         user = {"sub": "user123", "roles": ["admin"]}
 
-        with patch("src.api.workflows.bind_workflow_context"):
-            with patch("src.api.workflows.bind_agent_context"):
-                with pytest.raises(HTTPException) as exc_info:
-                    await get_workflow_status(workflow_id, user)
+        with (
+            patch("src.api.workflows.bind_workflow_context"),
+            patch("src.api.workflows.bind_agent_context"),
+            pytest.raises(HTTPException) as exc_info,
+        ):
+            await get_workflow_status(workflow_id, user)
 
         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
         assert exc_info.value.detail == "Workflow not found"
@@ -264,9 +271,11 @@ class TestApproveWorkflow:
         request = ApprovalRequest(decision="approve", reason=None)
         user = {"sub": "user123", "roles": ["admin"]}
 
-        with patch("src.api.workflows.bind_workflow_context"):
-            with patch("src.api.workflows.bind_agent_context"):
-                response = await approve_workflow(workflow_id, request, user)
+        with (
+            patch("src.api.workflows.bind_workflow_context"),
+            patch("src.api.workflows.bind_agent_context"),
+        ):
+            response = await approve_workflow(workflow_id, request, user)
 
         assert response.workflow_id == workflow_id
         assert response.decision == "approve"
@@ -278,10 +287,12 @@ class TestApproveWorkflow:
         request = ApprovalRequest(decision="reject", reason=None)
         user = {"sub": "user123", "roles": ["admin"]}
 
-        with patch("src.api.workflows.bind_workflow_context"):
-            with patch("src.api.workflows.bind_agent_context"):
-                with pytest.raises(HTTPException) as exc_info:
-                    await approve_workflow(workflow_id, request, user)
+        with (
+            patch("src.api.workflows.bind_workflow_context"),
+            patch("src.api.workflows.bind_agent_context"),
+            pytest.raises(HTTPException) as exc_info,
+        ):
+            await approve_workflow(workflow_id, request, user)
 
         assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
         assert "Reason is required" in exc_info.value.detail
@@ -309,9 +320,11 @@ class TestApproveWorkflow:
         request = ApprovalRequest(decision="reject", reason="Invalid requirements")
         user = {"sub": "user123", "roles": ["admin"]}
 
-        with patch("src.api.workflows.bind_workflow_context"):
-            with patch("src.api.workflows.bind_agent_context"):
-                response = await approve_workflow(workflow_id, request, user)
+        with (
+            patch("src.api.workflows.bind_workflow_context"),
+            patch("src.api.workflows.bind_agent_context"),
+        ):
+            response = await approve_workflow(workflow_id, request, user)
 
         assert response.workflow_id == workflow_id
         assert response.decision == "reject"
@@ -325,10 +338,12 @@ class TestApproveWorkflow:
         request = ApprovalRequest(decision="approve", reason=None)
         user = {"sub": "user123", "roles": ["admin"]}
 
-        with patch("src.api.workflows.bind_workflow_context"):
-            with patch("src.api.workflows.bind_agent_context"):
-                with pytest.raises(HTTPException) as exc_info:
-                    await approve_workflow(workflow_id, request, user)
+        with (
+            patch("src.api.workflows.bind_workflow_context"),
+            patch("src.api.workflows.bind_agent_context"),
+            pytest.raises(HTTPException) as exc_info,
+        ):
+            await approve_workflow(workflow_id, request, user)
 
         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
 
@@ -353,9 +368,11 @@ class TestGetWorkflowBudget:
 
         user = {"sub": "user123", "roles": ["admin"]}
 
-        with patch("src.api.workflows.bind_workflow_context"):
-            with patch("src.api.workflows.bind_agent_context"):
-                response = await get_workflow_budget(workflow_id, user)
+        with (
+            patch("src.api.workflows.bind_workflow_context"),
+            patch("src.api.workflows.bind_agent_context"),
+        ):
+            response = await get_workflow_budget(workflow_id, user)
 
         assert response.workflow_id == workflow_id
         assert response.used_tokens == 1000
@@ -370,10 +387,12 @@ class TestGetWorkflowBudget:
         workflow_id = uuid.uuid4()
         user = {"sub": "user123", "roles": ["admin"]}
 
-        with patch("src.api.workflows.bind_workflow_context"):
-            with patch("src.api.workflows.bind_agent_context"):
-                with pytest.raises(HTTPException) as exc_info:
-                    await get_workflow_budget(workflow_id, user)
+        with (
+            patch("src.api.workflows.bind_workflow_context"),
+            patch("src.api.workflows.bind_agent_context"),
+            pytest.raises(HTTPException) as exc_info,
+        ):
+            await get_workflow_budget(workflow_id, user)
 
         assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
 
@@ -392,27 +411,33 @@ class TestWorkflowIntegration:
         )
         user = {"sub": "user123", "roles": ["admin"]}
 
-        with patch("src.api.workflows.bind_workflow_context"):
-            with patch("src.api.workflows.bind_agent_context"):
-                start_response = await start_workflow(start_request, user)
+        with (
+            patch("src.api.workflows.bind_workflow_context"),
+            patch("src.api.workflows.bind_agent_context"),
+        ):
+            start_response = await start_workflow(start_request, user)
 
         workflow_id = start_response.workflow_id
 
         # Get status
-        with patch("src.api.workflows.bind_workflow_context"):
-            with patch("src.api.workflows.bind_agent_context"):
-                status_response = await get_workflow_status(workflow_id, user)
+        with (
+            patch("src.api.workflows.bind_workflow_context"),
+            patch("src.api.workflows.bind_agent_context"),
+        ):
+            status_response = await get_workflow_status(workflow_id, user)
 
         assert status_response.status == WorkflowStatus.PENDING
 
         # Approve workflow
         approve_request = ApprovalRequest(decision="approve", reason=None)
 
-        with patch("src.api.workflows.bind_workflow_context"):
-            with patch("src.api.workflows.bind_agent_context"):
-                approve_response = await approve_workflow(
-                    workflow_id, approve_request, user
-                )
+        with (
+            patch("src.api.workflows.bind_workflow_context"),
+            patch("src.api.workflows.bind_agent_context"),
+        ):
+            approve_response = await approve_workflow(
+                workflow_id, approve_request, user
+            )
 
         assert approve_response.decision == "approve"
 
@@ -430,9 +455,11 @@ class TestWorkflowIntegration:
                 user_request=f"Create feature number {i} for the system", priority=5
             )
 
-            with patch("src.api.workflows.bind_workflow_context"):
-                with patch("src.api.workflows.bind_agent_context"):
-                    response = await start_workflow(request, user)
+            with (
+                patch("src.api.workflows.bind_workflow_context"),
+                patch("src.api.workflows.bind_agent_context"),
+            ):
+                response = await start_workflow(request, user)
 
             workflow_ids.append(response.workflow_id)
 

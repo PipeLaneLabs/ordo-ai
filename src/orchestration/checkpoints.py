@@ -79,8 +79,8 @@ class CheckpointManager(BaseCheckpointSaver):  # type: ignore
             return None
 
         try:
-            state = await self.repository.load_checkpoint(checkpoint_id)
-            return self._state_to_checkpoint(state, checkpoint_id)
+            state = await self.repository.load_checkpoint(str(checkpoint_id))
+            return self._state_to_checkpoint(state, str(checkpoint_id))
         except Exception:
             # Checkpoint not found or error
             return None
@@ -103,16 +103,17 @@ class CheckpointManager(BaseCheckpointSaver):  # type: ignore
             Updated config with checkpoint_id
         """
         workflow_id = config.get("workflow_id", "unknown")
+        workflow_id_str = str(workflow_id)
         state = self._checkpoint_to_state(checkpoint)
 
         checkpoint_id = await self.repository.save_checkpoint(
-            workflow_id=workflow_id,
+            workflow_id=workflow_id_str,
             state=state,
         )
 
         # Update workflow metadata
         await self.repository.save_workflow_metadata(
-            workflow_id=workflow_id,
+            workflow_id=workflow_id_str,
             user_request=state.get("user_request", ""),
             status=state.get("current_phase", "RUNNING"),
             current_phase=state.get("current_phase"),
@@ -123,7 +124,7 @@ class CheckpointManager(BaseCheckpointSaver):  # type: ignore
 
         # Log audit event
         await self.repository.log_audit_event(
-            workflow_id=workflow_id,
+            workflow_id=workflow_id_str,
             event_type="CHECKPOINT_SAVED",
             agent_name=state.get("current_agent", "system"),
             event_data={
@@ -132,26 +133,29 @@ class CheckpointManager(BaseCheckpointSaver):  # type: ignore
             },
         )
 
-        return {**config, "checkpoint_id": checkpoint_id}
+        updated_config: RunnableConfig = {**config}
+        return updated_config
 
     async def alist(
         self,
-        config: RunnableConfig,
+        config: RunnableConfig | None,
         *,
-        _filter_dict: dict[str, Any] | None = None,
-        _before: RunnableConfig | None = None,
-        _limit: int | None = None,
+        filter: dict[str, Any] | None = None,  # noqa: ARG002, A002
+        before: RunnableConfig | None = None,  # noqa: ARG002
+        limit: int | None = None,
     ) -> AsyncIterator[CheckpointTuple]:
         """List checkpoints (LangGraph interface)."""
+        if config is None:
+            return
         workflow_id = config.get("configurable", {}).get("workflow_id") or config.get(
             "workflow_id"
         )
         if not workflow_id:
             return
 
-        limit_val = _limit or self.max_checkpoints_per_workflow
+        limit_val = limit or self.max_checkpoints_per_workflow
         checkpoints = await self.repository.list_checkpoints(
-            workflow_id=workflow_id,
+            workflow_id=str(workflow_id),
             limit=limit_val,
         )
 
@@ -175,10 +179,11 @@ class CheckpointManager(BaseCheckpointSaver):  # type: ignore
                     }
                 }
 
+                metadata_dict: CheckpointMetadata = {"source": "input", "step": -1, "writes": {}, "parents": {}}  # type: ignore[typeddict-unknown-key]
                 yield CheckpointTuple(
                     config=checkpoint_config,
                     checkpoint=checkpoint,
-                    metadata={"source": "postgres", "writes": {}, "parents": {}},
+                    metadata=metadata_dict,
                     parent_config=None,
                     pending_writes=[],
                 )
@@ -211,15 +216,15 @@ class CheckpointManager(BaseCheckpointSaver):  # type: ignore
         Returns:
             LangGraph Checkpoint object
         """
-        return {
+        checkpoint_dict: dict[str, Any] = {
             "v": state.get("state_version", 1),
             "ts": checkpoint_id,
             "id": checkpoint_id,
             "channel_values": {"state": state},
             "channel_versions": {},
             "versions_seen": {},
-            "pending_sends": [],
         }
+        return checkpoint_dict  # type: ignore[return-value]
 
     def _checkpoint_to_state(self, checkpoint: Checkpoint) -> WorkflowState:
         """Convert LangGraph Checkpoint to WorkflowState.

@@ -1,0 +1,4 @@
+# Bandit security scanner configuration
+# B608: Hardcoded SQL expressions - skipped because this project uses 
+# f-strings for LLM prompt templates, not SQL queries
+skips: ['B608']

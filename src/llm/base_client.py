@@ -72,6 +72,7 @@ class BaseLLMClient(ABC):
         max_tokens: int = 2000,
         temperature: float = 0.7,
         stop: list[str] | None = None,
+        model: str | None = None,
         **_kwargs: object,
     ) -> LLMResponse:
         """Generate text from a prompt.
@@ -199,10 +200,11 @@ class BaseLLMClient(ABC):
         for attempt in range(self.max_retries):
             try:
                 # Execute with timeout
-                return await asyncio.wait_for(
-                    operation(),
+                result = await asyncio.wait_for(
+                    operation(),  # type: ignore[operator]
                     timeout=self.timeout_seconds,
                 )
+                return result
             except TimeoutError as e:
                 last_error = e
                 log.warning(
