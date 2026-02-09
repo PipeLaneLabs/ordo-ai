@@ -10,7 +10,7 @@ import os
 import sys
 from datetime import UTC, datetime
 from types import ModuleType
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
