@@ -9,7 +9,6 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-import subprocess
 from datetime import UTC, datetime
 from typing import Any
 
@@ -68,8 +67,9 @@ class StaticAnalysisAgent(BaseAgent):
 
         # 2. Proceed with standard execution (build prompt -> call LLM -> parse)
         # Note: tool_results are passed via state for LLM context
-        state["tool_results"] = tool_results
-        return await super().execute(state)
+        updated_state = state.copy()
+        updated_state["tool_results"] = tool_results
+        return await super().execute(updated_state)
 
     async def _run_analysis_tools(self) -> dict[str, dict[str, Any]]:
         """Run static analysis tools in parallel.
@@ -92,34 +92,50 @@ class StaticAnalysisAgent(BaseAgent):
         radon_task = self._run_command("radon cc src/ -a -nb")
 
         # Gather results
-        black_result, ruff_result, mypy_result, radon_result = await asyncio.gather(
+        results_tuple = await asyncio.gather(
             black_task, ruff_task, mypy_task, radon_task, return_exceptions=True
         )
+        black_result: dict[str, Any] | Exception = results_tuple[0]  # type: ignore[assignment]
+        ruff_result: dict[str, Any] | Exception = results_tuple[1]  # type: ignore[assignment]
+        mypy_result: dict[str, Any] | Exception = results_tuple[2]  # type: ignore[assignment]
+        radon_result: dict[str, Any] | Exception = results_tuple[3]  # type: ignore[assignment]
 
-        black_result_typed: subprocess.CompletedProcess[str] | Exception = black_result
-        ruff_result_typed: subprocess.CompletedProcess[str] | Exception = ruff_result
-        mypy_result_typed: subprocess.CompletedProcess[str] | Exception = mypy_result
-        radon_result_typed: subprocess.CompletedProcess[str] | Exception = radon_result
-
+        # Process results with proper type handling
         results["black"] = (
-            black_result_typed
-            if isinstance(black_result_typed, dict)
-            else self._error_result("black", black_result_typed)
+            black_result
+            if isinstance(black_result, dict)
+            else (
+                self._error_result("black", black_result)
+                if isinstance(black_result, Exception)
+                else {"status": "error"}
+            )
         )
         results["ruff"] = (
-            ruff_result_typed
-            if isinstance(ruff_result_typed, dict)
-            else self._error_result("ruff", ruff_result_typed)
+            ruff_result
+            if isinstance(ruff_result, dict)
+            else (
+                self._error_result("ruff", ruff_result)
+                if isinstance(ruff_result, Exception)
+                else {"status": "error"}
+            )
         )
         results["mypy"] = (
-            mypy_result_typed
-            if isinstance(mypy_result_typed, dict)
-            else self._error_result("mypy", mypy_result_typed)
+            mypy_result
+            if isinstance(mypy_result, dict)
+            else (
+                self._error_result("mypy", mypy_result)
+                if isinstance(mypy_result, Exception)
+                else {"status": "error"}
+            )
         )
         results["radon"] = (
-            radon_result_typed
-            if isinstance(radon_result_typed, dict)
-            else self._error_result("radon", radon_result_typed)
+            radon_result
+            if isinstance(radon_result, dict)
+            else (
+                self._error_result("radon", radon_result)
+                if isinstance(radon_result, Exception)
+                else {"status": "error"}
+            )
         )
 
         return results
@@ -186,6 +202,7 @@ class StaticAnalysisAgent(BaseAgent):
             Formatted prompt string for LLM
         """
         tool_results = state.get("tool_results", {})
+        tool_results_dict = tool_results if isinstance(tool_results, dict) else {}
         architecture = (
             await self._read_if_exists("ARCHITECTURE.md")
             or "ARCHITECTURE.md not found."
@@ -209,39 +226,39 @@ Your mission is to provide fast, deterministic code quality feedback.
 ## Tool Execution Results
 
 ### Black (Code Formatting)
-**Command:** {tool_results.get('black', {}).get('command', 'N/A')}
-**Return Code:** {tool_results.get('black', {}).get('return_code', 'N/A')}
+**Command:** {tool_results_dict.get('black', {}).get('command', 'N/A')}
+**Return Code:** {tool_results_dict.get('black', {}).get('return_code', 'N/A')}
 **Output:**
 ```
-{tool_results.get('black', {}).get('stdout', '')}
-{tool_results.get('black', {}).get('stderr', '')}
+{tool_results_dict.get('black', {}).get('stdout', '')}
+{tool_results_dict.get('black', {}).get('stderr', '')}
 ```
 
 ### Ruff (Linting)
-**Command:** {tool_results.get('ruff', {}).get('command', 'N/A')}
-**Return Code:** {tool_results.get('ruff', {}).get('return_code', 'N/A')}
+**Command:** {tool_results_dict.get('ruff', {}).get('command', 'N/A')}
+**Return Code:** {tool_results_dict.get('ruff', {}).get('return_code', 'N/A')}
 **Output:**
 ```
-{tool_results.get('ruff', {}).get('stdout', '')}
-{tool_results.get('ruff', {}).get('stderr', '')}
+{tool_results_dict.get('ruff', {}).get('stdout', '')}
+{tool_results_dict.get('ruff', {}).get('stderr', '')}
 ```
 
 ### Mypy (Type Checking)
-**Command:** {tool_results.get('mypy', {}).get('command', 'N/A')}
-**Return Code:** {tool_results.get('mypy', {}).get('return_code', 'N/A')}
+**Command:** {tool_results_dict.get('mypy', {}).get('command', 'N/A')}
+**Return Code:** {tool_results_dict.get('mypy', {}).get('return_code', 'N/A')}
 **Output:**
 ```
-{tool_results.get('mypy', {}).get('stdout', '')}
-{tool_results.get('mypy', {}).get('stderr', '')}
+{tool_results_dict.get('mypy', {}).get('stdout', '')}
+{tool_results_dict.get('mypy', {}).get('stderr', '')}
 ```
 
 ### Radon (Complexity Analysis)
-**Command:** {tool_results.get('radon', {}).get('command', 'N/A')}
-**Return Code:** {tool_results.get('radon', {}).get('return_code', 'N/A')}
+**Command:** {tool_results_dict.get('radon', {}).get('command', 'N/A')}
+**Return Code:** {tool_results_dict.get('radon', {}).get('return_code', 'N/A')}
 **Output:**
 ```
-{tool_results.get('radon', {}).get('stdout', '')}
-{tool_results.get('radon', {}).get('stderr', '')}
+{tool_results_dict.get('radon', {}).get('stdout', '')}
+{tool_results_dict.get('radon', {}).get('stderr', '')}
 ```
 
 ## Instructions

@@ -46,7 +46,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         "application_starting",
         environment=settings.environment,
         log_level=settings.log_level,
-        version="1.0.0",
+        version="0.1.0-alpha",
     )
 
     # TODO (TASK-036): Initialize PostgreSQL connection pool
@@ -68,7 +68,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(
     title="Multi-Tier Agent Ecosystem",
     description="LangGraph-native multi-agent system for automated SDLC",
-    version="1.0.0",
+    version="0.1.0-alpha",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
@@ -97,7 +97,7 @@ async def root() -> dict[str, str]:
     """Root endpoint with API information."""
     return {
         "name": "Multi-Tier Agent Ecosystem API",
-        "version": "1.0.0",
+        "version": "0.1.0-alpha",
         "docs": "/docs",
         "health": "/health",
         "metrics": "/metrics",

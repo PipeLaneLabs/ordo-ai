@@ -54,8 +54,11 @@ class TestLLMClientFallback:
                 try:
                     await openrouter.generate(prompt="Test")
                     raise AssertionError("Should have raised error")
-                except Exception:
-                    pass
+                except AssertionError:
+                    raise
+                except Exception as e:
+                    # Expected - OpenRouter should fail, continuing to test fallback
+                    assert e is not None  # Verify exception was raised
 
                 # Fallback to Google
                 response = await google.generate(prompt="Test")

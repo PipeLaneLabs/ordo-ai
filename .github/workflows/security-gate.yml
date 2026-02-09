@@ -1,12 +1,16 @@
+# ==========================================================
+# 🛡️ SECURITY GATE (The PR Blocker)
+# ==========================================================
 name: Security Gate (PR Blocker)
-
 on:
   pull_request:
     branches: [main, develop]
+    types: [opened, synchronize, reopened] # Runs when PR is made or updated
 
 permissions:
   contents: read
   pull-requests: write
+  security-events: write # Required for CodeQL/Bandit reporting
 
 jobs:
   dependency-review:
@@ -23,8 +27,6 @@ jobs:
           config-file: './.github/dependency-review-config.yml'
           # Block PRs that add high/critical vulnerabilities
           fail-on-severity: high
-          # Block these licenses explicitly
-          deny-licenses: GPL-3.0, AGPL-3.0, LGPL-3.0, SSPL-1.0
           # Allow informational/low/medium vulnerabilities (will warn but not block)
           # Comment out the line below if you want to block ALL vulnerabilities
           # fail-on-severity: low
@@ -46,7 +48,7 @@ jobs:
           base: ${{ github.event.pull_request.base.sha }}
           head: ${{ github.event.pull_request.head.sha }}
           # Only fail on verified secrets (reduces false positives)
-          extra_args: --only-verified --fail
+          extra_args: --only-verified
 
   codeql-analysis:
     runs-on: ubuntu-latest

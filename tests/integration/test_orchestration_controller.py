@@ -1,6 +1,7 @@
 """Integration tests for OrchestrationController with mock agents."""
 
-from unittest.mock import MagicMock
+import os
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -90,8 +91,9 @@ class TestOrchestrationControllerInitialization:
 class TestOrchestrationControllerGraphBuilding:
     """Test OrchestrationController graph building."""
 
-    @pytest.mark.skip(
-        reason="Requires full LangGraph StateGraph compilation with real checkpointer"
+    @pytest.mark.skipif(
+        os.getenv("RUN_INTEGRATION") != "1",
+        reason="Requires full LangGraph StateGraph compilation with real checkpointer",
     )
     def test_build_graph_creates_graph(
         self,
@@ -108,14 +110,17 @@ class TestOrchestrationControllerGraphBuilding:
         )
 
         # Act
-        graph = controller.build_graph()
+        with patch("src.orchestration.controller.StateGraph") as mock_graph:
+            mock_graph.return_value.compile.return_value = MagicMock()
+            graph = controller.build_graph()
 
         # Assert
         assert graph is not None
         assert controller.graph is not None
 
-    @pytest.mark.skip(
-        reason="Requires full LangGraph StateGraph compilation with real checkpointer"
+    @pytest.mark.skipif(
+        os.getenv("RUN_INTEGRATION") != "1",
+        reason="Requires full LangGraph StateGraph compilation with real checkpointer",
     )
     def test_build_graph_adds_tier_nodes(
         self,
@@ -132,7 +137,9 @@ class TestOrchestrationControllerGraphBuilding:
         )
 
         # Act
-        graph = controller.build_graph()
+        with patch("src.orchestration.controller.StateGraph") as mock_graph:
+            mock_graph.return_value.compile.return_value = MagicMock()
+            graph = controller.build_graph()
 
         # Assert - Graph is created successfully
         # (Full node verification requires LangGraph internals access)

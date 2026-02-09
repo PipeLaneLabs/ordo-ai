@@ -1,4 +1,7 @@
-version: '3.8'
+# ============================================================================
+# Multi-Tier Agent Ecosystem - Docker Compose Configuration
+# ============================================================================
+# Uses .env.docker for container-specific settings
 
 services:
   # ============================================================================
@@ -116,6 +119,8 @@ services:
       target: development
     container_name: agent-api
     restart: unless-stopped
+    env_file:
+      - .env.docker
     depends_on:
       postgres:
         condition: service_healthy
@@ -188,9 +193,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.chainlit
-      target: development
     container_name: agent-ui
     restart: unless-stopped
+    env_file:
+      - .env.docker
     depends_on:
       agent-api:
         condition: service_healthy
@@ -198,8 +204,13 @@ services:
       CHAINLIT_URL: http://0.0.0.0:8080
       FASTAPI_BACKEND_URL: http://agent-api:8000
       CHAINLIT_AUTH_SECRET: ${CHAINLIT_AUTH_SECRET:-dev-chainlit-secret-change-in-prod}
+      PYTHONPATH: /app  # Python module resolution path
+      HOST: 0.0.0.0
+      PORT: 8080
     volumes:
-      - ./chainlit_app:/app:ro  # Chainlit application code
+      - ./src:/app/src  # Mount src directory to match Dockerfile WORKDIR
+      - chainlit_files:/tmp/.files  # Writable directory for Chainlit uploads
+    working_dir: /app/src/chainlit_app  # Set working directory to chainlit app
     ports:
       - "8080:8080"
     healthcheck:
@@ -325,6 +336,10 @@ volumes:
   grafana_data:
     driver: local
     name: agent_grafana_data
+  
+  chainlit_files:
+    driver: local
+    name: agent_chainlit_files
 
 # ============================================================================
 # NETWORKS

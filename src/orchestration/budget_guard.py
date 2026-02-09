@@ -362,7 +362,10 @@ class BudgetGuard:
 
         # Check budget first
         check_result = await self.check_budget(
-            operation_name, estimated_tokens, estimated_cost_usd, workflow_id
+            workflow_state=None,
+            operation_name=operation_name,
+            estimated_tokens=estimated_tokens,
+            estimated_cost_usd=estimated_cost_usd,
         )
 
         # Reserve budget in Redis
@@ -389,7 +392,9 @@ class BudgetGuard:
 
         import json
 
-        await self.cache.set(budget_key, json.dumps(new_budget), ttl=86400)  # 24h TTL
+        await self.cache.set(
+            budget_key, json.dumps(new_budget), ttl_seconds=86400
+        )  # 24h TTL
 
         logger.info(
             "budget_reserved_async",
@@ -467,6 +472,176 @@ class BudgetGuard:
             total_workflow_cost=workflow_state["budget_used_usd"] + cost,
             total_month_cost=self.current_month_used_usd,
         )
+
+    async def track_cost(
+        self,
+        workflow_state: WorkflowState,
+        cost_usd: float,
+    ) -> dict[str, Any]:
+        """
+        Track additional cost against a workflow budget.
+
+        Args:
+            workflow_state: Current workflow state
+            cost_usd: Cost to add (USD). Negative values are treated as 0.
+
+        Returns:
+            Updated budget summary for the workflow
+        """
+        cost = cost_usd if cost_usd > 0 else 0.0
+        if cost_usd < 0:
+            logger.warning(
+                "budget_cost_negative",
+                workflow_id=workflow_state.get("workflow_id"),
+                cost_usd=cost_usd,
+            )
+
+        workflow_state["budget_used_usd"] += cost
+        workflow_state["budget_remaining_usd"] = max(
+            0.0, self.max_monthly_budget_usd - workflow_state["budget_used_usd"]
+        )
+
+        self.current_month_used_usd = max(0.0, self.current_month_used_usd + cost)
+
+        logger.info(
+            "budget_cost_tracked",
+            workflow_id=workflow_state["workflow_id"],
+            cost_usd=cost,
+            total_workflow_cost=workflow_state["budget_used_usd"],
+            total_month_cost=self.current_month_used_usd,
+        )
+
+        return {
+            "allowed": True,
+            "cost_usd": cost,
+            "budget_used_usd": workflow_state["budget_used_usd"],
+            "budget_remaining_usd": workflow_state["budget_remaining_usd"],
+        }
+
+    async def reset_workflow_budget(
+        self,
+        workflow_state: WorkflowState,
+    ) -> dict[str, Any]:
+        """
+        Reset workflow budget usage to defaults.
+
+        Args:
+            workflow_state: Current workflow state
+
+        Returns:
+            Updated budget summary for the workflow
+        """
+        workflow_state["budget_used_tokens"] = 0
+        workflow_state["budget_used_usd"] = 0.0
+        workflow_state["budget_remaining_tokens"] = self.max_tokens_per_workflow
+        workflow_state["budget_remaining_usd"] = self.max_monthly_budget_usd
+
+        logger.info(
+            "budget_reset",
+            workflow_id=workflow_state["workflow_id"],
+            remaining_tokens=workflow_state["budget_remaining_tokens"],
+            remaining_usd=workflow_state["budget_remaining_usd"],
+        )
+
+        return {
+            "allowed": True,
+            "budget_used_tokens": workflow_state["budget_used_tokens"],
+            "budget_used_usd": workflow_state["budget_used_usd"],
+            "budget_remaining_tokens": workflow_state["budget_remaining_tokens"],
+            "budget_remaining_usd": workflow_state["budget_remaining_usd"],
+        }
+
+    async def refund_tokens(
+        self,
+        workflow_state: WorkflowState,
+        tokens: int,
+    ) -> dict[str, Any]:
+        """
+        Refund tokens back to a workflow budget.
+
+        Args:
+            workflow_state: Current workflow state
+            tokens: Tokens to refund (negative values are treated as 0)
+
+        Returns:
+            Updated budget summary for the workflow
+        """
+        refund = tokens if tokens > 0 else 0
+        if tokens < 0:
+            logger.warning(
+                "budget_refund_tokens_negative",
+                workflow_id=workflow_state.get("workflow_id"),
+                tokens=tokens,
+            )
+
+        workflow_state["budget_used_tokens"] = max(
+            0, workflow_state["budget_used_tokens"] - refund
+        )
+        workflow_state["budget_remaining_tokens"] = min(
+            self.max_tokens_per_workflow,
+            self.max_tokens_per_workflow - workflow_state["budget_used_tokens"],
+        )
+
+        logger.info(
+            "budget_tokens_refunded",
+            workflow_id=workflow_state["workflow_id"],
+            tokens_refunded=refund,
+            remaining_tokens=workflow_state["budget_remaining_tokens"],
+        )
+
+        return {
+            "allowed": True,
+            "tokens_refunded": refund,
+            "budget_used_tokens": workflow_state["budget_used_tokens"],
+            "budget_remaining_tokens": workflow_state["budget_remaining_tokens"],
+        }
+
+    async def refund_cost(
+        self,
+        workflow_state: WorkflowState,
+        cost_usd: float,
+    ) -> dict[str, Any]:
+        """
+        Refund cost back to a workflow budget.
+
+        Args:
+            workflow_state: Current workflow state
+            cost_usd: Cost to refund (negative values are treated as 0)
+
+        Returns:
+            Updated budget summary for the workflow
+        """
+        refund = cost_usd if cost_usd > 0 else 0.0
+        if cost_usd < 0:
+            logger.warning(
+                "budget_refund_cost_negative",
+                workflow_id=workflow_state.get("workflow_id"),
+                cost_usd=cost_usd,
+            )
+
+        workflow_state["budget_used_usd"] = max(
+            0.0, workflow_state["budget_used_usd"] - refund
+        )
+        workflow_state["budget_remaining_usd"] = min(
+            self.max_monthly_budget_usd,
+            self.max_monthly_budget_usd - workflow_state["budget_used_usd"],
+        )
+
+        self.current_month_used_usd = max(0.0, self.current_month_used_usd - refund)
+
+        logger.info(
+            "budget_cost_refunded",
+            workflow_id=workflow_state["workflow_id"],
+            cost_refunded=refund,
+            remaining_usd=workflow_state["budget_remaining_usd"],
+        )
+
+        return {
+            "allowed": True,
+            "cost_refunded": refund,
+            "budget_used_usd": workflow_state["budget_used_usd"],
+            "budget_remaining_usd": workflow_state["budget_remaining_usd"],
+        }
 
     def get_budget_summary(self, workflow_state: WorkflowState) -> dict[str, Any]:
         """

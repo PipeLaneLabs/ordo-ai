@@ -380,11 +380,12 @@ Respond with JSON:
         }
 
         # Update state
-        deviations = state.get("deviations", [])
-        deviations.append(deviation_entry)
+        deviations_list = state.get("deviations", [])
+        if isinstance(deviations_list, list):
+            deviations_list.append(deviation_entry)
 
         updated_state = state.copy()
-        updated_state["deviations"] = deviations
+        updated_state["deviations"] = deviations_list
         updated_state["last_error"] = str(error)
 
         # Log to file
@@ -435,23 +436,24 @@ Respond with JSON:
             WorkflowError: If recovery fails after max retries
         """
         retry_count = state.get("retry_count", 0)
+        retry_count_int = retry_count if isinstance(retry_count, int) else 0
 
-        if retry_count >= max_retries:
+        if retry_count_int >= max_retries:
             logger.error(
                 "recovery_max_retries_exceeded",
                 workflow_id=state["workflow_id"],
-                retry_count=retry_count,
+                retry_count=retry_count_int,
                 max_retries=max_retries,
             )
             raise WorkflowError(f"Max retries ({max_retries}) exceeded: {error}")
 
         # Exponential backoff: 2^retry_count seconds
-        backoff_delay = 2**retry_count
+        backoff_delay = 2**retry_count_int
 
         logger.info(
             "attempting_recovery",
             workflow_id=state["workflow_id"],
-            retry_count=retry_count + 1,
+            retry_count=retry_count_int + 1,
             backoff_seconds=backoff_delay,
             error_type=type(error).__name__,
         )
@@ -460,7 +462,7 @@ Respond with JSON:
 
         # Update state
         updated_state = state.copy()
-        updated_state["retry_count"] = retry_count + 1
+        updated_state["retry_count"] = retry_count_int + 1
         updated_state["last_retry_timestamp"] = datetime.now(UTC).isoformat()
 
         return updated_state
@@ -570,10 +572,11 @@ Respond with JSON:
         updated_state["escalation_timestamp"] = datetime.now(UTC).isoformat()
 
         # Log escalation
+        escalation_timestamp = updated_state.get("escalation_timestamp", "")
         escalation_entry = f"""
 ---
 
-## ESCALATION - {updated_state['escalation_timestamp']}
+## ESCALATION - {escalation_timestamp}
 
 **Workflow ID:** {state['workflow_id']}
 **Reason:** {reason}

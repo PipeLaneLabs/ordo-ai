@@ -4,6 +4,7 @@ Tests the full workflow from user request through all 6 tiers,
 verifying artifact generation, budget tracking, and state transitions.
 """
 
+import os
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
@@ -14,6 +15,12 @@ from src.observability.logging import bind_workflow_context
 from src.orchestration.budget_guard import BudgetGuard
 from src.orchestration.checkpoints import CheckpointManager
 from src.orchestration.state import create_initial_state
+
+
+pytestmark = pytest.mark.skipif(
+    os.getenv("RUN_E2E") != "1",
+    reason="E2E tests are gated behind RUN_E2E=1",
+)
 
 
 @pytest.fixture

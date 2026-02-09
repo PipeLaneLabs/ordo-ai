@@ -553,7 +553,65 @@ class TestExecuteWorkflow:
 
             # Mock astream to return empty async generator
             async def mock_astream(*args, **kwargs):
+                # LangGraph wraps state updates in node names
                 yield {
+                    "planning": {
+                        "workflow_id": "test-123",
+                        "user_request": "Test request",
+                        "current_phase": "planning",
+                        "current_task": "test",
+                        "current_agent": "TestAgent",
+                        "rejection_count": 0,
+                        "state_version": 1,
+                        "requirements": "",
+                        "architecture": "",
+                        "tasks": "",
+                        "code_files": {},
+                        "test_files": {},
+                        "partial_artifacts": {},
+                        "validation_report": "",
+                        "quality_report": "",
+                        "security_report": "",
+                        "budget_used_tokens": 0,
+                        "budget_used_usd": 0.0,
+                        "budget_remaining_tokens": 10000,
+                        "budget_remaining_usd": 100.0,
+                        "quality_gates_passed": [],
+                        "blocking_issues": [],
+                        "awaiting_human_approval": False,
+                        "approval_gate": "",
+                        "approval_timeout": "",
+                        "routing_decision": {},
+                        "escalation_flag": False,
+                        "trace_id": "test-123",
+                        "dependencies": "",
+                        "infrastructure": "",
+                        "observability": "",
+                        "deviation_log": "",
+                        "compliance_log": "",
+                        "acceptance_report": "",
+                        "agent_token_usage": {},
+                        "created_at": datetime.now(UTC).isoformat(),
+                        "updated_at": datetime.now(UTC).isoformat(),
+                    }
+                }
+
+            mock_graph.astream = mock_astream
+
+            result = await controller.execute_workflow("Test request", "test-123")
+
+            assert result["workflow_id"] == "test-123"
+
+    @pytest.mark.asyncio
+    async def test_execute_workflow_raises_budget_exhausted(self, controller):
+        """Test that execute_workflow raises BudgetExhaustedError when budget exhausted."""
+        mock_graph = MagicMock()
+        controller.graph = mock_graph
+
+        async def mock_astream(*args, **kwargs):
+            # LangGraph wraps state updates in node names
+            yield {
+                "planning": {
                     "workflow_id": "test-123",
                     "user_request": "Test request",
                     "current_phase": "planning",
@@ -570,10 +628,10 @@ class TestExecuteWorkflow:
                     "validation_report": "",
                     "quality_report": "",
                     "security_report": "",
-                    "budget_used_tokens": 0,
-                    "budget_used_usd": 0.0,
-                    "budget_remaining_tokens": 10000,
-                    "budget_remaining_usd": 100.0,
+                    "budget_used_tokens": 10000,
+                    "budget_used_usd": 100.0,
+                    "budget_remaining_tokens": -1,
+                    "budget_remaining_usd": -1.0,
                     "quality_gates_passed": [],
                     "blocking_issues": [],
                     "awaiting_human_approval": False,
@@ -592,58 +650,6 @@ class TestExecuteWorkflow:
                     "created_at": datetime.now(UTC).isoformat(),
                     "updated_at": datetime.now(UTC).isoformat(),
                 }
-
-            mock_graph.astream = mock_astream
-
-            result = await controller.execute_workflow("Test request", "test-123")
-
-            assert result["workflow_id"] == "test-123"
-
-    @pytest.mark.asyncio
-    async def test_execute_workflow_raises_budget_exhausted(self, controller):
-        """Test that execute_workflow raises BudgetExhaustedError when budget exhausted."""
-        mock_graph = MagicMock()
-        controller.graph = mock_graph
-
-        async def mock_astream(*args, **kwargs):
-            yield {
-                "workflow_id": "test-123",
-                "user_request": "Test request",
-                "current_phase": "planning",
-                "current_task": "test",
-                "current_agent": "TestAgent",
-                "rejection_count": 0,
-                "state_version": 1,
-                "requirements": "",
-                "architecture": "",
-                "tasks": "",
-                "code_files": {},
-                "test_files": {},
-                "partial_artifacts": {},
-                "validation_report": "",
-                "quality_report": "",
-                "security_report": "",
-                "budget_used_tokens": 10000,
-                "budget_used_usd": 100.0,
-                "budget_remaining_tokens": -1,
-                "budget_remaining_usd": -1.0,
-                "quality_gates_passed": [],
-                "blocking_issues": [],
-                "awaiting_human_approval": False,
-                "approval_gate": "",
-                "approval_timeout": "",
-                "routing_decision": {},
-                "escalation_flag": False,
-                "trace_id": "test-123",
-                "dependencies": "",
-                "infrastructure": "",
-                "observability": "",
-                "deviation_log": "",
-                "compliance_log": "",
-                "acceptance_report": "",
-                "agent_token_usage": {},
-                "created_at": datetime.now(UTC).isoformat(),
-                "updated_at": datetime.now(UTC).isoformat(),
             }
 
         mock_graph.astream = mock_astream
@@ -660,44 +666,47 @@ class TestExecuteWorkflow:
 
         async def mock_astream(*args, **kwargs):
             for _i in range(3):
+                # LangGraph wraps state updates in node names
                 yield {
-                    "workflow_id": "test-123",
-                    "user_request": "Test request",
-                    "current_phase": "planning",
-                    "current_task": "test",
-                    "current_agent": "TestAgent",
-                    "rejection_count": 0,
-                    "state_version": 1,
-                    "requirements": "",
-                    "architecture": "",
-                    "tasks": "",
-                    "code_files": {},
-                    "test_files": {},
-                    "partial_artifacts": {},
-                    "validation_report": "",
-                    "quality_report": "",
-                    "security_report": "",
-                    "budget_used_tokens": 0,
-                    "budget_used_usd": 0.0,
-                    "budget_remaining_tokens": 10000,
-                    "budget_remaining_usd": 100.0,
-                    "quality_gates_passed": [],
-                    "blocking_issues": [],
-                    "awaiting_human_approval": False,
-                    "approval_gate": "",
-                    "approval_timeout": "",
-                    "routing_decision": {},
-                    "escalation_flag": False,
-                    "trace_id": "test-123",
-                    "dependencies": "",
-                    "infrastructure": "",
-                    "observability": "",
-                    "deviation_log": "",
-                    "compliance_log": "",
-                    "acceptance_report": "",
-                    "agent_token_usage": {},
-                    "created_at": datetime.now(UTC).isoformat(),
-                    "updated_at": datetime.now(UTC).isoformat(),
+                    "planning": {
+                        "workflow_id": "test-123",
+                        "user_request": "Test request",
+                        "current_phase": "planning",
+                        "current_task": "test",
+                        "current_agent": "TestAgent",
+                        "rejection_count": 0,
+                        "state_version": 1,
+                        "requirements": "",
+                        "architecture": "",
+                        "tasks": "",
+                        "code_files": {},
+                        "test_files": {},
+                        "partial_artifacts": {},
+                        "validation_report": "",
+                        "quality_report": "",
+                        "security_report": "",
+                        "budget_used_tokens": 0,
+                        "budget_used_usd": 0.0,
+                        "budget_remaining_tokens": 10000,
+                        "budget_remaining_usd": 100.0,
+                        "quality_gates_passed": [],
+                        "blocking_issues": [],
+                        "awaiting_human_approval": False,
+                        "approval_gate": "",
+                        "approval_timeout": "",
+                        "routing_decision": {},
+                        "escalation_flag": False,
+                        "trace_id": "test-123",
+                        "dependencies": "",
+                        "infrastructure": "",
+                        "observability": "",
+                        "deviation_log": "",
+                        "compliance_log": "",
+                        "acceptance_report": "",
+                        "agent_token_usage": {},
+                        "created_at": datetime.now(UTC).isoformat(),
+                        "updated_at": datetime.now(UTC).isoformat(),
+                    }
                 }
 
         mock_graph.astream = mock_astream

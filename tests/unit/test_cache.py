@@ -27,9 +27,13 @@ class TestRedisCacheConnect:
         mock_client = AsyncMock()
         mock_client.ping = AsyncMock()
 
-        with patch(
-            "src.storage.cache.redis.ConnectionPool.from_url", return_value=mock_pool
-        ), patch("src.storage.cache.redis.Redis", return_value=mock_client):
+        with (
+            patch(
+                "src.storage.cache.redis.ConnectionPool.from_url",
+                return_value=mock_pool,
+            ),
+            patch("src.storage.cache.redis.Redis", return_value=mock_client),
+        ):
             cache = RedisCache()
             await cache.connect()
 

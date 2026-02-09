@@ -441,5 +441,4 @@ async def on_chat_end() -> None:
     )
 
 
-# Create Chainlit app instance
-app = cl.App()
+# Chainlit 2.x auto-manages app instance via decorators - no explicit app = cl.App() needed

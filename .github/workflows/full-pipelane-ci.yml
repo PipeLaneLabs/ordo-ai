@@ -1,0 +1,793 @@
+# ==========================================================
+# 🔬 FULL PIPELANE CI (Comprehensive Testing)
+# ==========================================================
+name: Full Pipelane CI
+
+on:
+  push:
+    branches: [main, develop]
+  schedule:
+    # Run nightly at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  # ------------------------------------------------------------------
+  # JOB 1: CODE QUALITY (Ruff, Black, MyPy)
+  # ------------------------------------------------------------------
+  lint:
+    runs-on: ubuntu-latest
+    name: Code Quality Checks
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Install Poetry 2.3.1
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+      
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-
+      
+      - name: Install dependencies
+        run: poetry install --no-root --with dev
+      
+      - name: Run Black formatter check
+        run: poetry run black --check src/ tests/
+      
+      - name: Run Ruff linter
+        run: poetry run ruff check src/ tests/
+      
+      - name: Run MyPy type checker
+        run: poetry run mypy src/ --strict
+
+  # ------------------------------------------------------------------
+  # JOB 2: TEST SUITE (Unit & Integration)
+  # ------------------------------------------------------------------
+  test:
+    runs-on: ubuntu-latest
+    name: Test Suite
+    
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: agent_ecosystem_test
+          POSTGRES_USER: agent_user
+          POSTGRES_PASSWORD: agent_password_secure_123
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Install Poetry 2.3.1
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+      
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-
+      
+      - name: Install dependencies
+        run: poetry install --no-root --with dev
+
+      - name: Create reports directory
+        run: mkdir -p reports
+      
+      - name: Run unit tests
+        env:
+          OPENROUTER_API_KEY: "sk-fake-key-for-testing"
+          GOOGLE_API_KEY: "fake-google-key"
+          JWT_SECRET_KEY: "fake-super-secret-key-for-testing-only"
+          MINIO_SECRET_KEY: "fake-minio-key"
+          POSTGRES_PASSWORD: "fake-password"
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: agent_ecosystem_test
+          POSTGRES_USER: agent_user
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+        run: |
+          set -o pipefail
+          poetry run pytest tests/unit/ -v \
+            --cov=src \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=70 \
+            --junitxml=reports/unit-junit.xml \
+            --durations=20 \
+            --durations-min=0.5 2>&1 | tee reports/unit-timing.txt
+      
+      - name: Run integration tests
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: agent_ecosystem_test
+          POSTGRES_USER: agent_user
+          POSTGRES_PASSWORD: agent_password_secure_123
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          OPENROUTER_API_KEY: "sk-fake-key-for-testing"
+          GOOGLE_API_KEY: "fake-google-key"
+          JWT_SECRET_KEY: "fake-super-secret-key-for-testing-only"
+          MINIO_SECRET_KEY: "fake-minio-key"
+        run: |
+          set -o pipefail
+          poetry run pytest tests/integration/ -v --no-cov \
+            --reruns 2 \
+            --reruns-delay 1 \
+            --junitxml=reports/integration-junit.xml \
+            --durations=20 \
+            --durations-min=0.5 2>&1 | tee reports/integration-timing.txt
+
+      - name: Generate scenario map
+        if: always()
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: agent_ecosystem_test
+          POSTGRES_USER: agent_user
+          POSTGRES_PASSWORD: agent_password_secure_123
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          OPENROUTER_API_KEY: "sk-fake-key-for-testing"
+          GOOGLE_API_KEY: "fake-google-key"
+          JWT_SECRET_KEY: "fake-super-secret-key-for-testing-only"
+          MINIO_SECRET_KEY: "fake-minio-key"
+        run: |
+          poetry run pytest tests/integration/ tests/e2e/ --collect-only -q > reports/scenario-map.txt
+
+      - name: Summarize test results
+        if: always()
+        env:
+          REPORT_DIR: reports
+        run: |
+          python - <<'PY'
+          import glob
+          import os
+          import re
+          import xml.etree.ElementTree as ET
+
+          report_dir = os.environ.get("REPORT_DIR", "reports")
+          junit_files = sorted(glob.glob(os.path.join(report_dir, "*.xml")))
+          timing_files = sorted(glob.glob(os.path.join(report_dir, "*timing*.txt")))
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+
+          def write(line=""):
+              with open(summary_path, "a", encoding="utf-8") as handle:
+                  handle.write(line + "\n")
+
+          write("## Test Summary")
+
+          failures = []
+          for junit in junit_files:
+              try:
+                  root = ET.parse(junit).getroot()
+              except Exception:
+                  continue
+              for case in root.iter("testcase"):
+                  classname = case.attrib.get("classname", "")
+                  name = case.attrib.get("name", "")
+                  for tag in ("failure", "error"):
+                      for node in case.findall(tag):
+                          msg = (node.attrib.get("message") or "").strip()
+                          failures.append((classname, name, tag, msg))
+
+          write("### Failures")
+          if failures:
+              for classname, name, tag, msg in failures[:10]:
+                  test_name = ".".join([part for part in (classname, name) if part])
+                  if msg:
+                      write(f"- {test_name} ({tag}): {msg}")
+                  else:
+                      write(f"- {test_name} ({tag})")
+              if len(failures) > 10:
+                  write(f"- ... and {len(failures) - 10} more")
+          else:
+              write("- None")
+
+          slow = []
+          timing_re = re.compile(r"^\s*([0-9.]+)s\s+(call|setup|teardown)\s+(.+)$")
+          for timing in timing_files:
+              try:
+                  with open(timing, "r", encoding="utf-8", errors="ignore") as handle:
+                      for line in handle:
+                          match = timing_re.match(line.strip())
+                          if match:
+                              slow.append((float(match.group(1)), match.group(2), match.group(3)))
+              except FileNotFoundError:
+                  continue
+
+          slow.sort(reverse=True)
+          write("### Top 10 Slow Tests")
+          if slow:
+              for duration, kind, test_name in slow[:10]:
+                  write(f"- {duration:.2f}s {kind} {test_name}")
+          else:
+              write("- None")
+          PY
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-test-reports
+          path: reports/
+
+  # ------------------------------------------------------------------
+  # JOB 3: INTEGRATION EXTENDED (Git + LangGraph)
+  # ------------------------------------------------------------------
+  integration-extended:
+    runs-on: ubuntu-latest
+    name: Integration Extended
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: agent_ecosystem_test
+          POSTGRES_USER: agent_user
+          POSTGRES_PASSWORD: agent_password_secure_123
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry 2.3.1
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: poetry install --no-root --with dev
+
+      - name: Create reports directory
+        run: mkdir -p reports
+
+      - name: Configure git identity
+        run: |
+          git config --global user.email "ci@example.com"
+          git config --global user.name "ci"
+
+      - name: Run extended integration tests
+        env:
+          RUN_INTEGRATION: "1"
+          RUN_GIT: "1"
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: agent_ecosystem_test
+          POSTGRES_USER: agent_user
+          POSTGRES_PASSWORD: agent_password_secure_123
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          OPENROUTER_API_KEY: "sk-fake-key-for-testing"
+          GOOGLE_API_KEY: "fake-google-key"
+          JWT_SECRET_KEY: "fake-super-secret-key-for-testing-only"
+          MINIO_SECRET_KEY: "fake-minio-key"
+        run: |
+          set -o pipefail
+          poetry run pytest tests/integration/ -v --no-cov \
+            --reruns 2 \
+            --reruns-delay 1 \
+            --junitxml=reports/integration-extended-junit.xml \
+            --durations=20 \
+            --durations-min=0.5 2>&1 | tee reports/integration-extended-timing.txt
+
+      - name: Summarize test results
+        if: always()
+        env:
+          REPORT_DIR: reports
+        run: |
+          python - <<'PY'
+          import glob
+          import os
+          import re
+          import xml.etree.ElementTree as ET
+
+          report_dir = os.environ.get("REPORT_DIR", "reports")
+          junit_files = sorted(glob.glob(os.path.join(report_dir, "*.xml")))
+          timing_files = sorted(glob.glob(os.path.join(report_dir, "*timing*.txt")))
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+
+          def write(line=""):
+              with open(summary_path, "a", encoding="utf-8") as handle:
+                  handle.write(line + "\n")
+
+          write("## Test Summary")
+
+          failures = []
+          for junit in junit_files:
+              try:
+                  root = ET.parse(junit).getroot()
+              except Exception:
+                  continue
+              for case in root.iter("testcase"):
+                  classname = case.attrib.get("classname", "")
+                  name = case.attrib.get("name", "")
+                  for tag in ("failure", "error"):
+                      for node in case.findall(tag):
+                          msg = (node.attrib.get("message") or "").strip()
+                          failures.append((classname, name, tag, msg))
+
+          write("### Failures")
+          if failures:
+              for classname, name, tag, msg in failures[:10]:
+                  test_name = ".".join([part for part in (classname, name) if part])
+                  if msg:
+                      write(f"- {test_name} ({tag}): {msg}")
+                  else:
+                      write(f"- {test_name} ({tag})")
+              if len(failures) > 10:
+                  write(f"- ... and {len(failures) - 10} more")
+          else:
+              write("- None")
+
+          slow = []
+          timing_re = re.compile(r"^\s*([0-9.]+)s\s+(call|setup|teardown)\s+(.+)$")
+          for timing in timing_files:
+              try:
+                  with open(timing, "r", encoding="utf-8", errors="ignore") as handle:
+                      for line in handle:
+                          match = timing_re.match(line.strip())
+                          if match:
+                              slow.append((float(match.group(1)), match.group(2), match.group(3)))
+              except FileNotFoundError:
+                  continue
+
+          slow.sort(reverse=True)
+          write("### Top 10 Slow Tests")
+          if slow:
+              for duration, kind, test_name in slow[:10]:
+                  write(f"- {duration:.2f}s {kind} {test_name}")
+          else:
+              write("- None")
+          PY
+
+      - name: Upload integration extended reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-integration-extended-reports
+          path: reports/
+
+  # ------------------------------------------------------------------
+  # JOB 4: CHAINLIT REAL IMPORT CHECK
+  # ------------------------------------------------------------------
+  chainlit-real:
+    runs-on: ubuntu-latest
+    name: Chainlit Real Import
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry 2.3.1
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: poetry install --no-root --with dev
+
+      - name: Create reports directory
+        run: mkdir -p reports
+
+      - name: Run Chainlit tests with real import
+        env:
+          RUN_CHAINLIT_REAL: "1"
+          OPENROUTER_API_KEY: "sk-fake-key-for-testing"
+          GOOGLE_API_KEY: "fake-google-key"
+          JWT_SECRET_KEY: "fake-super-secret-key-for-testing-only"
+          MINIO_SECRET_KEY: "fake-minio-key"
+          POSTGRES_PASSWORD: "fake-password"
+        run: |
+          set -o pipefail
+          poetry run pytest tests/unit/test_chainlit_app.py -v --no-cov \
+            --reruns 2 \
+            --reruns-delay 1 \
+            --junitxml=reports/chainlit-app-junit.xml \
+            --durations=20 \
+            --durations-min=0.5 2>&1 | tee reports/chainlit-app-timing.txt
+          poetry run pytest tests/unit/test_chainlit_app_extended.py -v --no-cov \
+            --reruns 2 \
+            --reruns-delay 1 \
+            --junitxml=reports/chainlit-app-extended-junit.xml \
+            --durations=20 \
+            --durations-min=0.5 2>&1 | tee reports/chainlit-app-extended-timing.txt
+          poetry run pytest tests/unit/test_chainlit_callbacks_extended.py -v --no-cov \
+            --reruns 2 \
+            --reruns-delay 1 \
+            --junitxml=reports/chainlit-callbacks-extended-junit.xml \
+            --durations=20 \
+            --durations-min=0.5 2>&1 | tee reports/chainlit-callbacks-extended-timing.txt
+
+      - name: Summarize test results
+        if: always()
+        env:
+          REPORT_DIR: reports
+        run: |
+          python - <<'PY'
+          import glob
+          import os
+          import re
+          import xml.etree.ElementTree as ET
+
+          report_dir = os.environ.get("REPORT_DIR", "reports")
+          junit_files = sorted(glob.glob(os.path.join(report_dir, "*.xml")))
+          timing_files = sorted(glob.glob(os.path.join(report_dir, "*timing*.txt")))
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+
+          def write(line=""):
+              with open(summary_path, "a", encoding="utf-8") as handle:
+                  handle.write(line + "\n")
+
+          write("## Test Summary")
+
+          failures = []
+          for junit in junit_files:
+              try:
+                  root = ET.parse(junit).getroot()
+              except Exception:
+                  continue
+              for case in root.iter("testcase"):
+                  classname = case.attrib.get("classname", "")
+                  name = case.attrib.get("name", "")
+                  for tag in ("failure", "error"):
+                      for node in case.findall(tag):
+                          msg = (node.attrib.get("message") or "").strip()
+                          failures.append((classname, name, tag, msg))
+
+          write("### Failures")
+          if failures:
+              for classname, name, tag, msg in failures[:10]:
+                  test_name = ".".join([part for part in (classname, name) if part])
+                  if msg:
+                      write(f"- {test_name} ({tag}): {msg}")
+                  else:
+                      write(f"- {test_name} ({tag})")
+              if len(failures) > 10:
+                  write(f"- ... and {len(failures) - 10} more")
+          else:
+              write("- None")
+
+          slow = []
+          timing_re = re.compile(r"^\s*([0-9.]+)s\s+(call|setup|teardown)\s+(.+)$")
+          for timing in timing_files:
+              try:
+                  with open(timing, "r", encoding="utf-8", errors="ignore") as handle:
+                      for line in handle:
+                          match = timing_re.match(line.strip())
+                          if match:
+                              slow.append((float(match.group(1)), match.group(2), match.group(3)))
+              except FileNotFoundError:
+                  continue
+
+          slow.sort(reverse=True)
+          write("### Top 10 Slow Tests")
+          if slow:
+              for duration, kind, test_name in slow[:10]:
+                  write(f"- {duration:.2f}s {kind} {test_name}")
+          else:
+              write("- None")
+          PY
+
+      - name: Upload Chainlit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-chainlit-reports
+          path: reports/
+
+  # ------------------------------------------------------------------
+  # JOB 5: E2E TESTS (Full Workflow)
+  # ------------------------------------------------------------------
+  e2e:
+    runs-on: ubuntu-latest
+    name: E2E Tests
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry 2.3.1
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: poetry install --no-root --with dev
+
+      - name: Create reports directory
+        run: mkdir -p reports
+
+      - name: Run E2E tests
+        env:
+          RUN_E2E: "1"
+          OPENROUTER_API_KEY: "sk-fake-key-for-testing"
+          GOOGLE_API_KEY: "fake-google-key"
+          JWT_SECRET_KEY: "fake-super-secret-key-for-testing-only"
+          MINIO_SECRET_KEY: "fake-minio-key"
+          POSTGRES_PASSWORD: "agent_password_secure_123"
+        run: |
+          set -o pipefail
+          poetry run pytest tests/e2e/ -v --no-cov \
+            --reruns 2 \
+            --reruns-delay 1 \
+            --junitxml=reports/e2e-junit.xml \
+            --durations=20 \
+            --durations-min=0.5 2>&1 | tee reports/e2e-timing.txt
+
+      - name: Capture service logs on failure
+        if: failure()
+        run: |
+          docker compose ps
+          docker compose logs --tail=200
+
+      - name: Stop E2E services
+        if: always()
+        run: |
+          if [ ! -f .env.docker ]; then
+            printf "%s\n" \
+              "OPENROUTER_API_KEY=sk-fake-key-for-testing" \
+              "GOOGLE_API_KEY=fake-google-key" \
+              "JWT_SECRET_KEY=fake-super-secret-key-for-testing-only" \
+              "CHAINLIT_AUTH_SECRET=fake-chainlit-secret-key-for-testing-only" \
+              > .env.docker
+          fi
+          docker compose down -v
+
+      - name: Summarize test results
+        if: always()
+        env:
+          REPORT_DIR: reports
+        run: |
+          python - <<'PY'
+          import glob
+          import os
+          import re
+          import xml.etree.ElementTree as ET
+
+          report_dir = os.environ.get("REPORT_DIR", "reports")
+          junit_files = sorted(glob.glob(os.path.join(report_dir, "*.xml")))
+          timing_files = sorted(glob.glob(os.path.join(report_dir, "*timing*.txt")))
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+
+          def write(line=""):
+              with open(summary_path, "a", encoding="utf-8") as handle:
+                  handle.write(line + "\n")
+
+          write("## Test Summary")
+
+          failures = []
+          for junit in junit_files:
+              try:
+                  root = ET.parse(junit).getroot()
+              except Exception:
+                  continue
+              for case in root.iter("testcase"):
+                  classname = case.attrib.get("classname", "")
+                  name = case.attrib.get("name", "")
+                  for tag in ("failure", "error"):
+                      for node in case.findall(tag):
+                          msg = (node.attrib.get("message") or "").strip()
+                          failures.append((classname, name, tag, msg))
+
+          write("### Failures")
+          if failures:
+              for classname, name, tag, msg in failures[:10]:
+                  test_name = ".".join([part for part in (classname, name) if part])
+                  if msg:
+                      write(f"- {test_name} ({tag}): {msg}")
+                  else:
+                      write(f"- {test_name} ({tag})")
+              if len(failures) > 10:
+                  write(f"- ... and {len(failures) - 10} more")
+          else:
+              write("- None")
+
+          slow = []
+          timing_re = re.compile(r"^\s*([0-9.]+)s\s+(call|setup|teardown)\s+(.+)$")
+          for timing in timing_files:
+              try:
+                  with open(timing, "r", encoding="utf-8", errors="ignore") as handle:
+                      for line in handle:
+                          match = timing_re.match(line.strip())
+                          if match:
+                              slow.append((float(match.group(1)), match.group(2), match.group(3)))
+              except FileNotFoundError:
+                  continue
+
+          slow.sort(reverse=True)
+          write("### Top 10 Slow Tests")
+          if slow:
+              for duration, kind, test_name in slow[:10]:
+                  write(f"- {duration:.2f}s {kind} {test_name}")
+          else:
+              write("- None")
+          PY
+
+      - name: Upload E2E reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-e2e-reports
+          path: reports/
+
+  # ------------------------------------------------------------------
+  # JOB 6: SECURITY SCAN (Bandit)
+  # ------------------------------------------------------------------
+  security:
+    runs-on: ubuntu-latest
+    name: Security Scans (Bandit)
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Install Poetry 2.3.1
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+      
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            venv-${{ runner.os }}-
+      
+      - name: Install dependencies
+        run: poetry install --no-root --with dev
+      
+      - name: Run Bandit security scanner
+        run: |
+          poetry run pip install bandit
+          # Use .bandit config to skip B608 false positives (f-strings for LLM prompts, not SQL)
+          poetry run bandit -r src/ -ll -c .bandit -f json -o bandit-report.json
+      
+      - name: Display Bandit results
+        if: always()
+        run: |
+          if [ -f bandit-report.json ]; then
+            cat bandit-report.json
+          fi
+      
+      - name: Upload Bandit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-security-report
+          path: bandit-report.json

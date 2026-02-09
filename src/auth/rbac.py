@@ -106,12 +106,13 @@ def require_permission(required_permission: str) -> Callable[..., Any]:
                         "rbac", "No user provided for permission check"
                     )
 
-            user_roles = user.get("roles", [])
+            user_dict = user if isinstance(user, dict) else {}
+            user_roles = user_dict.get("roles", [])
             if not check_permission(user_roles, required_permission):
                 logger.warning(
                     "Access denied",
                     extra={
-                        "user_id": user.get("sub"),
+                        "user_id": user_dict.get("sub"),
                         "required_permission": required_permission,
                         "user_roles": user_roles,
                     },

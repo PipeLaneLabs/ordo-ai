@@ -2,24 +2,61 @@
 Extended tests for Chainlit Callbacks - Coverage enhancement.
 
 Tests cover:
-- Message callbacks
-- User feedback handling
-- Workflow state updates
-- Error callbacks
-- Session management
 """
 
+from __future__ import annotations
+
+import os
+import sys
 from datetime import UTC, datetime
-from unittest.mock import patch
+from types import ModuleType
+from unittest.mock import MagicMock
 
 import pytest
 
 
+def _install_chainlit_stub() -> None:
+    if "chainlit" in sys.modules:
+        return
+
+    stub = ModuleType("chainlit")
+
+    class _Message:
+        def __init__(self, content: str) -> None:
+            self.content = content
+
+        async def send(self) -> _Message:
+            return self
+
+    def on_chat_start(func):
+        return func
+
+    def on_message(func):
+        return func
+
+    def on_chat_end(func):
+        return func
+
+    stub.Message = _Message
+    stub.on_chat_start = on_chat_start
+    stub.on_message = on_message
+    stub.on_chat_end = on_chat_end
+
+    sys.modules["chainlit"] = stub
+
+
+if os.getenv("RUN_CHAINLIT_REAL") != "1":
+    _install_chainlit_stub()
+
+
 @pytest.fixture
-def mock_chainlit():
+def mock_chainlit(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     """Create mock chainlit module."""
-    with patch("src.chainlit_app.callbacks.cl") as mock_cl:
-        yield mock_cl
+    import src.chainlit_app.callbacks as callbacks
+
+    mock_cl = MagicMock()
+    monkeypatch.setattr(callbacks, "cl", mock_cl)
+    return mock_cl
 
 
 class TestMessageCallbacks:
