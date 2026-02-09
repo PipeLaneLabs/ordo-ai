@@ -1,13 +1,13 @@
 # ==========================================================
-# 🧪 LINT AND TEST (Fast Feedback)
+# 🚀 BASELINE CI (Fast Feedback for PRs)
 # ==========================================================
-name: Lint and Test
+name: Baseline CI
 
 on:
-  push:
-    branches: [main, develop, 'feature/**', 'task/**']
   pull_request:
     branches: [main, develop]
+  push:
+    branches: ['feature/**', 'task/**']
 
 jobs:
   # ------------------------------------------------------------------

@@ -9,15 +9,70 @@ See: https://errors.pydantic.dev/2.12/u/class-not-fully-defined
 
 from __future__ import annotations
 
+import os
+import sys
+from types import ModuleType
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 
-# Skip entire module due to Pydantic/Chainlit compatibility issue
-pytestmark = pytest.mark.skip(
-    reason="Chainlit/Pydantic compatibility issue - CodeSettings not fully defined"
-)
+def _install_chainlit_stub() -> None:  # noqa: C901
+    if "chainlit" in sys.modules:
+        return
+
+    stub = ModuleType("chainlit")
+
+    class _UserSession:
+        def __init__(self) -> None:
+            self._data: dict[str, object] = {}
+
+        def set(self, key: str, value: object) -> None:
+            self._data[key] = value
+
+        def get(self, key: str, default: object | None = None) -> object | None:
+            return self._data.get(key, default)
+
+    class _Message:
+        def __init__(self, content: str) -> None:
+            self.content = content
+
+        async def send(self) -> _Message:
+            return self
+
+    class _AskUserMessage:
+        def __init__(self, content: str, timeout: int | None = None) -> None:
+            self.content = content
+            self.timeout = timeout
+
+        async def send(self) -> _AskUserMessage:
+            return self
+
+    def on_chat_start(func):
+        return func
+
+    def on_message(func):
+        return func
+
+    def on_chat_end(func):
+        return func
+
+    async def sleep(_seconds: float) -> None:
+        return None
+
+    stub.user_session = _UserSession()
+    stub.Message = _Message
+    stub.AskUserMessage = _AskUserMessage
+    stub.on_chat_start = on_chat_start
+    stub.on_message = on_message
+    stub.on_chat_end = on_chat_end
+    stub.sleep = sleep
+
+    sys.modules["chainlit"] = stub
+
+
+if os.getenv("RUN_CHAINLIT_REAL") != "1":
+    _install_chainlit_stub()
 
 # Conditional imports to prevent collection errors
 try:
@@ -32,7 +87,6 @@ try:
     )
     from src.chainlit_app.callbacks import ChainlitCallback, create_chainlit_callbacks
 except Exception:
-    # If imports fail, define dummy values to prevent collection errors
     _handle_approval = None
     _handle_budget_query = None
     _handle_check_status = None

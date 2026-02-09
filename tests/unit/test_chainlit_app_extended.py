@@ -10,18 +10,17 @@ Tests cover:
 - Error handling
 """
 
+from __future__ import annotations
+
+import os
+import sys
 from datetime import UTC, datetime
+from types import ModuleType
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from src.config import Settings
-
-
-# Skip entire module due to Pydantic/Chainlit compatibility issue
-pytestmark = pytest.mark.skip(
-    reason="Chainlit/Pydantic compatibility issue - CodeSettings not fully defined"
-)
 
 
 @pytest.fixture
@@ -31,6 +30,55 @@ def mock_settings():
     settings.environment = "test"
     settings.max_monthly_budget_usd = 100.0
     return settings
+
+
+def _install_chainlit_stub() -> None:  # noqa: C901
+    if "chainlit" in sys.modules:
+        return
+
+    stub = ModuleType("chainlit")
+
+    class _UserSession:
+        def __init__(self) -> None:
+            self._data: dict[str, object] = {}
+
+        def set(self, key: str, value: object) -> None:
+            self._data[key] = value
+
+        def get(self, key: str, default: object | None = None) -> object | None:
+            return self._data.get(key, default)
+
+    class _Message:
+        def __init__(self, content: str) -> None:
+            self.content = content
+
+        async def send(self) -> _Message:
+            return self
+
+    def on_chat_start(func):
+        return func
+
+    def on_message(func):
+        return func
+
+    def on_chat_end(func):
+        return func
+
+    async def sleep(_seconds: float) -> None:
+        return None
+
+    stub.user_session = _UserSession()
+    stub.Message = _Message
+    stub.on_chat_start = on_chat_start
+    stub.on_message = on_message
+    stub.on_chat_end = on_chat_end
+    stub.sleep = sleep
+
+    sys.modules["chainlit"] = stub
+
+
+if os.getenv("RUN_CHAINLIT_REAL") != "1":
+    _install_chainlit_stub()
 
 
 @pytest.fixture

@@ -204,7 +204,6 @@ class TestCostTracking:
                 cost_usd=2.0,
             )
 
-    @pytest.mark.skip(reason="BudgetGuard.track_cost() method not implemented")
     @pytest.mark.asyncio
     async def test_cost_precision(self, budget_guard, sample_workflow_state):
         """Test cost tracking precision."""
@@ -219,9 +218,6 @@ class TestCostTracking:
 class TestBudgetRecovery:
     """Tests for budget recovery mechanisms."""
 
-    @pytest.mark.skip(
-        reason="BudgetGuard.reset_workflow_budget() method not implemented"
-    )
     @pytest.mark.asyncio
     async def test_reset_workflow_budget(self, budget_guard, sample_workflow_state):
         """Test resetting workflow budget."""
@@ -232,7 +228,6 @@ class TestBudgetRecovery:
 
         assert result is not None
 
-    @pytest.mark.skip(reason="BudgetGuard.refund_tokens() method not implemented")
     @pytest.mark.asyncio
     async def test_refund_tokens(self, budget_guard, sample_workflow_state):
         """Test refunding tokens."""
@@ -246,7 +241,6 @@ class TestBudgetRecovery:
 
         assert result is not None
 
-    @pytest.mark.skip(reason="BudgetGuard.refund_cost() method not implemented")
     @pytest.mark.asyncio
     async def test_refund_cost(self, budget_guard, sample_workflow_state):
         """Test refunding cost."""
@@ -347,11 +341,10 @@ class TestBudgetGuardErrorHandling:
 
         assert result is not None
 
-    @pytest.mark.skip(reason="BudgetGuard.track_cost() method not implemented")
     @pytest.mark.asyncio
     async def test_handle_negative_cost(self, budget_guard, sample_workflow_state):
         """Test handling negative cost."""
-        with patch.object(budget_guard, "logger"):
+        with patch("src.orchestration.budget_guard.logger"):
             result = await budget_guard.track_cost(
                 workflow_state=sample_workflow_state,
                 cost_usd=-10.0,
@@ -363,9 +356,6 @@ class TestBudgetGuardErrorHandling:
 class TestBudgetGuardIntegration:
     """Integration tests for BudgetGuard."""
 
-    @pytest.mark.skip(
-        reason="BudgetGuard.track_cost() and reset_workflow_budget() methods not implemented"
-    )
     @pytest.mark.asyncio
     async def test_full_budget_lifecycle(self, budget_guard, sample_workflow_state):
         """Test complete budget lifecycle."""
@@ -391,9 +381,6 @@ class TestBudgetGuardIntegration:
         assert result2 is not None
         assert result3 is not None
 
-    @pytest.mark.skip(
-        reason="BudgetGuard.reset_workflow_budget() method not implemented"
-    )
     @pytest.mark.asyncio
     async def test_budget_exhaustion_recovery_flow(
         self, budget_guard, sample_workflow_state

@@ -389,3 +389,66 @@ class TestLoggingIntegration:
             bind_task_context("TASK-025", "Implement feature", "src/main.py")
 
             # Should not raise errors
+
+
+class TestAdditionalLoggingHelpers:
+    """Tests for remaining logging helpers."""
+
+    def test_log_error_includes_context(self):
+        """Test log_error passes error dict and context."""
+        mock_logger = MagicMock()
+
+        from src.observability.logging import log_error
+
+        log_error(
+            mock_logger,
+            error_type="ValueError",
+            message="Bad input",
+            file="src/file.py",
+            line=10,
+            context={"detail": "x"},
+        )
+
+        mock_logger.error.assert_called_once()
+        call_args = mock_logger.error.call_args
+        assert call_args[0][0] == "error.occurred"
+        assert call_args[1]["error"]["type"] == "ValueError"
+        assert call_args[1]["error"]["file"] == "src/file.py"
+
+    def test_log_agent_execution_with_rejection(self):
+        """Test log_agent_execution with rejection reason."""
+        mock_logger = MagicMock()
+
+        from src.observability.logging import log_agent_execution
+
+        log_agent_execution(
+            mock_logger,
+            agent_name="quality_engineer",
+            tier=3,
+            status="rejected",
+            duration_seconds=12.3,
+            rejection_reason="Coverage low",
+        )
+
+        mock_logger.info.assert_called_once()
+        call_args = mock_logger.info.call_args
+        assert call_args[0][0] == "agent.execution_completed"
+        assert call_args[1]["rejection_reason"] == "Coverage low"
+
+    def test_log_checkpoint_saved(self):
+        """Test log_checkpoint_saved helper."""
+        mock_logger = MagicMock()
+
+        from src.observability.logging import log_checkpoint_saved
+
+        log_checkpoint_saved(
+            mock_logger,
+            checkpoint_id="ckpt-1",
+            workflow_id="wf-1",
+            phase="development",
+            duration_seconds=0.5,
+        )
+
+        mock_logger.info.assert_called_once()
+        call_args = mock_logger.info.call_args
+        assert call_args[0][0] == "checkpoint.saved"

@@ -173,6 +173,9 @@ pytest tests/unit/test_config.py::test_config_loading -v
 # Run integration tests
 pytest tests/integration/ -v
 
+# Run optional integration suites (git/langgraph)
+RUN_INTEGRATION=1 RUN_GIT=1 pytest tests/integration/ -v
+
 # Run with specific markers
 pytest -m integration -v
 ```
@@ -182,6 +185,9 @@ pytest -m integration -v
 ```bash
 # Run end-to-end tests
 pytest tests/e2e/ -v
+
+# Run optional e2e suites (if enabled)
+RUN_E2E=1 pytest tests/e2e/ -v
 
 # Run with specific markers
 pytest -m e2e -v
@@ -206,6 +212,17 @@ Tests use `pytest` with the following configuration:
 - **Config file:** `pytest.ini`
 - **Fixtures:** `tests/conftest.py`
 - **Markers:** `unit`, `integration`, `e2e`
+
+### Optional Test Suites (CI)
+
+Some integration suites require a configured git repo and full LangGraph setup.
+They are gated behind environment flags and run in a dedicated CI job.
+
+- `RUN_INTEGRATION=1` enables extended integration suites.
+- `RUN_GIT=1` enables git-dependent integration suites.
+- `RUN_E2E=1` enables e2e suites when present.
+- `RUN_CHAINLIT_REAL=1` runs Chainlit tests against the real Chainlit package
+    (unit tests otherwise use a local stub).
 
 ---
 

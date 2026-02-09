@@ -2,23 +2,51 @@
 Extended tests for Chainlit Callbacks - Coverage enhancement.
 
 Tests cover:
-- Message callbacks
-- User feedback handling
-- Workflow state updates
-- Error callbacks
-- Session management
 """
 
+from __future__ import annotations
+
+import os
+import sys
 from datetime import UTC, datetime
+from types import ModuleType
 from unittest.mock import patch
 
 import pytest
 
 
-# Skip entire module due to Pydantic/Chainlit compatibility issue
-pytestmark = pytest.mark.skip(
-    reason="Chainlit/Pydantic compatibility issue - CodeSettings not fully defined"
-)
+def _install_chainlit_stub() -> None:
+    if "chainlit" in sys.modules:
+        return
+
+    stub = ModuleType("chainlit")
+
+    class _Message:
+        def __init__(self, content: str) -> None:
+            self.content = content
+
+        async def send(self) -> _Message:
+            return self
+
+    def on_chat_start(func):
+        return func
+
+    def on_message(func):
+        return func
+
+    def on_chat_end(func):
+        return func
+
+    stub.Message = _Message
+    stub.on_chat_start = on_chat_start
+    stub.on_message = on_message
+    stub.on_chat_end = on_chat_end
+
+    sys.modules["chainlit"] = stub
+
+
+if os.getenv("RUN_CHAINLIT_REAL") != "1":
+    _install_chainlit_stub()
 
 
 @pytest.fixture
