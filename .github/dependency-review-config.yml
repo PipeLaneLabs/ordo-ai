@@ -12,6 +12,7 @@ allow-licenses:
   - BSD-3-Clause
   - BSD-2-Clause
   - ISC
+  - MPL-2.0           # Allow pytest-rerunfailures
   - PSF-2.0           # Python Software Foundation (used by stdlib)
   - 0BSD              # Zero-Clause BSD (very permissive)
   - Unlicense         # Public domain
@@ -28,6 +29,11 @@ fail-on-scopes:
 # allow-ghsas:
 #   - GHSA-xxxx-xxxx-xxxx
 
-# Comment these packages from review (useful for known false positives)
-# allow-dependencies-licenses:
-#   - pkg:npm/example-package
+# Package-level license exceptions for dependencies with complex/unknown metadata
+allow-dependencies-licenses:
+  - pkg:pypi/aiohappyeyeballs
+  - pkg:pypi/protobuf
+  - pkg:pypi/opentelemetry-instrumentation-voyageai
+  - pkg:pypi/mcp
+  - pkg:pypi/multidict
+  - pkg:pypi/python-multipart
