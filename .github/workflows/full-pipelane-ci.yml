@@ -333,38 +333,6 @@ jobs:
       - name: Create reports directory
         run: mkdir -p reports
 
-      - name: Create Docker env file
-        run: |
-          cat <<'ENVFILE' > .env.docker
-          OPENROUTER_API_KEY=sk-fake-key-for-testing
-          GOOGLE_API_KEY=fake-google-key
-          JWT_SECRET_KEY=fake-super-secret-key-for-testing-only
-          CHAINLIT_AUTH_SECRET=fake-chainlit-secret-key-for-testing-only
-          ENVFILE
-
-      - name: Start E2E services
-        run: |
-          docker compose up -d postgres redis minio agent-api agent-ui prometheus grafana
-
-      - name: Wait for services to be healthy
-        run: |
-          for i in {1..30}; do
-            if curl -fsS http://localhost:8000/health >/dev/null 2>&1 && \
-               curl -fsS http://localhost:8080 >/dev/null 2>&1 && \
-               curl -fsS http://localhost:9000/minio/health/ready >/dev/null 2>&1 && \
-               curl -fsS http://localhost:9090/-/healthy >/dev/null 2>&1 && \
-               curl -fsS http://localhost:3000/api/health >/dev/null 2>&1; then
-              echo "All services are healthy."
-              exit 0
-            fi
-            echo "Waiting for services... ($i/30)"
-            sleep 5
-          done
-          echo "Services did not become healthy in time."
-          docker compose ps
-          docker compose logs --tail=200
-          exit 1
-
       - name: Configure git identity
         run: |
           git config --global user.email "ci@example.com"
