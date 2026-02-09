@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 
 from fastapi import APIRouter
 
+from src import __version__
 from src.api.schemas import HealthCheckResponse, HealthStatus, ReadinessCheckResponse
 from src.config import settings
 from src.observability.logging import bind_agent_context
@@ -112,7 +113,7 @@ async def health_check() -> HealthCheckResponse:
         status=HealthStatus.HEALTHY,
         timestamp=datetime.now(tz=UTC),
         services={"application": HealthStatus.HEALTHY},
-        details={"version": "0.1.0-alpha", "environment": settings.environment},
+        details={"version": __version__, "environment": settings.environment},
     )
 
     logger.debug("Basic health check completed", extra={"status": response.status})

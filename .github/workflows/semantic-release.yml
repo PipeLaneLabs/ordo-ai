@@ -1,0 +1,50 @@
+name: Semantic Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Still required for version history
+
+      # 1. Force the correct Python version
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 2. Install Poetry 2.3.1 (Pinned to match your ecosystem)
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      # 3. Install Semantic Release & Build Tools
+      # We install it directly on the runner to avoid Docker version conflicts
+      - name: Install release tools
+        run: |
+          pip install python-semantic-release build
+
+      # 4. Execute the Release
+      - name: Python Semantic Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Configure git so the tool can create the release commit
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          
+          # Run the versioning and publishing steps
+          semantic-release version
+          semantic-release publish

@@ -1,5 +1,7 @@
 from fastapi.testclient import TestClient
 
+from src import __version__
+
 
 def test_health_check(test_client: TestClient):
     """
@@ -12,7 +14,7 @@ def test_health_check(test_client: TestClient):
     assert "timestamp" in json_response
     assert "services" in json_response
     assert "details" in json_response
-    assert json_response["details"]["version"] == "0.1.0-alpha"
+    assert json_response["details"]["version"] == __version__
 
 
 def test_readiness_check(test_client: TestClient):
@@ -104,7 +106,7 @@ def test_root_endpoint(test_client: TestClient):
 
     # Test field values
     assert data["name"] == "Multi-Tier Agent Ecosystem API"
-    assert data["version"] == "0.1.0-alpha"
+    assert data["version"] == __version__
     assert data["docs"] == "/docs"
     assert data["health"] == "/health"
     assert data["metrics"] == "/metrics"

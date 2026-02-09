@@ -3,6 +3,7 @@
 import logging
 from unittest.mock import MagicMock, patch
 
+from src import __version__
 from src.observability.logging import (
     add_app_context,
     bind_agent_context,
@@ -26,7 +27,7 @@ class TestAddAppContext:
 
         assert result["service"] == "agent-api"
         assert result["environment"] is not None
-        assert result["version"] == "0.1.0-alpha"
+        assert result["version"] == __version__
         assert result["event"] == "test_event"
 
     def test_add_app_context_preserves_existing_fields(self):
