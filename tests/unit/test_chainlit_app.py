@@ -104,10 +104,18 @@ class TestChainlitApp:
     @pytest.mark.asyncio
     async def test_on_chat_start_initializes_session(self) -> None:
         """Test that on_chat_start initializes session state."""
+        class _FakeMessage:
+            def __init__(self, content: str) -> None:
+                self.content = content
+
+            async def send(self) -> _FakeMessage:
+                return self
+
         with patch("chainlit.user_session") as mock_session:
             mock_session.set = MagicMock()
 
-            await on_chat_start()
+            with patch("chainlit.Message", _FakeMessage):
+                await on_chat_start()
 
             # Verify session initialization
             assert mock_session.set.call_count >= 4

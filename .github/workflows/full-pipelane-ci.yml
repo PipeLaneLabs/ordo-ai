@@ -169,6 +169,18 @@ jobs:
 
       - name: Generate scenario map
         if: always()
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: agent_ecosystem_test
+          POSTGRES_USER: agent_user
+          POSTGRES_PASSWORD: agent_password_secure_123
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          OPENROUTER_API_KEY: "sk-fake-key-for-testing"
+          GOOGLE_API_KEY: "fake-google-key"
+          JWT_SECRET_KEY: "fake-super-secret-key-for-testing-only"
+          MINIO_SECRET_KEY: "fake-minio-key"
         run: |
           poetry run pytest tests/integration/ tests/e2e/ --collect-only -q > reports/scenario-map.txt
 
@@ -321,6 +333,38 @@ jobs:
       - name: Create reports directory
         run: mkdir -p reports
 
+      - name: Create Docker env file
+        run: |
+          cat <<'ENVFILE' > .env.docker
+          OPENROUTER_API_KEY=sk-fake-key-for-testing
+          GOOGLE_API_KEY=fake-google-key
+          JWT_SECRET_KEY=fake-super-secret-key-for-testing-only
+          CHAINLIT_AUTH_SECRET=fake-chainlit-secret-key-for-testing-only
+          ENVFILE
+
+      - name: Start E2E services
+        run: |
+          docker compose up -d postgres redis minio agent-api agent-ui prometheus grafana
+
+      - name: Wait for services to be healthy
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8000/health >/dev/null 2>&1 && \
+               curl -fsS http://localhost:8080 >/dev/null 2>&1 && \
+               curl -fsS http://localhost:9000/minio/health/ready >/dev/null 2>&1 && \
+               curl -fsS http://localhost:9090/-/healthy >/dev/null 2>&1 && \
+               curl -fsS http://localhost:3000/api/health >/dev/null 2>&1; then
+              echo "All services are healthy."
+              exit 0
+            fi
+            echo "Waiting for services... ($i/30)"
+            sleep 5
+          done
+          echo "Services did not become healthy in time."
+          docker compose ps
+          docker compose logs --tail=200
+          exit 1
+
       - name: Configure git identity
         run: |
           git config --global user.email "ci@example.com"
@@ -350,75 +394,75 @@ jobs:
             --durations=20 \
             --durations-min=0.5 2>&1 | tee reports/integration-extended-timing.txt
 
-          - name: Summarize test results
-          if: always()
-          env:
-            REPORT_DIR: reports
-          run: |
-            python - <<'PY'
-            import glob
-            import os
-            import re
-            import xml.etree.ElementTree as ET
+      - name: Summarize test results
+        if: always()
+        env:
+          REPORT_DIR: reports
+        run: |
+          python - <<'PY'
+          import glob
+          import os
+          import re
+          import xml.etree.ElementTree as ET
 
-            report_dir = os.environ.get("REPORT_DIR", "reports")
-            junit_files = sorted(glob.glob(os.path.join(report_dir, "*.xml")))
-            timing_files = sorted(glob.glob(os.path.join(report_dir, "*timing*.txt")))
-            summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+          report_dir = os.environ.get("REPORT_DIR", "reports")
+          junit_files = sorted(glob.glob(os.path.join(report_dir, "*.xml")))
+          timing_files = sorted(glob.glob(os.path.join(report_dir, "*timing*.txt")))
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
 
-            def write(line=""):
+          def write(line=""):
               with open(summary_path, "a", encoding="utf-8") as handle:
-                handle.write(line + "\n")
+                  handle.write(line + "\n")
 
-            write("## Test Summary")
+          write("## Test Summary")
 
-            failures = []
-            for junit in junit_files:
+          failures = []
+          for junit in junit_files:
               try:
-                root = ET.parse(junit).getroot()
+                  root = ET.parse(junit).getroot()
               except Exception:
-                continue
+                  continue
               for case in root.iter("testcase"):
-                classname = case.attrib.get("classname", "")
-                name = case.attrib.get("name", "")
-                for tag in ("failure", "error"):
-                  for node in case.findall(tag):
-                    msg = (node.attrib.get("message") or "").strip()
-                    failures.append((classname, name, tag, msg))
+                  classname = case.attrib.get("classname", "")
+                  name = case.attrib.get("name", "")
+                  for tag in ("failure", "error"):
+                      for node in case.findall(tag):
+                          msg = (node.attrib.get("message") or "").strip()
+                          failures.append((classname, name, tag, msg))
 
-            write("### Failures")
-            if failures:
+          write("### Failures")
+          if failures:
               for classname, name, tag, msg in failures[:10]:
-                test_name = ".".join([part for part in (classname, name) if part])
-                if msg:
-                  write(f"- {test_name} ({tag}): {msg}")
-                else:
-                  write(f"- {test_name} ({tag})")
+                  test_name = ".".join([part for part in (classname, name) if part])
+                  if msg:
+                      write(f"- {test_name} ({tag}): {msg}")
+                  else:
+                      write(f"- {test_name} ({tag})")
               if len(failures) > 10:
-                write(f"- ... and {len(failures) - 10} more")
-            else:
+                  write(f"- ... and {len(failures) - 10} more")
+          else:
               write("- None")
 
-            slow = []
-            timing_re = re.compile(r"^\s*([0-9.]+)s\s+(call|setup|teardown)\s+(.+)$")
-            for timing in timing_files:
+          slow = []
+          timing_re = re.compile(r"^\s*([0-9.]+)s\s+(call|setup|teardown)\s+(.+)$")
+          for timing in timing_files:
               try:
-                with open(timing, "r", encoding="utf-8", errors="ignore") as handle:
-                  for line in handle:
-                    match = timing_re.match(line.strip())
-                    if match:
-                      slow.append((float(match.group(1)), match.group(2), match.group(3)))
+                  with open(timing, "r", encoding="utf-8", errors="ignore") as handle:
+                      for line in handle:
+                          match = timing_re.match(line.strip())
+                          if match:
+                              slow.append((float(match.group(1)), match.group(2), match.group(3)))
               except FileNotFoundError:
-                continue
+                  continue
 
-            slow.sort(reverse=True)
-            write("### Top 10 Slow Tests")
-            if slow:
+          slow.sort(reverse=True)
+          write("### Top 10 Slow Tests")
+          if slow:
               for duration, kind, test_name in slow[:10]:
-                write(f"- {duration:.2f}s {kind} {test_name}")
-            else:
+                  write(f"- {duration:.2f}s {kind} {test_name}")
+          else:
               write("- None")
-            PY
+          PY
 
       - name: Upload integration extended reports
         if: always()
@@ -495,75 +539,75 @@ jobs:
             --durations=20 \
             --durations-min=0.5 2>&1 | tee reports/chainlit-callbacks-extended-timing.txt
 
-          - name: Summarize test results
-          if: always()
-          env:
-            REPORT_DIR: reports
-          run: |
-            python - <<'PY'
-            import glob
-            import os
-            import re
-            import xml.etree.ElementTree as ET
+      - name: Summarize test results
+        if: always()
+        env:
+          REPORT_DIR: reports
+        run: |
+          python - <<'PY'
+          import glob
+          import os
+          import re
+          import xml.etree.ElementTree as ET
 
-            report_dir = os.environ.get("REPORT_DIR", "reports")
-            junit_files = sorted(glob.glob(os.path.join(report_dir, "*.xml")))
-            timing_files = sorted(glob.glob(os.path.join(report_dir, "*timing*.txt")))
-            summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+          report_dir = os.environ.get("REPORT_DIR", "reports")
+          junit_files = sorted(glob.glob(os.path.join(report_dir, "*.xml")))
+          timing_files = sorted(glob.glob(os.path.join(report_dir, "*timing*.txt")))
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
 
-            def write(line=""):
+          def write(line=""):
               with open(summary_path, "a", encoding="utf-8") as handle:
-                handle.write(line + "\n")
+                  handle.write(line + "\n")
 
-            write("## Test Summary")
+          write("## Test Summary")
 
-            failures = []
-            for junit in junit_files:
+          failures = []
+          for junit in junit_files:
               try:
-                root = ET.parse(junit).getroot()
+                  root = ET.parse(junit).getroot()
               except Exception:
-                continue
+                  continue
               for case in root.iter("testcase"):
-                classname = case.attrib.get("classname", "")
-                name = case.attrib.get("name", "")
-                for tag in ("failure", "error"):
-                  for node in case.findall(tag):
-                    msg = (node.attrib.get("message") or "").strip()
-                    failures.append((classname, name, tag, msg))
+                  classname = case.attrib.get("classname", "")
+                  name = case.attrib.get("name", "")
+                  for tag in ("failure", "error"):
+                      for node in case.findall(tag):
+                          msg = (node.attrib.get("message") or "").strip()
+                          failures.append((classname, name, tag, msg))
 
-            write("### Failures")
-            if failures:
+          write("### Failures")
+          if failures:
               for classname, name, tag, msg in failures[:10]:
-                test_name = ".".join([part for part in (classname, name) if part])
-                if msg:
-                  write(f"- {test_name} ({tag}): {msg}")
-                else:
-                  write(f"- {test_name} ({tag})")
+                  test_name = ".".join([part for part in (classname, name) if part])
+                  if msg:
+                      write(f"- {test_name} ({tag}): {msg}")
+                  else:
+                      write(f"- {test_name} ({tag})")
               if len(failures) > 10:
-                write(f"- ... and {len(failures) - 10} more")
-            else:
+                  write(f"- ... and {len(failures) - 10} more")
+          else:
               write("- None")
 
-            slow = []
-            timing_re = re.compile(r"^\s*([0-9.]+)s\s+(call|setup|teardown)\s+(.+)$")
-            for timing in timing_files:
+          slow = []
+          timing_re = re.compile(r"^\s*([0-9.]+)s\s+(call|setup|teardown)\s+(.+)$")
+          for timing in timing_files:
               try:
-                with open(timing, "r", encoding="utf-8", errors="ignore") as handle:
-                  for line in handle:
-                    match = timing_re.match(line.strip())
-                    if match:
-                      slow.append((float(match.group(1)), match.group(2), match.group(3)))
+                  with open(timing, "r", encoding="utf-8", errors="ignore") as handle:
+                      for line in handle:
+                          match = timing_re.match(line.strip())
+                          if match:
+                              slow.append((float(match.group(1)), match.group(2), match.group(3)))
               except FileNotFoundError:
-                continue
+                  continue
 
-            slow.sort(reverse=True)
-            write("### Top 10 Slow Tests")
-            if slow:
+          slow.sort(reverse=True)
+          write("### Top 10 Slow Tests")
+          if slow:
               for duration, kind, test_name in slow[:10]:
-                write(f"- {duration:.2f}s {kind} {test_name}")
-            else:
+                  write(f"- {duration:.2f}s {kind} {test_name}")
+          else:
               write("- None")
-            PY
+          PY
 
       - name: Upload Chainlit reports
         if: always()
@@ -618,6 +662,7 @@ jobs:
           GOOGLE_API_KEY: "fake-google-key"
           JWT_SECRET_KEY: "fake-super-secret-key-for-testing-only"
           MINIO_SECRET_KEY: "fake-minio-key"
+          POSTGRES_PASSWORD: "agent_password_secure_123"
         run: |
           set -o pipefail
           poetry run pytest tests/e2e/ -v --no-cov \
@@ -627,75 +672,86 @@ jobs:
             --durations=20 \
             --durations-min=0.5 2>&1 | tee reports/e2e-timing.txt
 
-          - name: Summarize test results
-          if: always()
-          env:
-            REPORT_DIR: reports
-          run: |
-            python - <<'PY'
-            import glob
-            import os
-            import re
-            import xml.etree.ElementTree as ET
+      - name: Capture service logs on failure
+        if: failure()
+        run: |
+          docker compose ps
+          docker compose logs --tail=200
 
-            report_dir = os.environ.get("REPORT_DIR", "reports")
-            junit_files = sorted(glob.glob(os.path.join(report_dir, "*.xml")))
-            timing_files = sorted(glob.glob(os.path.join(report_dir, "*timing*.txt")))
-            summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+      - name: Stop E2E services
+        if: always()
+        run: |
+          docker compose down -v
 
-            def write(line=""):
+      - name: Summarize test results
+        if: always()
+        env:
+          REPORT_DIR: reports
+        run: |
+          python - <<'PY'
+          import glob
+          import os
+          import re
+          import xml.etree.ElementTree as ET
+
+          report_dir = os.environ.get("REPORT_DIR", "reports")
+          junit_files = sorted(glob.glob(os.path.join(report_dir, "*.xml")))
+          timing_files = sorted(glob.glob(os.path.join(report_dir, "*timing*.txt")))
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+
+          def write(line=""):
               with open(summary_path, "a", encoding="utf-8") as handle:
-                handle.write(line + "\n")
+                  handle.write(line + "\n")
 
-            write("## Test Summary")
+          write("## Test Summary")
 
-            failures = []
-            for junit in junit_files:
+          failures = []
+          for junit in junit_files:
               try:
-                root = ET.parse(junit).getroot()
+                  root = ET.parse(junit).getroot()
               except Exception:
-                continue
+                  continue
               for case in root.iter("testcase"):
-                classname = case.attrib.get("classname", "")
-                name = case.attrib.get("name", "")
-                for tag in ("failure", "error"):
-                  for node in case.findall(tag):
-                    msg = (node.attrib.get("message") or "").strip()
-                    failures.append((classname, name, tag, msg))
+                  classname = case.attrib.get("classname", "")
+                  name = case.attrib.get("name", "")
+                  for tag in ("failure", "error"):
+                      for node in case.findall(tag):
+                          msg = (node.attrib.get("message") or "").strip()
+                          failures.append((classname, name, tag, msg))
 
-            write("### Failures")
-            if failures:
+          write("### Failures")
+          if failures:
               for classname, name, tag, msg in failures[:10]:
-                test_name = ".".join([part for part in (classname, name) if part])
-                if msg:
-                  write(f"- {test_name} ({tag}): {msg}")
-                else:
-                  write(f"- {test_name} ({tag})")
+                  test_name = ".".join([part for part in (classname, name) if part])
+                  if msg:
+                      write(f"- {test_name} ({tag}): {msg}")
+                  else:
+                      write(f"- {test_name} ({tag})")
               if len(failures) > 10:
-                write(f"- ... and {len(failures) - 10} more")
-            else:
+                  write(f"- ... and {len(failures) - 10} more")
+          else:
               write("- None")
 
-            slow = []
-            timing_re = re.compile(r"^\s*([0-9.]+)s\s+(call|setup|teardown)\s+(.+)$")
-            for timing in timing_files:
+          slow = []
+          timing_re = re.compile(r"^\s*([0-9.]+)s\s+(call|setup|teardown)\s+(.+)$")
+          for timing in timing_files:
               try:
-                with open(timing, "r", encoding="utf-8", errors="ignore") as handle:
-                  for line in handle:
-                    match = timing_re.match(line.strip())
-                    if match:
-                      slow.append((float(match.group(1)), match.group(2), match.group(3)))
+                  with open(timing, "r", encoding="utf-8", errors="ignore") as handle:
+                      for line in handle:
+                          match = timing_re.match(line.strip())
+                          if match:
+                              slow.append((float(match.group(1)), match.group(2), match.group(3)))
               except FileNotFoundError:
-                continue
+                  continue
 
-            slow.sort(reverse=True)
-            write("### Top 10 Slow Tests")
-            if slow:
+          slow.sort(reverse=True)
+          write("### Top 10 Slow Tests")
+          if slow:
               for duration, kind, test_name in slow[:10]:
-                write(f"- {duration:.2f}s {kind} {test_name}")
-            else:
+                  write(f"- {duration:.2f}s {kind} {test_name}")
+          else:
               write("- None")
-            PY
+          PY
 
       - name: Upload E2E reports
         if: always()
