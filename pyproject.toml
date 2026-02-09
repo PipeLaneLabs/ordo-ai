@@ -22,13 +22,13 @@ langchain-openai = "^0.2.0"
 langchain-google-genai = "^2.0.0"
 
 # Backend Framework
-fastapi = "^0.115.0"  # Upgraded for Chainlit 2.x compatibility
-uvicorn = {extras = ["standard"], version = "^0.32.0"}  # Upgraded for Chainlit 2.x
+fastapi = "^0.116.1"  # Upgraded for Chainlit 2.9.4+ requirement
+uvicorn = {extras = ["standard"], version = "^0.35.0"}  # Upgraded for Chainlit 2.9.4+
 pydantic = "^2.10.0"
 pydantic-settings = "^2.7.0"
 
 # Frontend UI
-chainlit = "^2.0.0"  # Upgraded for Pydantic 2.10+ compatibility
+chainlit = "^2.9.4"  # Upgraded for patched SSRF fix and Pydantic 2.10+ compatibility
 
 # Database & Storage
 asyncpg = "^0.30.0"
