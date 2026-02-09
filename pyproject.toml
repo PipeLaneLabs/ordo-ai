@@ -39,7 +39,7 @@ minio = "^7.2.0"
 # Authentication & Security
 pyjwt = "^2.10.0"
 cryptography = "^44.0.0"
-python-multipart = "^0.0.18"  # Upgraded for Chainlit 2.x
+python-multipart = "^0.0.22"  # Patched for GHSA-wp53-j4wj-2cfg
 
 # Observability
 structlog = "^24.4.0"
