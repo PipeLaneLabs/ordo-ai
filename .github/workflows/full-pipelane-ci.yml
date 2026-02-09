@@ -172,7 +172,7 @@ jobs:
         run: |
           poetry run pytest tests/integration/ tests/e2e/ --collect-only -q > reports/scenario-map.txt
 
-        - name: Summarize test results
+      - name: Summarize test results
         if: always()
         env:
           REPORT_DIR: reports
@@ -189,57 +189,57 @@ jobs:
           summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
 
           def write(line=""):
-            with open(summary_path, "a", encoding="utf-8") as handle:
-              handle.write(line + "\n")
+              with open(summary_path, "a", encoding="utf-8") as handle:
+                  handle.write(line + "\n")
 
           write("## Test Summary")
 
           failures = []
           for junit in junit_files:
-            try:
-              root = ET.parse(junit).getroot()
-            except Exception:
-              continue
-            for case in root.iter("testcase"):
-              classname = case.attrib.get("classname", "")
-              name = case.attrib.get("name", "")
-              for tag in ("failure", "error"):
-                for node in case.findall(tag):
-                  msg = (node.attrib.get("message") or "").strip()
-                  failures.append((classname, name, tag, msg))
+              try:
+                  root = ET.parse(junit).getroot()
+              except Exception:
+                  continue
+              for case in root.iter("testcase"):
+                  classname = case.attrib.get("classname", "")
+                  name = case.attrib.get("name", "")
+                  for tag in ("failure", "error"):
+                      for node in case.findall(tag):
+                          msg = (node.attrib.get("message") or "").strip()
+                          failures.append((classname, name, tag, msg))
 
           write("### Failures")
           if failures:
-            for classname, name, tag, msg in failures[:10]:
-              test_name = ".".join([part for part in (classname, name) if part])
-              if msg:
-                write(f"- {test_name} ({tag}): {msg}")
-              else:
-                write(f"- {test_name} ({tag})")
-            if len(failures) > 10:
-              write(f"- ... and {len(failures) - 10} more")
+              for classname, name, tag, msg in failures[:10]:
+                  test_name = ".".join([part for part in (classname, name) if part])
+                  if msg:
+                      write(f"- {test_name} ({tag}): {msg}")
+                  else:
+                      write(f"- {test_name} ({tag})")
+              if len(failures) > 10:
+                  write(f"- ... and {len(failures) - 10} more")
           else:
-            write("- None")
+              write("- None")
 
           slow = []
           timing_re = re.compile(r"^\s*([0-9.]+)s\s+(call|setup|teardown)\s+(.+)$")
           for timing in timing_files:
-            try:
-              with open(timing, "r", encoding="utf-8", errors="ignore") as handle:
-                for line in handle:
-                  match = timing_re.match(line.strip())
-                  if match:
-                    slow.append((float(match.group(1)), match.group(2), match.group(3)))
-            except FileNotFoundError:
-              continue
+              try:
+                  with open(timing, "r", encoding="utf-8", errors="ignore") as handle:
+                      for line in handle:
+                          match = timing_re.match(line.strip())
+                          if match:
+                              slow.append((float(match.group(1)), match.group(2), match.group(3)))
+              except FileNotFoundError:
+                  continue
 
           slow.sort(reverse=True)
           write("### Top 10 Slow Tests")
           if slow:
-            for duration, kind, test_name in slow[:10]:
-              write(f"- {duration:.2f}s {kind} {test_name}")
+              for duration, kind, test_name in slow[:10]:
+                  write(f"- {duration:.2f}s {kind} {test_name}")
           else:
-            write("- None")
+              write("- None")
           PY
       
       - name: Upload coverage to Codecov
