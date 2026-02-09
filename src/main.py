@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import make_asgi_app
 
+from src import __version__
 from src.api.health import router as health_router
 from src.api.workflows import router as workflows_router
 from src.config import settings
@@ -46,7 +47,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         "application_starting",
         environment=settings.environment,
         log_level=settings.log_level,
-        version="0.1.0-alpha",
+        version=__version__,
     )
 
     # TODO (TASK-036): Initialize PostgreSQL connection pool
@@ -68,7 +69,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(
     title="Multi-Tier Agent Ecosystem",
     description="LangGraph-native multi-agent system for automated SDLC",
-    version="0.1.0-alpha",
+    version=__version__,
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
@@ -97,7 +98,7 @@ async def root() -> dict[str, str]:
     """Root endpoint with API information."""
     return {
         "name": "Multi-Tier Agent Ecosystem API",
-        "version": "0.1.0-alpha",
+        "version": __version__,
         "docs": "/docs",
         "health": "/health",
         "metrics": "/metrics",

@@ -14,6 +14,7 @@ from typing import Any
 import structlog
 from structlog.typing import EventDict, Processor
 
+from src import __version__
 from src.config import settings
 
 
@@ -33,7 +34,7 @@ def add_app_context(
     """
     event_dict["service"] = "agent-api"
     event_dict["environment"] = settings.environment
-    event_dict["version"] = "0.1.0-alpha"
+    event_dict["version"] = __version__
     return event_dict
 
 

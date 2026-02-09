@@ -24,6 +24,7 @@ from src.api.health import (
     readiness_check,
     redis_health_check,
 )
+from src import __version__
 from src.api.schemas import HealthStatus
 
 
@@ -197,7 +198,7 @@ class TestHealthCheckEndpoint:
             assert "application" in response.services
             assert response.services["application"] == HealthStatus.HEALTHY
             assert "version" in response.details
-            assert response.details["version"] == "0.1.0-alpha"
+            assert response.details["version"] == __version__
 
     @pytest.mark.asyncio
     async def test_health_check_response_structure(self):

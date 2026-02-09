@@ -1,6 +1,6 @@
 [project]
 name = "multi-tier-agent-ecosystem"
-version = "0.1.0-alpha"
+version = "0.1.0-alpha.1"
 description = "A production-ready, LangGraph-native multi-agent system for automated software development lifecycle"
 authors = [
     {name = "Harman"}
@@ -263,7 +263,7 @@ skips = ["B608"]
 # ============================================================================
 
 [tool.semantic_release]
-version_toml = ["pyproject.toml:tool.poetry.version"]
+version_toml = ["pyproject.toml:project.version"]
 version_variables = [
     "src/__init__.py:__version__",  # Optional: checks if you have a version in src
 ]
