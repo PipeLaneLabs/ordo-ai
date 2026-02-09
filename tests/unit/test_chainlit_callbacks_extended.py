@@ -10,7 +10,7 @@ import os
 import sys
 from datetime import UTC, datetime
 from types import ModuleType
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -50,10 +50,13 @@ if os.getenv("RUN_CHAINLIT_REAL") != "1":
 
 
 @pytest.fixture
-def mock_chainlit():
+def mock_chainlit(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     """Create mock chainlit module."""
-    with patch("src.chainlit_app.callbacks.cl") as mock_cl:
-        yield mock_cl
+    import src.chainlit_app.callbacks as callbacks
+
+    mock_cl = MagicMock()
+    monkeypatch.setattr(callbacks, "cl", mock_cl)
+    return mock_cl
 
 
 class TestMessageCallbacks:

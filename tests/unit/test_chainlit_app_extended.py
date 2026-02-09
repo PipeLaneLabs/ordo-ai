@@ -82,10 +82,13 @@ if os.getenv("RUN_CHAINLIT_REAL") != "1":
 
 
 @pytest.fixture
-def mock_chainlit():
+def mock_chainlit(monkeypatch: pytest.MonkeyPatch) -> MagicMock:
     """Create mock chainlit module."""
-    with patch("src.chainlit_app.app.cl") as mock_cl:
-        yield mock_cl
+    import src.chainlit_app.app as app
+
+    mock_cl = MagicMock()
+    monkeypatch.setattr(app, "cl", mock_cl)
+    return mock_cl
 
 
 class TestChatSessionInitialization:

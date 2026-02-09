@@ -649,6 +649,14 @@ jobs:
       - name: Stop E2E services
         if: always()
         run: |
+          if [ ! -f .env.docker ]; then
+            cat <<'ENVFILE' > .env.docker
+            OPENROUTER_API_KEY=sk-fake-key-for-testing
+            GOOGLE_API_KEY=fake-google-key
+            JWT_SECRET_KEY=fake-super-secret-key-for-testing-only
+            CHAINLIT_AUTH_SECRET=fake-chainlit-secret-key-for-testing-only
+            ENVFILE
+          fi
           docker compose down -v
 
       - name: Summarize test results
