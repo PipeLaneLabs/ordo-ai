@@ -104,6 +104,7 @@ class TestChainlitApp:
     @pytest.mark.asyncio
     async def test_on_chat_start_initializes_session(self) -> None:
         """Test that on_chat_start initializes session state."""
+
         class _FakeMessage:
             def __init__(self, content: str) -> None:
                 self.content = content

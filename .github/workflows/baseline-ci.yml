@@ -167,6 +167,18 @@ jobs:
 
       - name: Generate scenario map
         if: always()
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_DB: agent_ecosystem_test
+          POSTGRES_USER: agent_user
+          POSTGRES_PASSWORD: agent_password_secure_123
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          OPENROUTER_API_KEY: "sk-fake-key-for-testing"
+          GOOGLE_API_KEY: "fake-google-key"
+          JWT_SECRET_KEY: "fake-super-secret-key-for-testing-only"
+          MINIO_SECRET_KEY: "fake-minio-key"
         run: |
           poetry run pytest tests/integration/ --collect-only -q > reports/scenario-map.txt
 
