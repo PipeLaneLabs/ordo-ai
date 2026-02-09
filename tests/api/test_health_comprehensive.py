@@ -14,6 +14,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from src import __version__
 from src.api.health import (
     check_minio_health,
     check_postgres_health,
@@ -24,7 +25,6 @@ from src.api.health import (
     readiness_check,
     redis_health_check,
 )
-from src import __version__
 from src.api.schemas import HealthStatus
 
 
