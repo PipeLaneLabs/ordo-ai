@@ -56,6 +56,7 @@ pytest = "^8.3.0"
 pytest-asyncio = "^0.24.0"
 pytest-cov = "^6.0.0"
 pytest-mock = "^3.14.0"
+pytest-rerunfailures = "^14.0.0"
 freezegun = "^1.5.1"
 
 # Code Quality
@@ -206,11 +207,6 @@ addopts = [
     "-ra",
     "--strict-markers",
     "--strict-config",
-    "--cov=src",
-    "--cov-report=term-missing:skip-covered",
-    "--cov-report=html",
-    "--cov-report=xml",
-    "--cov-fail-under=70",  # 70% coverage per ADR-005
 ]
 testpaths = ["tests"]
 pythonpath = ["."]

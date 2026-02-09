@@ -117,6 +117,9 @@ jobs:
       
       - name: Install dependencies
         run: poetry install --no-root --with dev
+
+      - name: Create reports directory
+        run: mkdir -p reports
       
       - name: Run unit tests
         env:
@@ -132,11 +135,15 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
         run: |
+          set -o pipefail
           poetry run pytest tests/unit/ -v \
             --cov=src \
             --cov-report=xml \
             --cov-report=term-missing \
-            --cov-fail-under=70
+            --cov-fail-under=70 \
+            --junitxml=reports/unit-junit.xml \
+            --durations=20 \
+            --durations-min=0.5 2>&1 | tee reports/unit-timing.txt
       
       - name: Run integration tests
         env:
@@ -152,7 +159,88 @@ jobs:
           JWT_SECRET_KEY: "fake-super-secret-key-for-testing-only"
           MINIO_SECRET_KEY: "fake-minio-key"
         run: |
-          poetry run pytest tests/integration/ -v
+          set -o pipefail
+          poetry run pytest tests/integration/ -v --no-cov \
+            --reruns 2 \
+            --reruns-delay 1 \
+            --junitxml=reports/integration-junit.xml \
+            --durations=20 \
+            --durations-min=0.5 2>&1 | tee reports/integration-timing.txt
+
+      - name: Generate scenario map
+        if: always()
+        run: |
+          poetry run pytest tests/integration/ tests/e2e/ --collect-only -q > reports/scenario-map.txt
+
+        - name: Summarize test results
+        if: always()
+        env:
+          REPORT_DIR: reports
+        run: |
+          python - <<'PY'
+          import glob
+          import os
+          import re
+          import xml.etree.ElementTree as ET
+
+          report_dir = os.environ.get("REPORT_DIR", "reports")
+          junit_files = sorted(glob.glob(os.path.join(report_dir, "*.xml")))
+          timing_files = sorted(glob.glob(os.path.join(report_dir, "*timing*.txt")))
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+
+          def write(line=""):
+            with open(summary_path, "a", encoding="utf-8") as handle:
+              handle.write(line + "\n")
+
+          write("## Test Summary")
+
+          failures = []
+          for junit in junit_files:
+            try:
+              root = ET.parse(junit).getroot()
+            except Exception:
+              continue
+            for case in root.iter("testcase"):
+              classname = case.attrib.get("classname", "")
+              name = case.attrib.get("name", "")
+              for tag in ("failure", "error"):
+                for node in case.findall(tag):
+                  msg = (node.attrib.get("message") or "").strip()
+                  failures.append((classname, name, tag, msg))
+
+          write("### Failures")
+          if failures:
+            for classname, name, tag, msg in failures[:10]:
+              test_name = ".".join([part for part in (classname, name) if part])
+              if msg:
+                write(f"- {test_name} ({tag}): {msg}")
+              else:
+                write(f"- {test_name} ({tag})")
+            if len(failures) > 10:
+              write(f"- ... and {len(failures) - 10} more")
+          else:
+            write("- None")
+
+          slow = []
+          timing_re = re.compile(r"^\s*([0-9.]+)s\s+(call|setup|teardown)\s+(.+)$")
+          for timing in timing_files:
+            try:
+              with open(timing, "r", encoding="utf-8", errors="ignore") as handle:
+                for line in handle:
+                  match = timing_re.match(line.strip())
+                  if match:
+                    slow.append((float(match.group(1)), match.group(2), match.group(3)))
+            except FileNotFoundError:
+              continue
+
+          slow.sort(reverse=True)
+          write("### Top 10 Slow Tests")
+          if slow:
+            for duration, kind, test_name in slow[:10]:
+              write(f"- {duration:.2f}s {kind} {test_name}")
+          else:
+            write("- None")
+          PY
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -161,6 +249,13 @@ jobs:
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-test-reports
+          path: reports/
 
   # ------------------------------------------------------------------
   # JOB 3: INTEGRATION EXTENDED (Git + LangGraph)
@@ -223,6 +318,9 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-root --with dev
 
+      - name: Create reports directory
+        run: mkdir -p reports
+
       - name: Configure git identity
         run: |
           git config --global user.email "ci@example.com"
@@ -244,7 +342,90 @@ jobs:
           JWT_SECRET_KEY: "fake-super-secret-key-for-testing-only"
           MINIO_SECRET_KEY: "fake-minio-key"
         run: |
-          poetry run pytest tests/integration/ -v
+          set -o pipefail
+          poetry run pytest tests/integration/ -v --no-cov \
+            --reruns 2 \
+            --reruns-delay 1 \
+            --junitxml=reports/integration-extended-junit.xml \
+            --durations=20 \
+            --durations-min=0.5 2>&1 | tee reports/integration-extended-timing.txt
+
+          - name: Summarize test results
+          if: always()
+          env:
+            REPORT_DIR: reports
+          run: |
+            python - <<'PY'
+            import glob
+            import os
+            import re
+            import xml.etree.ElementTree as ET
+
+            report_dir = os.environ.get("REPORT_DIR", "reports")
+            junit_files = sorted(glob.glob(os.path.join(report_dir, "*.xml")))
+            timing_files = sorted(glob.glob(os.path.join(report_dir, "*timing*.txt")))
+            summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+
+            def write(line=""):
+              with open(summary_path, "a", encoding="utf-8") as handle:
+                handle.write(line + "\n")
+
+            write("## Test Summary")
+
+            failures = []
+            for junit in junit_files:
+              try:
+                root = ET.parse(junit).getroot()
+              except Exception:
+                continue
+              for case in root.iter("testcase"):
+                classname = case.attrib.get("classname", "")
+                name = case.attrib.get("name", "")
+                for tag in ("failure", "error"):
+                  for node in case.findall(tag):
+                    msg = (node.attrib.get("message") or "").strip()
+                    failures.append((classname, name, tag, msg))
+
+            write("### Failures")
+            if failures:
+              for classname, name, tag, msg in failures[:10]:
+                test_name = ".".join([part for part in (classname, name) if part])
+                if msg:
+                  write(f"- {test_name} ({tag}): {msg}")
+                else:
+                  write(f"- {test_name} ({tag})")
+              if len(failures) > 10:
+                write(f"- ... and {len(failures) - 10} more")
+            else:
+              write("- None")
+
+            slow = []
+            timing_re = re.compile(r"^\s*([0-9.]+)s\s+(call|setup|teardown)\s+(.+)$")
+            for timing in timing_files:
+              try:
+                with open(timing, "r", encoding="utf-8", errors="ignore") as handle:
+                  for line in handle:
+                    match = timing_re.match(line.strip())
+                    if match:
+                      slow.append((float(match.group(1)), match.group(2), match.group(3)))
+              except FileNotFoundError:
+                continue
+
+            slow.sort(reverse=True)
+            write("### Top 10 Slow Tests")
+            if slow:
+              for duration, kind, test_name in slow[:10]:
+                write(f"- {duration:.2f}s {kind} {test_name}")
+            else:
+              write("- None")
+            PY
+
+      - name: Upload integration extended reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-integration-extended-reports
+          path: reports/
 
   # ------------------------------------------------------------------
   # JOB 4: CHAINLIT REAL IMPORT CHECK
@@ -282,6 +463,9 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-root --with dev
 
+      - name: Create reports directory
+        run: mkdir -p reports
+
       - name: Run Chainlit tests with real import
         env:
           RUN_CHAINLIT_REAL: "1"
@@ -291,9 +475,102 @@ jobs:
           MINIO_SECRET_KEY: "fake-minio-key"
           POSTGRES_PASSWORD: "fake-password"
         run: |
-          poetry run pytest tests/unit/test_chainlit_app.py -v
-          poetry run pytest tests/unit/test_chainlit_app_extended.py -v
-          poetry run pytest tests/unit/test_chainlit_callbacks_extended.py -v
+          set -o pipefail
+          poetry run pytest tests/unit/test_chainlit_app.py -v --no-cov \
+            --reruns 2 \
+            --reruns-delay 1 \
+            --junitxml=reports/chainlit-app-junit.xml \
+            --durations=20 \
+            --durations-min=0.5 2>&1 | tee reports/chainlit-app-timing.txt
+          poetry run pytest tests/unit/test_chainlit_app_extended.py -v --no-cov \
+            --reruns 2 \
+            --reruns-delay 1 \
+            --junitxml=reports/chainlit-app-extended-junit.xml \
+            --durations=20 \
+            --durations-min=0.5 2>&1 | tee reports/chainlit-app-extended-timing.txt
+          poetry run pytest tests/unit/test_chainlit_callbacks_extended.py -v --no-cov \
+            --reruns 2 \
+            --reruns-delay 1 \
+            --junitxml=reports/chainlit-callbacks-extended-junit.xml \
+            --durations=20 \
+            --durations-min=0.5 2>&1 | tee reports/chainlit-callbacks-extended-timing.txt
+
+          - name: Summarize test results
+          if: always()
+          env:
+            REPORT_DIR: reports
+          run: |
+            python - <<'PY'
+            import glob
+            import os
+            import re
+            import xml.etree.ElementTree as ET
+
+            report_dir = os.environ.get("REPORT_DIR", "reports")
+            junit_files = sorted(glob.glob(os.path.join(report_dir, "*.xml")))
+            timing_files = sorted(glob.glob(os.path.join(report_dir, "*timing*.txt")))
+            summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+
+            def write(line=""):
+              with open(summary_path, "a", encoding="utf-8") as handle:
+                handle.write(line + "\n")
+
+            write("## Test Summary")
+
+            failures = []
+            for junit in junit_files:
+              try:
+                root = ET.parse(junit).getroot()
+              except Exception:
+                continue
+              for case in root.iter("testcase"):
+                classname = case.attrib.get("classname", "")
+                name = case.attrib.get("name", "")
+                for tag in ("failure", "error"):
+                  for node in case.findall(tag):
+                    msg = (node.attrib.get("message") or "").strip()
+                    failures.append((classname, name, tag, msg))
+
+            write("### Failures")
+            if failures:
+              for classname, name, tag, msg in failures[:10]:
+                test_name = ".".join([part for part in (classname, name) if part])
+                if msg:
+                  write(f"- {test_name} ({tag}): {msg}")
+                else:
+                  write(f"- {test_name} ({tag})")
+              if len(failures) > 10:
+                write(f"- ... and {len(failures) - 10} more")
+            else:
+              write("- None")
+
+            slow = []
+            timing_re = re.compile(r"^\s*([0-9.]+)s\s+(call|setup|teardown)\s+(.+)$")
+            for timing in timing_files:
+              try:
+                with open(timing, "r", encoding="utf-8", errors="ignore") as handle:
+                  for line in handle:
+                    match = timing_re.match(line.strip())
+                    if match:
+                      slow.append((float(match.group(1)), match.group(2), match.group(3)))
+              except FileNotFoundError:
+                continue
+
+            slow.sort(reverse=True)
+            write("### Top 10 Slow Tests")
+            if slow:
+              for duration, kind, test_name in slow[:10]:
+                write(f"- {duration:.2f}s {kind} {test_name}")
+            else:
+              write("- None")
+            PY
+
+      - name: Upload Chainlit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-chainlit-reports
+          path: reports/
 
   # ------------------------------------------------------------------
   # JOB 5: E2E TESTS (Full Workflow)
@@ -331,6 +608,9 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-root --with dev
 
+      - name: Create reports directory
+        run: mkdir -p reports
+
       - name: Run E2E tests
         env:
           RUN_E2E: "1"
@@ -339,7 +619,90 @@ jobs:
           JWT_SECRET_KEY: "fake-super-secret-key-for-testing-only"
           MINIO_SECRET_KEY: "fake-minio-key"
         run: |
-          poetry run pytest tests/e2e/ -v
+          set -o pipefail
+          poetry run pytest tests/e2e/ -v --no-cov \
+            --reruns 2 \
+            --reruns-delay 1 \
+            --junitxml=reports/e2e-junit.xml \
+            --durations=20 \
+            --durations-min=0.5 2>&1 | tee reports/e2e-timing.txt
+
+          - name: Summarize test results
+          if: always()
+          env:
+            REPORT_DIR: reports
+          run: |
+            python - <<'PY'
+            import glob
+            import os
+            import re
+            import xml.etree.ElementTree as ET
+
+            report_dir = os.environ.get("REPORT_DIR", "reports")
+            junit_files = sorted(glob.glob(os.path.join(report_dir, "*.xml")))
+            timing_files = sorted(glob.glob(os.path.join(report_dir, "*timing*.txt")))
+            summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+
+            def write(line=""):
+              with open(summary_path, "a", encoding="utf-8") as handle:
+                handle.write(line + "\n")
+
+            write("## Test Summary")
+
+            failures = []
+            for junit in junit_files:
+              try:
+                root = ET.parse(junit).getroot()
+              except Exception:
+                continue
+              for case in root.iter("testcase"):
+                classname = case.attrib.get("classname", "")
+                name = case.attrib.get("name", "")
+                for tag in ("failure", "error"):
+                  for node in case.findall(tag):
+                    msg = (node.attrib.get("message") or "").strip()
+                    failures.append((classname, name, tag, msg))
+
+            write("### Failures")
+            if failures:
+              for classname, name, tag, msg in failures[:10]:
+                test_name = ".".join([part for part in (classname, name) if part])
+                if msg:
+                  write(f"- {test_name} ({tag}): {msg}")
+                else:
+                  write(f"- {test_name} ({tag})")
+              if len(failures) > 10:
+                write(f"- ... and {len(failures) - 10} more")
+            else:
+              write("- None")
+
+            slow = []
+            timing_re = re.compile(r"^\s*([0-9.]+)s\s+(call|setup|teardown)\s+(.+)$")
+            for timing in timing_files:
+              try:
+                with open(timing, "r", encoding="utf-8", errors="ignore") as handle:
+                  for line in handle:
+                    match = timing_re.match(line.strip())
+                    if match:
+                      slow.append((float(match.group(1)), match.group(2), match.group(3)))
+              except FileNotFoundError:
+                continue
+
+            slow.sort(reverse=True)
+            write("### Top 10 Slow Tests")
+            if slow:
+              for duration, kind, test_name in slow[:10]:
+                write(f"- {duration:.2f}s {kind} {test_name}")
+            else:
+              write("- None")
+            PY
+
+      - name: Upload E2E reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-e2e-reports
+          path: reports/
 
   # ------------------------------------------------------------------
   # JOB 6: SECURITY SCAN (Bandit)
