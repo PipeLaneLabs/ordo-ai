@@ -7,9 +7,25 @@ on:
   pull_request:
     branches: [main, develop]
   push:
-    branches: ['feature/**', 'task/**']
+    branches: ['feat/**', 'fix/**', 'chore/**']
 
 jobs:
+
+  # ------------------------------------------------------------------
+  # JOB 0: COMMIT LINT (The Gatekeeper)
+  # ------------------------------------------------------------------
+  commit-lint:
+    runs-on: ubuntu-latest
+    name: Lint Commit Messages
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check Commit Messages
+        uses: wagoid/commitlint-github-action@v6
+        with:
+          configFile: .commitlintrc.yaml
+
   # ------------------------------------------------------------------
   # JOB 1: CODE QUALITY (Ruff, Black, MyPy)
   # ------------------------------------------------------------------

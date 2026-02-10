@@ -273,6 +273,11 @@ upload_to_release = true
 build_command = "pip install poetry && poetry build"
 commit_message = "chore(release): {version} [skip ci]"
 
+# Allow semantic-release to operate on release branches
+[tool.semantic_release.branches.release]
+match = "^release/.*"
+prerelease = false
+
 [tool.semantic_release.changelog]
 exclude_commit_patterns = [
     "chore(release):",

@@ -3,6 +3,7 @@ updates:
   # Poetry dependencies
   - package-ecosystem: "pip"
     directory: "/"
+    target-branch: "develop"  # Protect main: all deps merge to develop first
     schedule:
       interval: "daily"
       day: "monday"
