@@ -264,7 +264,7 @@ jobs:
 
       - name: Upload test reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: full-test-reports
           path: reports/
@@ -434,7 +434,7 @@ jobs:
 
       - name: Upload integration extended reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: full-integration-extended-reports
           path: reports/
@@ -579,7 +579,7 @@ jobs:
 
       - name: Upload Chainlit reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: full-chainlit-reports
           path: reports/
@@ -731,7 +731,7 @@ jobs:
 
       - name: Upload E2E reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: full-e2e-reports
           path: reports/
@@ -787,7 +787,7 @@ jobs:
       
       - name: Upload Bandit report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: bandit-security-report
           path: bandit-report.json

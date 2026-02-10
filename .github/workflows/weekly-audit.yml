@@ -70,7 +70,7 @@ jobs:
       
       - name: Upload vulnerability reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: vulnerability-reports-${{ github.run_number }}
           path: |
@@ -115,7 +115,7 @@ jobs:
           python-version: '3.12'
       
       - name: Upload SBOM artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sbom-${{ github.run_number }}
           path: |
@@ -194,7 +194,7 @@ jobs:
           EOF
       
       - name: Upload license reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: license-reports-${{ github.run_number }}
           path: |
@@ -258,7 +258,7 @@ jobs:
           poetry run radon mi src/
       
       - name: Upload metrics reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: code-metrics-${{ github.run_number }}
           path: |
