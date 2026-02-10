@@ -279,3 +279,7 @@ exclude_commit_patterns = [
     "chore(deps):",
     "ci:",
 ]
+
+[tool.semantic_release.changelog.default_templates]
+changelog_file = "CHANGELOG.md"
+output_format = "md"
