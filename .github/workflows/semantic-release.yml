@@ -1,16 +1,13 @@
-name: Semantic Release
+name: Semantic Release PR
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
-  release:
+  release-pr:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      issues: write
       pull-requests: write
 
     steps:
@@ -31,20 +28,28 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       # 3. Install Semantic Release & Build Tools
-      # We install it directly on the runner to avoid Docker version conflicts
       - name: Install release tools
         run: |
           pip install python-semantic-release build
 
-      # 4. Execute the Release
-      - name: Python Semantic Release
+      # 4. Create a release PR (no direct push to main)
+      - name: Create release PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Configure git so the tool can create the release commit
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          
-          # Run the versioning and publishing steps
-          semantic-release version
-          semantic-release publish
+
+          NEXT_VERSION=$(semantic-release version --print)
+          RELEASE_BRANCH="release/v${NEXT_VERSION}"
+
+          git checkout -b "$RELEASE_BRANCH"
+          semantic-release version --no-push --no-vcs-release --no-tag --skip-build
+
+          git push origin "$RELEASE_BRANCH"
+
+          gh pr create \
+            --title "chore(release): v${NEXT_VERSION}" \
+            --body "Automated release PR for v${NEXT_VERSION}." \
+            --base main \
+            --head "$RELEASE_BRANCH"
