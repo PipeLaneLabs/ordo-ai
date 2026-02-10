@@ -18,7 +18,7 @@ jobs:
     name: Code Quality Checks
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Set up Python 3.12
         uses: actions/setup-python@v4
@@ -88,7 +88,7 @@ jobs:
           - 6379:6379
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Set up Python 3.12
         uses: actions/setup-python@v4
@@ -275,7 +275,7 @@ jobs:
     name: Security Scans (Bandit)
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Set up Python 3.12
         uses: actions/setup-python@v4
