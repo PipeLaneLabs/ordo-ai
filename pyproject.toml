@@ -265,18 +265,33 @@ skips = ["B608"]
 [tool.semantic_release]
 version_toml = ["pyproject.toml:project.version"]
 version_variables = [
-    "src/__init__.py:__version__",  # Optional: checks if you have a version in src
+    "src/__init__.py:__version__",
 ]
-branch = "main"
 upload_to_pypi = false            # We use Docker/GHCR instead of PyPI
 upload_to_release = true
 build_command = "pip install poetry && poetry build"
 commit_message = "chore(release): {version} [skip ci]"
 
-# Allow semantic-release to operate on release branches
-[tool.semantic_release.branches.release]
-match = "^release/.*"
+# ------------------------------------------------------------------
+# 🌳 THREE-TIER PROMOTION STRATEGY (Alpha → Beta → Production)
+# ------------------------------------------------------------------
+
+# Tier 1: Main (Production) -> v1.0.0
+[tool.semantic_release.branches.main]
+match = "main"
 prerelease = false
+
+# Tier 2: Staging (Beta) -> v1.0.0-beta.1
+[tool.semantic_release.branches.staging]
+match = "staging"
+prerelease = true
+prerelease_token = "beta"
+
+# Tier 3: Develop (Alpha) -> v1.0.0-alpha.1
+[tool.semantic_release.branches.develop]
+match = "develop"
+prerelease = true
+prerelease_token = "alpha"
 
 [tool.semantic_release.changelog]
 exclude_commit_patterns = [
