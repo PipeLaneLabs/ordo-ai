@@ -22,9 +22,19 @@ jobs:
       id-token: write
       contents: write
     steps:
+      # --- SURGICAL ADDITION: GENERATE BOT TOKEN ---
+      - name: Generate Bot Token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+
+      # --- UPDATED: USE BOT TOKEN FOR CHECKOUT ---
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ steps.generate_token.outputs.token }}
       
       - uses: actions/setup-python@v5
         with:
@@ -40,9 +50,12 @@ jobs:
       
       - name: Python Semantic Release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # --- UPDATED: USE BOT TOKEN TO BYPASS RULESET ---
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          # --- UPDATED: BOT IDENTITY FOR AUDIT LOGS ---
+          git config user.name "ordo-ai-factory-bot[bot]"
+          git config user.email "ordo-ai-factory-bot[bot]@users.noreply.github.com"
+          
           semantic-release version
           semantic-release publish
