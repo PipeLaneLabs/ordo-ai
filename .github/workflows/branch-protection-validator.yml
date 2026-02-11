@@ -1,0 +1,86 @@
+# ==========================================================
+# 🛡️ BRANCH PROTECTION VALIDATOR
+# ==========================================================
+# Enforces Three-Tier Promotion flow:
+# - Features → develop (via PR)
+# - develop → staging (via PR)
+# - staging → main (via PR)
+# ==========================================================
+name: Branch Protection Validator
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main, staging, develop]
+
+jobs:
+  validate-promotion-path:
+    runs-on: ubuntu-latest
+    name: Validate Branch Promotion Path
+    
+    steps:
+      - name: Validate PR to main comes from staging
+        if: github.base_ref == 'main'
+        run: |
+          echo "🔍 Validating PR to main..."
+          if [ "${{ github.head_ref }}" != "staging" ]; then
+            echo "❌ ERROR: PRs to 'main' must come from 'staging' branch"
+            echo "Current PR is from: ${{ github.head_ref }}"
+            echo ""
+            echo "✅ Correct flow: staging → main"
+            echo "❌ Invalid flow: ${{ github.head_ref }} → main"
+            exit 1
+          fi
+          echo "✅ Valid promotion path: staging → main"
+      
+      - name: Validate PR to staging comes from develop
+        if: github.base_ref == 'staging'
+        run: |
+          echo "🔍 Validating PR to staging..."
+          if [ "${{ github.head_ref }}" != "develop" ]; then
+            echo "❌ ERROR: PRs to 'staging' must come from 'develop' branch"
+            echo "Current PR is from: ${{ github.head_ref }}"
+            echo ""
+            echo "✅ Correct flow: develop → staging"
+            echo "❌ Invalid flow: ${{ github.head_ref }} → staging"
+            exit 1
+          fi
+          echo "✅ Valid promotion path: develop → staging"
+      
+      - name: Validate PR to develop comes from feature branches
+        if: github.base_ref == 'develop'
+        run: |
+          echo "🔍 Validating PR to develop..."
+          BRANCH="${{ github.head_ref }}"
+          
+          # Check if branch follows feature naming convention
+          if [[ ! "$BRANCH" =~ ^(feat|fix|chore)/ ]]; then
+            echo "❌ ERROR: PRs to 'develop' must come from feat/, fix/, or chore/ branches"
+            echo "Current PR is from: $BRANCH"
+            echo ""
+            echo "✅ Correct naming: feat/*, fix/*, chore/*"
+            echo "❌ Invalid branch: $BRANCH"
+            exit 1
+          fi
+          echo "✅ Valid feature branch: $BRANCH → develop"
+      
+      - name: Display Three-Tier Promotion Flow
+        if: always()
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📋 THREE-TIER PROMOTION STRATEGY"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "Tier 1: feat/*, fix/*, chore/*  →  develop (Alpha)"
+          echo "        ├─ Version: v1.0.0-alpha.X"
+          echo "        └─ Tests: Unit + Integration"
+          echo ""
+          echo "Tier 2: develop  →  staging (Beta)"
+          echo "        ├─ Version: v1.0.0-beta.X"
+          echo "        └─ Tests: E2E + Performance"
+          echo ""
+          echo "Tier 3: staging  →  main (Production)"
+          echo "        ├─ Version: v1.0.0"
+          echo "        └─ Tests: Final Sanity Checks"
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
