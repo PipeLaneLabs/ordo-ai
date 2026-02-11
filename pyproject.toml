@@ -1,6 +1,6 @@
 [project]
 name = "multi-tier-agent-ecosystem"
-version = "0.1.0-alpha.1"
+version = "1.0.0-alpha.1"
 description = "A production-ready, LangGraph-native multi-agent system for automated software development lifecycle"
 authors = [
     {name = "Harman"}
@@ -259,18 +259,22 @@ directory = "htmlcov"
 skips = ["B608"]
 
 # ============================================================================
-# RELEASE AUTOMATION CONFIGURATION (Added for Phase 3)
+# RELEASE AUTOMATION CONFIGURATION (Tag-Only Strategy)
 # ============================================================================
 
 [tool.semantic_release]
 version_toml = ["pyproject.toml:project.version"]
-version_variables = [
-    "src/__init__.py:__version__",
-]
-upload_to_pypi = false            # We use Docker/GHCR instead of PyPI
+version_variables = ["src/__init__.py:__version__"]
+
+# --- PLATINUM FIX: DISABLE COMMITS TO PREVENT CONFLICTS ---
+commit = false                   # Do not push changes to pyproject.toml/CHANGELOG
+tag = true                       # Create a Git Tag (this is our version of truth)
+push = true                      # Push the tag to GitHub
+# ----------------------------------------------------------
+
+upload_to_pypi = false           # We use Docker/GHCR instead of PyPI
 upload_to_release = true
 build_command = "pip install poetry && poetry build"
-commit_message = "chore(release): {version} [skip ci]"
 
 # ------------------------------------------------------------------
 # 🌳 THREE-TIER PROMOTION STRATEGY (Alpha → Beta → Production)
