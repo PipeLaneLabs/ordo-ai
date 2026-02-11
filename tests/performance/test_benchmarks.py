@@ -5,8 +5,9 @@ Run with: pytest tests/performance/ --benchmark-json=results.json
 """
 
 import os
+from unittest.mock import AsyncMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock
 
 
 # Skip performance tests unless explicitly enabled
