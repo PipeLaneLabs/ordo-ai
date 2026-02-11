@@ -4,7 +4,7 @@
 name: Security Gate (PR Blocker)
 on:
   pull_request:
-    branches: [main, develop]
+    branches: [main, staging, develop]
     types: [opened, synchronize, reopened] # Runs when PR is made or updated
 
 permissions:

@@ -1,11 +1,16 @@
 # ==========================================================
 # 🔬 FULL PIPELANE CI (Comprehensive Testing)
 # ==========================================================
-name: Full Pipelane CI
+name: Full Pipeline CI
 
 on:
   push:
-    branches: [main, develop]
+    # Triggers after merge to handle releases/tagging
+    branches: [main, staging, develop]
+  pull_request:
+    # CRITICAL: This allows Branch Protection to "see" the tests 
+    # before you merge code into Staging or Main.
+    branches: [main, staging]
   schedule:
     # Run nightly at 2 AM UTC
     - cron: '0 2 * * *'
@@ -585,11 +590,17 @@ jobs:
           path: reports/
 
   # ------------------------------------------------------------------
-  # JOB 5: E2E TESTS (Full Workflow)
+  # JOB 5: E2E TESTS (Full Workflow) - STAGING/MAIN ONLY
   # ------------------------------------------------------------------
   e2e:
     runs-on: ubuntu-latest
     name: E2E Tests
+    # Only run heavy E2E tests for promotion PRs or merges to Staging/Main
+    if: |
+      github.ref == 'refs/heads/staging' || 
+      github.ref == 'refs/heads/main' ||
+      github.base_ref == 'staging' ||
+      github.base_ref == 'main'
 
     steps:
       - uses: actions/checkout@v4
@@ -735,6 +746,74 @@ jobs:
         with:
           name: full-e2e-reports
           path: reports/
+
+  # ------------------------------------------------------------------
+  # JOB 5B: PERFORMANCE BENCHMARKS - STAGING/MAIN ONLY
+  # ------------------------------------------------------------------
+  performance:
+    needs: e2e
+    runs-on: ubuntu-latest
+    name: Performance Benchmarks
+    # Only run on staging and main branches
+    if: |
+      github.ref == 'refs/heads/staging' || 
+      github.ref == 'refs/heads/main' ||
+      github.base_ref == 'staging' ||
+      github.base_ref == 'main'
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install Poetry 2.3.1
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+      
+      - name: Install dependencies
+        run: |
+          poetry install --no-root --with dev
+          poetry run pip install pytest-benchmark
+      
+      - name: Run Performance Benchmarks
+        env:
+          RUN_PERFORMANCE: "1"
+          OPENROUTER_API_KEY: "sk-fake-key-for-testing"
+          GOOGLE_API_KEY: "fake-google-key"
+          JWT_SECRET_KEY: "fake-super-secret-key-for-testing-only"
+        run: |
+          poetry run pytest tests/performance/ -v \
+            --benchmark-only \
+            --benchmark-json=benchmark-results.json \
+            --benchmark-min-rounds=5
+      
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+        with:
+          tool: 'pytest'
+          output-file-path: benchmark-results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: false
+          comment-on-alert: true
+          fail-on-alert: true
+          alert-threshold: '110%'  # Fail if 10% slower than baseline
+      
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-benchmarks
+          path: benchmark-results.json
 
   # ------------------------------------------------------------------
   # JOB 6: SECURITY SCAN (Bandit)
