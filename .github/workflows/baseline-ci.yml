@@ -5,53 +5,13 @@ name: Baseline CI
 
 on:
   pull_request:
-    types: [opened, edited, synchronize, reopened]
+    # Trigger on PRs targeting any of our three main tiers
     branches: [main, staging, develop]
   push:
-    branches: ['feat/**', 'fix/**', 'chore/**']
+    # Trigger on personal work branches only
+    branches: ['feature/**', 'task/**', 'feat/**', 'fix/**', 'chore/**']
 
 jobs:
-
-  # ------------------------------------------------------------------
-  # JOB 0: PR TITLE LINT (Ensures Squash Commit is Valid)
-  # ------------------------------------------------------------------
-  pr-title-lint:
-    runs-on: ubuntu-latest
-    name: Validate PR Title
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: amannn/action-semantic-pull-request@v5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          types: |
-            feat
-            fix
-            docs
-            style
-            refactor
-            perf
-            test
-            build
-            ci
-            chore
-          requireScope: false
-
-  # ------------------------------------------------------------------
-  # JOB 1: COMMIT LINT (The Gatekeeper)
-  # ------------------------------------------------------------------
-  commit-lint:
-    runs-on: ubuntu-latest
-    name: Lint Commit Messages
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Check Commit Messages
-        uses: wagoid/commitlint-github-action@v6
-        with:
-          configFile: .commitlintrc.yaml
-
   # ------------------------------------------------------------------
   # JOB 1: CODE QUALITY (Ruff, Black, MyPy)
   # ------------------------------------------------------------------

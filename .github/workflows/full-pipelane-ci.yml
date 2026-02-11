@@ -1,11 +1,16 @@
 # ==========================================================
 # 🔬 FULL PIPELANE CI (Comprehensive Testing)
 # ==========================================================
-name: Full Pipelane CI
+name: Full Pipeline CI
 
 on:
   push:
+    # Triggers after merge to handle releases/tagging
     branches: [main, staging, develop]
+  pull_request:
+    # CRITICAL: This allows Branch Protection to "see" the tests 
+    # before you merge code into Staging or Main.
+    branches: [main, staging]
   schedule:
     # Run nightly at 2 AM UTC
     - cron: '0 2 * * *'
@@ -590,8 +595,12 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     name: E2E Tests
-    # Only run on staging and main branches
-    if: github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main'
+    # Only run heavy E2E tests for promotion PRs or merges to Staging/Main
+    if: |
+      github.ref == 'refs/heads/staging' || 
+      github.ref == 'refs/heads/main' ||
+      github.base_ref == 'staging' ||
+      github.base_ref == 'main'
 
     steps:
       - uses: actions/checkout@v4
@@ -746,7 +755,11 @@ jobs:
     runs-on: ubuntu-latest
     name: Performance Benchmarks
     # Only run on staging and main branches
-    if: github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main'
+    if: |
+      github.ref == 'refs/heads/staging' || 
+      github.ref == 'refs/heads/main' ||
+      github.base_ref == 'staging' ||
+      github.base_ref == 'main'
 
     steps:
       - uses: actions/checkout@v4
