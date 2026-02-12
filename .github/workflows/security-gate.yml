@@ -6,6 +6,7 @@ on:
   pull_request:
     branches: [main, staging, develop]
     types: [opened, synchronize, reopened] # Runs when PR is made or updated
+  workflow_dispatch: # --- ADDED: MANUAL TRIGGER ---
 
 permissions:
   contents: read
