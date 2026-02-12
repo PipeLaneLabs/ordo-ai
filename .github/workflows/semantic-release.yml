@@ -42,6 +42,8 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          # Install the plugin so Poetry can read git tags
+          $HOME/.local/bin/poetry self add "poetry-dynamic-versioning[plugin]"
       
       - name: Install python-semantic-release
         run: pip install python-semantic-release

@@ -1,6 +1,6 @@
 [project]
 name = "multi-tier-agent-ecosystem"
-version = "1.0.0-alpha.7"
+version = "0.0.0"
 description = "A production-ready, LangGraph-native multi-agent system for automated software development lifecycle"
 authors = [
     {name = "Harman"}
@@ -77,10 +77,14 @@ types-aiofiles = "^25.1.0.20251011"
 bandit = "^1.9.3"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
+build-backend = "poetry_dynamic_versioning.backend"
 
-
+[tool.poetry-dynamic-versioning]
+enable = true
+vcs = "git"
+style = "pep440"
+dirty = true
 
 # ============================================================================
 # CODE QUALITY TOOL CONFIGURATIONS
@@ -263,18 +267,17 @@ skips = ["B608"]
 # ============================================================================
 
 [tool.semantic_release]
-version_toml = ["pyproject.toml:project.version"]
-version_variables = ["src/__init__.py:__version__"]
+version_toml = [] 
+version_variables = []
 
-# --- PLATINUM FIX: DISABLE COMMITS TO PREVENT CONFLICTS ---
-commit = false                   # Do not push changes to pyproject.toml/CHANGELOG
-tag = true                       # Create a Git Tag (this is our version of truth)
-push = true                      # Push the tag to GitHub
-# ----------------------------------------------------------
+commit = false
+tag = true
+push = true
 
-upload_to_pypi = false           # We use Docker/GHCR instead of PyPI
+upload_to_pypi = false
 upload_to_release = true
-build_command = "pip install poetry && poetry build"
+# Update build command to ensure plugin is present if build runs
+build_command = "pip install poetry poetry-dynamic-versioning && poetry build"
 
 # ------------------------------------------------------------------
 # 🌳 THREE-TIER PROMOTION STRATEGY (Alpha → Beta → Production)

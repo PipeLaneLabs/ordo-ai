@@ -45,3 +45,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            # Force Poetry to use the tag name as the version
+            POETRY_DYNAMIC_VERSIONING_BYPASS=${{ github.ref_name }}
