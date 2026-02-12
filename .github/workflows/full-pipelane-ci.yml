@@ -597,6 +597,7 @@ jobs:
     name: E2E Tests
     # Only run heavy E2E tests for promotion PRs or merges to Staging/Main
     if: |
+      github.event_name == 'workflow_dispatch' ||
       github.ref == 'refs/heads/staging' || 
       github.ref == 'refs/heads/main' ||
       github.base_ref == 'staging' ||
