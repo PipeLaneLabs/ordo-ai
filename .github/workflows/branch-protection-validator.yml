@@ -12,6 +12,8 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     branches: [main, staging, develop]
+    # --- ADDED: MANUAL TRIGGER ---
+  workflow_dispatch:
 
 jobs:
   validate-promotion-path:
