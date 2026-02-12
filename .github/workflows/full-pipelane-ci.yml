@@ -597,6 +597,7 @@ jobs:
     name: E2E Tests
     # Only run heavy E2E tests for promotion PRs or merges to Staging/Main
     if: |
+      github.event_name == 'workflow_dispatch' ||
       github.ref == 'refs/heads/staging' || 
       github.ref == 'refs/heads/main' ||
       github.base_ref == 'staging' ||
@@ -756,6 +757,7 @@ jobs:
     name: Performance Benchmarks
     # Only run on staging and main branches
     if: |
+      github.event_name == 'workflow_dispatch' ||
       github.ref == 'refs/heads/staging' || 
       github.ref == 'refs/heads/main' ||
       github.base_ref == 'staging' ||
@@ -763,7 +765,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
@@ -790,6 +791,8 @@ jobs:
           OPENROUTER_API_KEY: "sk-fake-key-for-testing"
           GOOGLE_API_KEY: "fake-google-key"
           JWT_SECRET_KEY: "fake-super-secret-key-for-testing-only"
+          POSTGRES_PASSWORD: "fake-password-for-testing"
+          MINIO_SECRET_KEY: "fake-minio-key-for-testing"
         run: |
           poetry run pytest tests/performance/ -v \
             --benchmark-only \

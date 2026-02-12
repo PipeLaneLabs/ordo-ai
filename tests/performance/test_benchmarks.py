@@ -20,10 +20,12 @@ pytestmark = pytest.mark.skipif(
 @pytest.fixture
 def mock_settings():
     """Mock settings for performance tests."""
-    from src.config.settings import Settings
+    from src.config import Settings
 
     return Settings(
-        llm_api_key="sk-fake-key-for-testing",
+        openrouter_api_key="sk-fake-key-for-testing",
+        google_api_key="fake-google-key",
+        jwt_secret_key="test-secret-key-min-32-chars-long-123456",
         postgres_host="localhost",
         postgres_port=5432,
         postgres_db="test_db",
@@ -31,6 +33,7 @@ def mock_settings():
         postgres_password="test_pass",
         redis_host="localhost",
         redis_port=6379,
+        minio_secret_key="fake-minio-key",
     )
 
 
