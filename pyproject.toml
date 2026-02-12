@@ -263,10 +263,7 @@ skips = ["B608"]
 # ============================================================================
 
 [tool.semantic_release]
-version_toml = ["pyproject.toml:project.version"]
-version_variables = ["src/__init__.py:__version__"]
-
-# --- PLATINUM FIX: DISABLE COMMITS TO PREVENT CONFLICTS ---
+tag_format = "v{version}"
 commit = false                   # Do not push changes to pyproject.toml/CHANGELOG
 tag = true                       # Create a Git Tag (this is our version of truth)
 push = true                      # Push the tag to GitHub
