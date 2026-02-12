@@ -96,6 +96,5 @@ Thumbs.db
 # ...BUT force-include the important documentation:
 !README.md
 !DEVELOPER_GUIDE.md
-!CHANGELOG.md
 !docs/*.md          # Allow everything inside the docs/ folder
 !.github/*.md       # Allow templates inside .github/
