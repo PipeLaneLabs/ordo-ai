@@ -26,6 +26,7 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          $HOME/.local/bin/poetry self add "poetry-dynamic-versioning[plugin]"
       
       - name: Configure Poetry
         run: |
@@ -94,6 +95,7 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          $HOME/.local/bin/poetry self add "poetry-dynamic-versioning[plugin]"
       
       - name: Install dependencies
         run: poetry install --no-root
@@ -104,7 +106,6 @@ jobs:
           input: ./pyproject.toml
           output: sbom.xml
           format: xml
-          python-version: '3.12'
       
       - name: Generate SBOM in JSON format
         uses: CycloneDX/gh-python-generate-sbom@v2
@@ -112,7 +113,6 @@ jobs:
           input: ./pyproject.toml
           output: sbom.json
           format: json
-          python-version: '3.12'
       
       - name: Upload SBOM artifacts
         uses: actions/upload-artifact@v4
@@ -148,6 +148,7 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          $HOME/.local/bin/poetry self add "poetry-dynamic-versioning[plugin]"
       
       - name: Install dependencies
         run: poetry install --no-root
@@ -241,6 +242,7 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          $HOME/.local/bin/poetry self add "poetry-dynamic-versioning[plugin]"
       
       - name: Install dependencies
         run: poetry install --no-root --with dev

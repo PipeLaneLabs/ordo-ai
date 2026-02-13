@@ -31,6 +31,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Poetry (System-wide)
 RUN curl -sSL https://install.python-poetry.org | python3 -
 
+# --- CHANGE 1: Install the Dynamic Versioning Plugin ---
+# This allows Poetry to understand the [tool.poetry-dynamic-versioning] section
+RUN poetry self add "poetry-dynamic-versioning[plugin]"
+
 # Create app directory
 WORKDIR /app
 
@@ -40,8 +44,13 @@ WORKDIR /app
 FROM base AS dependencies
 
 # Copy Poetry configuration files
-# We copy ONLY these first to leverage Docker layer caching
 COPY pyproject.toml poetry.lock ./
+
+# --- CHANGE 2: Accept the version from GitHub Actions ---
+# We use this variable to tell the plugin "Here is the version" 
+# since it cannot find .git tags inside the container.
+ARG POETRY_DYNAMIC_VERSIONING_BYPASS
+ENV POETRY_DYNAMIC_VERSIONING_BYPASS=${POETRY_DYNAMIC_VERSIONING_BYPASS}
 
 # Install dependencies
 # --no-root: Do not install the project itself yet (just libs)
