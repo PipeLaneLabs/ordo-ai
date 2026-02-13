@@ -600,8 +600,10 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       github.ref == 'refs/heads/staging' || 
       github.ref == 'refs/heads/main' ||
+      github.ref == 'refs/heads/develop' ||
       github.base_ref == 'staging' ||
-      github.base_ref == 'main'
+      github.base_ref == 'main' ||
+      github.base_ref == 'develop'
 
     steps:
       - uses: actions/checkout@v4
@@ -760,8 +762,10 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       github.ref == 'refs/heads/staging' || 
       github.ref == 'refs/heads/main' ||
+      github.ref == 'refs/heads/develop' ||
       github.base_ref == 'staging' ||
-      github.base_ref == 'main'
+      github.base_ref == 'main' ||
+      github.base_ref == 'develop'
 
     steps:
       - uses: actions/checkout@v4
@@ -801,7 +805,7 @@ jobs:
       
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/develop'
         with:
           tool: 'pytest'
           output-file-path: benchmark-results.json
