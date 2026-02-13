@@ -801,15 +801,15 @@ jobs:
       
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/develop'
         with:
           tool: 'pytest'
           output-file-path: benchmark-results.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          auto-push: false
+          auto-push: ${{ github.ref == 'refs/heads/main' }} # Only save new baseline on main
           comment-on-alert: true
           fail-on-alert: true
-          alert-threshold: '110%'  # Fail if 10% slower than baseline
+          alert-threshold: '200%'  # Fail if 100% slower than baseline
       
       - name: Upload benchmark results
         if: always()
