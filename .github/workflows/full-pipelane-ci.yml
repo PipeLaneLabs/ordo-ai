@@ -43,7 +43,7 @@ jobs:
           poetry config virtualenvs.in-project true
       
       - name: Cache Poetry dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
@@ -113,7 +113,7 @@ jobs:
           poetry config virtualenvs.in-project true
       
       - name: Cache Poetry dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
@@ -325,7 +325,7 @@ jobs:
           poetry config virtualenvs.in-project true
 
       - name: Cache Poetry dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
@@ -470,7 +470,7 @@ jobs:
           poetry config virtualenvs.in-project true
 
       - name: Cache Poetry dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
@@ -622,7 +622,7 @@ jobs:
           poetry config virtualenvs.in-project true
 
       - name: Cache Poetry dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
@@ -844,7 +844,7 @@ jobs:
           poetry config virtualenvs.in-project true
       
       - name: Cache Poetry dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
