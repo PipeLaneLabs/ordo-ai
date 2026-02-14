@@ -9,7 +9,7 @@ on:
     branches: [main, staging, develop]
   push:
     # Trigger on personal work branches only
-    branches: ['feature/**', 'task/**', 'feat/**', 'fix/**', 'chore/**']
+    branches: ['feature/**', 'task/**', 'feat/**', 'fix/**', 'chore/**', 'dependabot/**']
   workflow_dispatch: # --- ADDED: MANUAL TRIGGER ---
 
 jobs:

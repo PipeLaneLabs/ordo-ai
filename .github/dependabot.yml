@@ -17,7 +17,7 @@ updates:
       - "automated"
     open-pull-requests-limit: 5
     commit-message:
-      prefix: "chore"
+      prefix: "fix"
       include: "scope"
 
   # 🤖 GitHub Actions updates
@@ -25,7 +25,11 @@ updates:
     directory: "/"
     target-branch: "develop" # FIXED: Prevents PRs from targeting 'main'
     schedule:
-      interval: "monthly"
+      interval: "weekly
+      day: "saturday"
+      time: "00:00"
     labels:
       - "dependencies"
       - "github-actions"
+    commit-message:
+      prefix: "fix" # Consistency across all bots

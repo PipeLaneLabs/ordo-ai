@@ -55,16 +55,17 @@ jobs:
           echo "🔍 Validating PR to develop..."
           BRANCH="${{ github.head_ref }}"
           
-          # Check if branch follows feature naming convention
-          if [[ ! "$BRANCH" =~ ^(feat|fix|chore)/ ]]; then
-            echo "❌ ERROR: PRs to 'develop' must come from feat/, fix/, or chore/ branches"
+          # UPDATED: Enforce folder structure with trailing slash '/'
+          if [[ ! "$BRANCH" =~ ^(feat|fix|chore|dependabot)/ ]]; then
+            echo "❌ ERROR: PRs to 'develop' must use the folder naming convention"
             echo "Current PR is from: $BRANCH"
             echo ""
-            echo "✅ Correct naming: feat/*, fix/*, chore/*"
-            echo "❌ Invalid branch: $BRANCH"
+            echo "✅ Correct naming: feat/*, fix/*, chore/*, dependabot/*"
+            echo "❌ Invalid branch: $BRANCH (Missing '/')"
             exit 1
           fi
           echo "✅ Valid feature branch: $BRANCH → develop"
+      
       
       - name: Display Three-Tier Promotion Flow
         if: always()
@@ -73,7 +74,7 @@ jobs:
           echo "📋 THREE-TIER PROMOTION STRATEGY"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
-          echo "Tier 1: feat/*, fix/*, chore/*  →  develop (Alpha)"
+          echo "Tier 1: feat*, fix*, chore*, dependabot*  →  develop (Alpha)"
           echo "        ├─ Version: v1.0.0-alpha.X"
           echo "        └─ Tests: Unit + Integration"
           echo ""
