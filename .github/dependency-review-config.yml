@@ -16,6 +16,7 @@ allow-licenses:
   - PSF-2.0           # Python Software Foundation (used by stdlib)
   - 0BSD              # Zero-Clause BSD (very permissive)
   - Unlicense         # Public domain
+  - HPND-Markus-Kuhn  # Required by wcwidth (MIT AND HPND-Markus-Kuhn)
 
 # Note: deny-licenses is specified in the workflow file to avoid conflicts
 # You can only use allow-licenses OR deny-licenses, not both
@@ -37,3 +38,7 @@ allow-dependencies-licenses:
   - pkg:pypi/mcp
   - pkg:pypi/multidict
   - pkg:pypi/python-multipart
+  - pkg:pypi/wcwidth
+  - pkg:pypi/librt
+  - pkg:pypi/langsmith
+  - pkg:pypi/pycparser
