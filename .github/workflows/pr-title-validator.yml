@@ -1,0 +1,45 @@
+name: "Lint PR Title"
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+
+jobs:
+  validate-pr-title:
+    name: Validate PR Title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Ensure the type is one of your allowed types
+          types: |
+            feat
+            fix
+            chore
+            docs
+            style
+            refactor
+            perf
+            test
+            ci
+            build
+            revert
+          # Ensure a scope is present (optional, but you requested strictness)
+          requireScope: true
+          # Configure which scopes are allowed (optional - leave empty to allow any)
+          # scopes: |
+          #   api
+          #   ui
+          #   deps
+          #   auth
+          
+          # Explain the error to the user if validation fails
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            must start with a lowercase letter.
