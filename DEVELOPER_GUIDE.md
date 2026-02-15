@@ -228,6 +228,19 @@ They are gated behind environment flags and run in a dedicated CI job.
 
 ## Code Standards
 
+### Commit Messages
+
+This project follows the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification. To ensure consistency, all commits should be made using the `commitizen` tool, which provides a guided process for creating compliant commit messages.
+
+Instead of `git commit`, use:
+
+```bash
+# Run the interactive commitizen prompt
+cz commit
+```
+
+The pre-commit hook will still validate your commit message if you use `git commit`, but `cz commit` is the recommended and easiest way to ensure your commits are formatted correctly.
+
 ### Style Guide
 
 This project follows PEP 8 with the following tools:

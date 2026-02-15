@@ -61,6 +61,9 @@ jobs:
       
       - name: Run MyPy type checker
         run: poetry run mypy src/ --strict
+      
+      - name: Run MyPy on tests
+        run: poetry run mypy tests/ --ignore-missing-imports
 
   # ------------------------------------------------------------------
   # JOB 2: TEST SUITE (Unit & Integration)
@@ -601,10 +604,13 @@ jobs:
       github.ref == 'refs/heads/staging' || 
       github.ref == 'refs/heads/main' ||
       github.base_ref == 'staging' ||
-      github.base_ref == 'main'
+      github.base_ref == 'main' ||
+      github.event_name == 'schedule'
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'schedule' && 'develop' }}
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v4
@@ -761,10 +767,13 @@ jobs:
       github.ref == 'refs/heads/staging' || 
       github.ref == 'refs/heads/main' ||
       github.base_ref == 'staging' ||
-      github.base_ref == 'main'
+      github.base_ref == 'main' ||
+      github.event_name == 'schedule'
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'schedule' && 'develop' }}
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
