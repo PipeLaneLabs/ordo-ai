@@ -5,7 +5,7 @@
 #   make setup          - Install dependencies and setup pre-commit hooks
 #   make run            - Start the FastAPI application locally
 #   make test           - Run all tests and generate coverage report
-#   make lint           - Run all code quality checks (ruff, mypy, black)
+#   make lint           - Run all code quality checks (black, ruff, mypy)
 #   make format         - Auto-format code with black and ruff
 #   make security-scan  - Run bandit security scanner
 #   make clean          - Remove temporary files and caches
