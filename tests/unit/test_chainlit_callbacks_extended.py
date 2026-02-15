@@ -10,6 +10,7 @@ import os
 import sys
 from datetime import UTC, datetime
 from types import ModuleType
+from typing import Any, cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -19,7 +20,7 @@ def _install_chainlit_stub() -> None:
     if "chainlit" in sys.modules:
         return
 
-    stub = ModuleType("chainlit")
+    stub = cast(Any, ModuleType("chainlit"))
 
     class _Message:
         def __init__(self, content: str) -> None:
@@ -124,7 +125,8 @@ class TestUserFeedbackHandling:
         }
 
         assert feedback["rating"] == 4
-        assert "Good" in feedback["comment"]
+        comment = cast(str, feedback["comment"])
+        assert "Good" in comment
 
     @pytest.mark.asyncio
     async def test_handle_positive_feedback(self, mock_chainlit):
@@ -149,7 +151,8 @@ class TestUserFeedbackHandling:
         }
 
         assert feedback["type"] == "negative"
-        assert "Slow" in feedback["issue"]
+        issue = cast(str, feedback["issue"])
+        assert "Slow" in issue
 
     @pytest.mark.asyncio
     async def test_store_feedback(self, mock_chainlit):
@@ -305,7 +308,8 @@ class TestSessionManagement:
         }
 
         assert session_data["stored"] is True
-        assert len(session_data["workflows"]) == 2
+        workflows = cast(list[str], session_data["workflows"])
+        assert len(workflows) == 2
 
     @pytest.mark.asyncio
     async def test_retrieve_session_data(self, mock_chainlit):

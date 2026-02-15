@@ -5,9 +5,12 @@ Run with: pytest tests/performance/ --benchmark-json=results.json
 """
 
 import os
+from typing import Any, cast
 from unittest.mock import AsyncMock
 
 import pytest
+
+from src.config import Settings
 
 
 # Skip performance tests unless explicitly enabled
@@ -18,10 +21,8 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.fixture
-def mock_settings():
+def mock_settings() -> Settings:
     """Mock settings for performance tests."""
-    from src.config import Settings
-
     return Settings(
         openrouter_api_key="sk-fake-key-for-testing",
         google_api_key="fake-google-key",
@@ -38,7 +39,7 @@ def mock_settings():
 
 
 @pytest.fixture
-def mock_llm_client():
+def mock_llm_client() -> AsyncMock:
     """Mock LLM client for performance tests."""
     client = AsyncMock()
     client.chat_completion = AsyncMock(
@@ -47,17 +48,22 @@ def mock_llm_client():
     return client
 
 
-def test_agent_response_latency(benchmark, mock_settings, mock_llm_client):
+def test_agent_response_latency(
+    benchmark: Any, mock_settings: Settings, mock_llm_client: AsyncMock
+) -> None:
     """Benchmark agent response time.
 
     Target: < 500ms for simple queries
     Threshold: Fail if > 550ms (10% tolerance)
     """
 
-    async def agent_response():
+    async def agent_response() -> dict[str, Any]:
         # Simulate agent processing
-        response = await mock_llm_client.chat_completion(
-            messages=[{"role": "user", "content": "Hello"}]
+        response = cast(
+            dict[str, Any],
+            await mock_llm_client.chat_completion(
+                messages=[{"role": "user", "content": "Hello"}]
+            ),
         )
         return response
 
@@ -69,7 +75,7 @@ def test_agent_response_latency(benchmark, mock_settings, mock_llm_client):
     assert result is not None
 
 
-def test_checkpoint_save_performance(benchmark, mock_settings):
+def test_checkpoint_save_performance(benchmark: Any, mock_settings: Settings) -> None:
     """Benchmark checkpoint save operation.
 
     Target: < 100ms per checkpoint
@@ -90,14 +96,16 @@ def test_checkpoint_save_performance(benchmark, mock_settings):
     assert "thread_id" in result
 
 
-def test_budget_guard_check_performance(benchmark, mock_settings):
+def test_budget_guard_check_performance(
+    benchmark: Any, mock_settings: Settings
+) -> None:
     """Benchmark budget guard validation.
 
     Target: < 50ms per check
     Threshold: Fail if > 55ms (10% tolerance)
     """
 
-    def check_budget():
+    def check_budget() -> bool:
         # Simulate budget calculation
         usage = {"prompt_tokens": 100, "completion_tokens": 50}
         cost = usage["prompt_tokens"] * 0.000001 + usage["completion_tokens"] * 0.000002
@@ -108,7 +116,9 @@ def test_budget_guard_check_performance(benchmark, mock_settings):
 
 
 @pytest.mark.asyncio
-async def test_concurrent_agent_throughput(mock_settings, mock_llm_client):
+async def test_concurrent_agent_throughput(
+    mock_settings: Settings, mock_llm_client: AsyncMock
+) -> None:
     """Test throughput with concurrent agent requests.
 
     Target: Handle 10 concurrent requests in < 2 seconds
@@ -116,9 +126,12 @@ async def test_concurrent_agent_throughput(mock_settings, mock_llm_client):
     import asyncio
     import time
 
-    async def process_request(request_id: int):
-        response = await mock_llm_client.chat_completion(
-            messages=[{"role": "user", "content": f"Request {request_id}"}]
+    async def process_request(request_id: int) -> dict[str, Any]:
+        response = cast(
+            dict[str, Any],
+            await mock_llm_client.chat_completion(
+                messages=[{"role": "user", "content": f"Request {request_id}"}]
+            ),
         )
         return response
 

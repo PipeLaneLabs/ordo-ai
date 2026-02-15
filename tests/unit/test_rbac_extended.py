@@ -176,7 +176,7 @@ class TestRequirePermissionDecorator:
         """Test decorator allows function execution with permission."""
 
         @require_permission("workflow:start")
-        async def protected_function(user: dict) -> str:
+        async def protected_function(user: dict[str, object]) -> str:
             return "success"
 
         user = {"sub": "user123", "roles": ["admin"]}
@@ -188,7 +188,7 @@ class TestRequirePermissionDecorator:
         """Test decorator denies function execution without permission."""
 
         @require_permission("workflow:delete")
-        async def protected_function(user: dict) -> str:
+        async def protected_function(user: dict[str, object]) -> str:
             return "success"
 
         user = {"sub": "user123", "roles": ["viewer"]}
@@ -201,7 +201,7 @@ class TestRequirePermissionDecorator:
         """Test decorator extracts user from kwargs."""
 
         @require_permission("workflow:start")
-        async def protected_function(user: dict) -> str:
+        async def protected_function(user: dict[str, object]) -> str:
             return "success"
 
         user = {"sub": "user123", "roles": ["developer"]}
@@ -213,7 +213,7 @@ class TestRequirePermissionDecorator:
         """Test decorator extracts user from positional args."""
 
         @require_permission("workflow:start")
-        async def protected_function(self: object, user: dict) -> str:
+        async def protected_function(self: object, user: dict[str, object]) -> str:
             return "success"
 
         user = {"sub": "user123", "roles": ["developer"]}
@@ -237,7 +237,7 @@ class TestRequirePermissionDecorator:
         """Test decorator handles user without roles field."""
 
         @require_permission("workflow:start")
-        async def protected_function(user: dict) -> str:
+        async def protected_function(user: dict[str, object]) -> str:
             return "success"
 
         user = {"sub": "user123"}  # No roles field
@@ -249,7 +249,7 @@ class TestRequirePermissionDecorator:
         """Test decorator denies access with empty roles."""
 
         @require_permission("workflow:start")
-        async def protected_function(user: dict) -> str:
+        async def protected_function(user: dict[str, object]) -> str:
             return "success"
 
         user = {"sub": "user123", "roles": []}
@@ -261,7 +261,7 @@ class TestRequirePermissionDecorator:
         """Test decorator grants access if any role has permission."""
 
         @require_permission("workflow:start")
-        async def protected_function(user: dict) -> str:
+        async def protected_function(user: dict[str, object]) -> str:
             return "success"
 
         user = {"sub": "user123", "roles": ["viewer", "developer"]}
@@ -273,7 +273,7 @@ class TestRequirePermissionDecorator:
         """Test decorator preserves original function behavior."""
 
         @require_permission("workflow:start")
-        async def protected_function(user: dict, value: int) -> int:
+        async def protected_function(user: dict[str, object], value: int) -> int:
             return value * 2
 
         user = {"sub": "user123", "roles": ["admin"]}
@@ -286,7 +286,7 @@ class TestRequirePermissionDecorator:
 
         @require_permission("workflow:start")
         async def protected_function(
-            self: object, user: dict, arg1: str, arg2: int
+            self: object, user: dict[str, object], arg1: str, arg2: int
         ) -> str:
             return f"{arg1}:{arg2}"
 
@@ -299,7 +299,7 @@ class TestRequirePermissionDecorator:
         """Test decorator logs when access is denied."""
 
         @require_permission("workflow:delete")
-        async def protected_function(user: dict) -> str:
+        async def protected_function(user: dict[str, object]) -> str:
             return "success"
 
         user = {"sub": "user123", "roles": ["viewer"]}
@@ -420,21 +420,21 @@ class TestRBACEdgeCases:
         """Test decorator handles None user gracefully."""
 
         @require_permission("workflow:start")
-        async def protected_function(user: dict) -> str:
+        async def protected_function(user: dict[str, object] | None) -> str:
             return "success"
 
         with pytest.raises((ConfigurationError, TypeError, AttributeError)):
-            await protected_function(user=None)  # type: ignore
+            await protected_function(user=None)
 
     @pytest.mark.asyncio
     async def test_decorator_with_empty_user_dict(self) -> None:
         """Test decorator with empty user dictionary."""
 
         @require_permission("workflow:start")
-        async def protected_function(user: dict) -> str:
+        async def protected_function(user: dict[str, object]) -> str:
             return "success"
 
-        user = {}
+        user: dict[str, object] = {}
         with pytest.raises((PermissionError, ConfigurationError)):
             await protected_function(user=user)
 

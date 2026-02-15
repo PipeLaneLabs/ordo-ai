@@ -12,7 +12,9 @@ Tests cover:
 """
 
 import unittest
+from collections.abc import AsyncIterator
 from datetime import UTC, datetime
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -26,7 +28,7 @@ from src.orchestration.state import WorkflowState
 
 
 @pytest.fixture
-def mock_settings():
+def mock_settings() -> Settings:
     """Create mock settings."""
     settings = MagicMock(spec=Settings)
     settings.total_budget_tokens = 10000
@@ -35,19 +37,23 @@ def mock_settings():
 
 
 @pytest.fixture
-def mock_budget_guard():
+def mock_budget_guard() -> BudgetGuard:
     """Create mock budget guard."""
     return MagicMock(spec=BudgetGuard)
 
 
 @pytest.fixture
-def mock_checkpoint_manager():
+def mock_checkpoint_manager() -> CheckpointManager:
     """Create mock checkpoint manager."""
     return MagicMock(spec=CheckpointManager)
 
 
 @pytest.fixture
-def controller(mock_settings, mock_budget_guard, mock_checkpoint_manager):
+def controller(
+    mock_settings: Settings,
+    mock_budget_guard: BudgetGuard,
+    mock_checkpoint_manager: CheckpointManager,
+) -> OrchestrationController:
     """Create OrchestrationController instance."""
     return OrchestrationController(
         settings=mock_settings,
@@ -61,8 +67,11 @@ class TestOrchestrationControllerInit:
     """Tests for controller initialization."""
 
     def test_init_with_defaults(
-        self, mock_settings, mock_budget_guard, mock_checkpoint_manager
-    ):
+        self,
+        mock_settings: Settings,
+        mock_budget_guard: BudgetGuard,
+        mock_checkpoint_manager: CheckpointManager,
+    ) -> None:
         """Test controller initialization with default parameters."""
         controller = OrchestrationController(
             settings=mock_settings,
@@ -77,8 +86,11 @@ class TestOrchestrationControllerInit:
         assert controller.graph is None
 
     def test_init_with_custom_max_iterations(
-        self, mock_settings, mock_budget_guard, mock_checkpoint_manager
-    ):
+        self,
+        mock_settings: Settings,
+        mock_budget_guard: BudgetGuard,
+        mock_checkpoint_manager: CheckpointManager,
+    ) -> None:
         """Test controller initialization with custom max iterations."""
         controller = OrchestrationController(
             settings=mock_settings,
@@ -93,7 +105,9 @@ class TestOrchestrationControllerInit:
 class TestBuildGraph:
     """Tests for graph building."""
 
-    def test_build_graph_creates_compiled_graph(self, controller):
+    def test_build_graph_creates_compiled_graph(
+        self, controller: OrchestrationController
+    ) -> None:
         """Test that build_graph creates a compiled StateGraph."""
         with patch("src.orchestration.controller.StateGraph") as mock_graph_class:
             mock_graph_instance = MagicMock()
@@ -107,7 +121,9 @@ class TestBuildGraph:
             assert controller.graph == mock_compiled_graph
             mock_graph_instance.compile.assert_called_once()
 
-    def test_build_graph_adds_all_tier_nodes(self, controller):
+    def test_build_graph_adds_all_tier_nodes(
+        self, controller: OrchestrationController
+    ) -> None:
         """Test that build_graph adds all tier nodes."""
         with patch("src.orchestration.controller.StateGraph") as mock_graph_class:
             mock_graph_instance = MagicMock()
@@ -117,7 +133,6 @@ class TestBuildGraph:
 
             controller.build_graph()
 
-            # Verify all tier nodes are added
             expected_nodes = [
                 "tier_0_deviation",
                 "tier_1_requirements",
@@ -137,7 +152,9 @@ class TestBuildGraph:
             for node in expected_nodes:
                 mock_graph_instance.add_node.assert_any_call(node, unittest.mock.ANY)
 
-    def test_build_graph_sets_entry_point(self, controller):
+    def test_build_graph_sets_entry_point(
+        self, controller: OrchestrationController
+    ) -> None:
         """Test that build_graph sets entry point."""
         with patch("src.orchestration.controller.StateGraph") as mock_graph_class:
             mock_graph_instance = MagicMock()
@@ -156,7 +173,9 @@ class TestTierNodes:
     """Tests for tier node implementations."""
 
     @pytest.mark.asyncio
-    async def test_tier_0_deviation_handler(self, controller):
+    async def test_tier_0_deviation_handler(
+        self, controller: OrchestrationController
+    ) -> None:
         """Test Tier 0 deviation handler node."""
         state: WorkflowState = {
             "workflow_id": "test-123",
@@ -203,7 +222,9 @@ class TestTierNodes:
         assert result["current_agent"] == "DeviationHandler"
 
     @pytest.mark.asyncio
-    async def test_tier_1_requirements(self, controller):
+    async def test_tier_1_requirements(
+        self, controller: OrchestrationController
+    ) -> None:
         """Test Tier 1 requirements node."""
         state: WorkflowState = {
             "workflow_id": "test-123",
@@ -251,7 +272,7 @@ class TestTierNodes:
         assert result["current_phase"] == "planning"
 
     @pytest.mark.asyncio
-    async def test_tier_3_engineer(self, controller):
+    async def test_tier_3_engineer(self, controller: OrchestrationController) -> None:
         """Test Tier 3 engineer node."""
         state: WorkflowState = {
             "workflow_id": "test-123",
@@ -302,7 +323,9 @@ class TestTierNodes:
 class TestRoutingFunctions:
     """Tests for routing logic."""
 
-    def test_route_validator_output_with_blocking_issues(self, controller):
+    def test_route_validator_output_with_blocking_issues(
+        self, controller: OrchestrationController
+    ) -> None:
         """Test validator routing with blocking issues."""
         state: WorkflowState = {
             "workflow_id": "test-123",
@@ -348,7 +371,9 @@ class TestRoutingFunctions:
 
         assert result == "tier_0_deviation"
 
-    def test_route_validator_output_without_blocking_issues(self, controller):
+    def test_route_validator_output_without_blocking_issues(
+        self, controller: OrchestrationController
+    ) -> None:
         """Test validator routing without blocking issues."""
         state: WorkflowState = {
             "workflow_id": "test-123",
@@ -394,7 +419,9 @@ class TestRoutingFunctions:
 
         assert result == "tier_1_architect"
 
-    def test_route_dependencies_output_with_blocking_issues(self, controller):
+    def test_route_dependencies_output_with_blocking_issues(
+        self, controller: OrchestrationController
+    ) -> None:
         """Test dependencies routing with blocking issues."""
         state: WorkflowState = {
             "workflow_id": "test-123",
@@ -440,7 +467,9 @@ class TestRoutingFunctions:
 
         assert result == "tier_0_deviation"
 
-    def test_route_deviation_output_with_escalation(self, controller):
+    def test_route_deviation_output_with_escalation(
+        self, controller: OrchestrationController
+    ) -> None:
         """Test deviation routing with escalation flag."""
         state: WorkflowState = {
             "workflow_id": "test-123",
@@ -488,7 +517,9 @@ class TestRoutingFunctions:
 
         assert result == END
 
-    def test_route_deviation_output_with_max_rejections(self, controller):
+    def test_route_deviation_output_with_max_rejections(
+        self, controller: OrchestrationController
+    ) -> None:
         """Test deviation routing with max rejections reached."""
         state: WorkflowState = {
             "workflow_id": "test-123",
@@ -541,7 +572,9 @@ class TestExecuteWorkflow:
     """Tests for workflow execution."""
 
     @pytest.mark.asyncio
-    async def test_execute_workflow_builds_graph_if_needed(self, controller):
+    async def test_execute_workflow_builds_graph_if_needed(
+        self, controller: OrchestrationController
+    ) -> None:
         """Test that execute_workflow builds graph if not already built."""
         controller.graph = None
 
@@ -551,9 +584,9 @@ class TestExecuteWorkflow:
             mock_build.return_value = mock_graph
             controller.graph = mock_graph
 
-            # Mock astream to return empty async generator
-            async def mock_astream(*args, **kwargs):
-                # LangGraph wraps state updates in node names
+            async def mock_astream(
+                *args: Any, **kwargs: Any
+            ) -> AsyncIterator[dict[str, WorkflowState]]:
                 yield {
                     "planning": {
                         "workflow_id": "test-123",
@@ -603,13 +636,16 @@ class TestExecuteWorkflow:
             assert result["workflow_id"] == "test-123"
 
     @pytest.mark.asyncio
-    async def test_execute_workflow_raises_budget_exhausted(self, controller):
+    async def test_execute_workflow_raises_budget_exhausted(
+        self, controller: OrchestrationController
+    ) -> None:
         """Test that execute_workflow raises BudgetExhaustedError when budget exhausted."""
         mock_graph = MagicMock()
         controller.graph = mock_graph
 
-        async def mock_astream(*args, **kwargs):
-            # LangGraph wraps state updates in node names
+        async def mock_astream(
+            *args: Any, **kwargs: Any
+        ) -> AsyncIterator[dict[str, WorkflowState]]:
             yield {
                 "planning": {
                     "workflow_id": "test-123",
@@ -658,15 +694,18 @@ class TestExecuteWorkflow:
             await controller.execute_workflow("Test request", "test-123")
 
     @pytest.mark.asyncio
-    async def test_execute_workflow_raises_infinite_loop_detected(self, controller):
+    async def test_execute_workflow_raises_infinite_loop_detected(
+        self, controller: OrchestrationController
+    ) -> None:
         """Test that execute_workflow raises InfiniteLoopDetectedError at max iterations."""
         controller.max_iterations = 2
         mock_graph = MagicMock()
         controller.graph = mock_graph
 
-        async def mock_astream(*args, **kwargs):
+        async def mock_astream(
+            *args: Any, **kwargs: Any
+        ) -> AsyncIterator[dict[str, WorkflowState]]:
             for _i in range(3):
-                # LangGraph wraps state updates in node names
                 yield {
                     "planning": {
                         "workflow_id": "test-123",

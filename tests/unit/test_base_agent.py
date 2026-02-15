@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from src.agents.base_agent import BaseAgent
-from src.orchestration.state import WorkflowState
+from src.orchestration.state import create_initial_state
 
 
 # Concrete implementation for testing abstract class
@@ -58,13 +58,16 @@ def agent(mock_llm_client, mock_budget_guard, mock_settings):
 
 @pytest.fixture
 def workflow_state():
-    return WorkflowState(
+    state = create_initial_state(
         workflow_id="wf-123",
-        budget_remaining_tokens=5000,
-        budget_remaining_usd=1.0,
-        budget_used_tokens=0,
-        budget_used_usd=0.0,
+        user_request="Test request",
+        trace_id="trace-123",
     )
+    state["budget_remaining_tokens"] = 5000
+    state["budget_remaining_usd"] = 1.0
+    state["budget_used_tokens"] = 0
+    state["budget_used_usd"] = 0.0
+    return state
 
 
 @pytest.mark.anyio

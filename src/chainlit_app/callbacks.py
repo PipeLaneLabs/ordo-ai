@@ -391,7 +391,7 @@ and try again, or contact support for assistance.
 
         return node_name
 
-    def _format_output(self, output: dict[str, object]) -> str:
+    def _format_output(self, output: object) -> str:
         """Format node output for display in Chainlit.
 
         Args:

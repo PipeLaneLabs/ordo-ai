@@ -18,9 +18,16 @@ def mock_settings() -> Settings:
     return Settings(
         environment="test",
         log_level="DEBUG",
-        postgres_url="postgresql://test:test@localhost/test",
-        redis_url="redis://localhost:6379/0",
+        postgres_host="localhost",
+        postgres_port=5432,
+        postgres_db="test",
+        postgres_user="test",
+        postgres_password="test-pass-123",
+        redis_host="localhost",
+        redis_port=6379,
+        redis_db=0,
         minio_endpoint="localhost:9000",
+        minio_secret_key="minio-secret-123",
         openrouter_api_key="test-api-key-12345",
         google_api_key="test-api-key-12345",
         jwt_secret_key="test-secret-key-min-32-chars-long-123456",
@@ -166,7 +173,7 @@ class TestOrchestrationControllerTierNodes:
         state: WorkflowState = {
             "workflow_id": "test-123",
             "user_request": "test",
-            "current_phase": "testing",
+            "current_phase": "validation",
             "current_task": "test",
             "current_agent": "Test",
             "rejection_count": 0,
@@ -226,7 +233,7 @@ class TestOrchestrationControllerTierNodes:
         state: WorkflowState = {
             "workflow_id": "test-123",
             "user_request": "test",
-            "current_phase": "testing",
+            "current_phase": "validation",
             "current_task": "test",
             "current_agent": "Test",
             "rejection_count": 0,
@@ -287,7 +294,7 @@ class TestOrchestrationControllerTierNodes:
         state: WorkflowState = {
             "workflow_id": "test-123",
             "user_request": "test",
-            "current_phase": "testing",
+            "current_phase": "validation",
             "current_task": "test",
             "current_agent": "Test",
             "rejection_count": 0,
@@ -351,7 +358,7 @@ class TestOrchestrationControllerRoutingLogic:
         state: WorkflowState = {
             "workflow_id": "test-123",
             "user_request": "test",
-            "current_phase": "testing",
+            "current_phase": "validation",
             "current_task": "test",
             "current_agent": "Test",
             "rejection_count": 0,
@@ -410,7 +417,7 @@ class TestOrchestrationControllerRoutingLogic:
         state: WorkflowState = {
             "workflow_id": "test-123",
             "user_request": "test",
-            "current_phase": "testing",
+            "current_phase": "validation",
             "current_task": "test",
             "current_agent": "Test",
             "rejection_count": 0,
@@ -469,7 +476,7 @@ class TestOrchestrationControllerRoutingLogic:
         state: WorkflowState = {
             "workflow_id": "test-123",
             "user_request": "test",
-            "current_phase": "testing",
+            "current_phase": "validation",
             "current_task": "test",
             "current_agent": "Test",
             "rejection_count": 0,
@@ -528,7 +535,7 @@ class TestOrchestrationControllerRoutingLogic:
         state: WorkflowState = {
             "workflow_id": "test-123",
             "user_request": "test",
-            "current_phase": "testing",
+            "current_phase": "validation",
             "current_task": "test",
             "current_agent": "Test",
             "rejection_count": 3,

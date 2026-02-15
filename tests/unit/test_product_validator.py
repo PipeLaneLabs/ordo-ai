@@ -4,7 +4,7 @@ import pytest
 
 from src.agents.tier_4.product_validator import ProductValidatorAgent
 from src.llm.base_client import LLMResponse
-from src.orchestration.state import WorkflowState
+from src.orchestration.state import create_initial_state
 
 
 @pytest.fixture
@@ -43,10 +43,8 @@ async def test_initialization(product_agent):
 
 @pytest.mark.asyncio
 async def test_build_prompt(product_agent):
-    state: WorkflowState = {
-        "user_request": "Build a web app",
-        "current_phase": "tier_4",
-    }
+    state = create_initial_state("wf-1", "Build a web app", "trace-1")
+    state["current_phase"] = "validation"
 
     # Mock data
     product_agent._read_if_exists = AsyncMock(
@@ -100,7 +98,7 @@ async def test_summarize_test_files(product_agent, tmp_path):
 
 @pytest.mark.asyncio
 async def test_parse_output(product_agent):
-    state: WorkflowState = {}
+    state = create_initial_state("wf-1", "Build a web app", "trace-1")
     llm_response = LLMResponse(
         content="""
 # Product Acceptance Report
@@ -109,10 +107,13 @@ async def test_parse_output(product_agent):
 **Acceptance Criteria Met:** 5/5
 """,
         tokens_used=100,
+        tokens_prompt=50,
+        tokens_completion=50,
         cost_usd=0.0,
         model="test-model",
         latency_ms=150,
         provider="test-provider",
+        finish_reason="stop",
     )
 
     product_agent._write_file = AsyncMock()

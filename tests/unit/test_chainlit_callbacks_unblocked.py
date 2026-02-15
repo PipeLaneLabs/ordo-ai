@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import importlib
 import sys
-from types import SimpleNamespace
+from types import ModuleType
+from typing import Any, cast
 
 import pytest
 
@@ -19,7 +20,7 @@ class _FakeMessage:
         return self
 
 
-def _make_fake_chainlit() -> SimpleNamespace:
+def _make_fake_chainlit() -> ModuleType:
     sent_messages: list[str] = []
 
     def on_chat_start(func):
@@ -31,22 +32,22 @@ def _make_fake_chainlit() -> SimpleNamespace:
     def on_chat_end(func):
         return func
 
-    return SimpleNamespace(
-        Message=lambda content: _FakeMessage(content, sent_messages),
-        on_chat_start=on_chat_start,
-        on_message=on_message,
-        on_chat_end=on_chat_end,
-        sent_messages=sent_messages,
-    )
+    fake_cl: Any = ModuleType("chainlit")
+    fake_cl.Message = lambda content: _FakeMessage(content, sent_messages)
+    fake_cl.on_chat_start = on_chat_start
+    fake_cl.on_message = on_message
+    fake_cl.on_chat_end = on_chat_end
+    fake_cl.sent_messages = sent_messages
+    return cast(ModuleType, fake_cl)
 
 
-def _import_callbacks(fake_cl: SimpleNamespace) -> object:
+def _import_callbacks(fake_cl: ModuleType) -> Any:
     sys.modules.pop("src.chainlit_app.callbacks", None)
     sys.modules["chainlit"] = fake_cl
     return importlib.import_module("src.chainlit_app.callbacks")
 
 
-def _sample_state() -> dict:
+def _sample_state() -> dict[str, object]:
     return {
         "workflow_id": "wf-1",
         "user_request": "Do work",

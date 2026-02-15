@@ -1,7 +1,10 @@
 """Unit tests for CheckpointRepository - PostgreSQL checkpoint persistence."""
 
+import importlib
 import json
+from collections.abc import AsyncIterator
 from datetime import UTC, datetime
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -11,11 +14,15 @@ from src.exceptions import CheckpointNotFoundError, DatabaseConnectionError
 from src.storage.checkpoint_repository import CheckpointRepository
 
 
+asyncpg_module = importlib.import_module("asyncpg")
+PostgresError = cast(type[Exception], asyncpg_module.PostgresError)
+
+
 class TestCheckpointRepository:
     """Test suite for CheckpointRepository."""
 
     @pytest_asyncio.fixture
-    async def repository(self):
+    async def repository(self) -> AsyncIterator[CheckpointRepository]:
         """Create repository instance with mocked connection pool."""
         with patch("src.config.settings") as mock_settings:
             mock_settings.postgres_host = "localhost"
@@ -39,7 +46,7 @@ class TestCheckpointRepository:
             if repo.pool:
                 await repo.disconnect()
 
-    def _mock_pool_acquire(self, mock_conn):
+    def _mock_pool_acquire(self, mock_conn: AsyncMock) -> MagicMock:
         """Helper to create proper async context manager mock for pool.acquire()."""
         mock_context = MagicMock()
         mock_context.__aenter__ = AsyncMock(return_value=mock_conn)
@@ -74,10 +81,8 @@ class TestCheckpointRepository:
     @pytest.mark.asyncio
     async def test_save_checkpoint_database_error(self, repository):
         """Test checkpoint save with database error."""
-        import asyncpg
-
         mock_conn = AsyncMock()
-        mock_conn.execute.side_effect = asyncpg.PostgresError("Connection lost")
+        mock_conn.execute.side_effect = PostgresError("Connection lost")
         repository.pool.acquire = MagicMock(
             return_value=self._mock_pool_acquire(mock_conn)
         )
@@ -236,10 +241,8 @@ class TestCheckpointRepository:
     @pytest.mark.asyncio
     async def test_connect_failure(self, repository):
         """Test database connection failure."""
-        import asyncpg
-
         with patch("asyncpg.create_pool", new_callable=AsyncMock) as mock_create_pool:
-            mock_create_pool.side_effect = asyncpg.PostgresError("Connection refused")
+            mock_create_pool.side_effect = PostgresError("Connection refused")
 
             with pytest.raises(DatabaseConnectionError) as exc_info:
                 await repository.connect()

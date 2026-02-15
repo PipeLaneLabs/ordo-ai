@@ -13,6 +13,7 @@ import pytest
 from src.agents.tier_3.static_analysis import StaticAnalysisAgent
 from src.config import Settings
 from src.llm.base_client import LLMResponse
+from src.orchestration.state import WorkflowState, create_initial_state
 
 
 @pytest.fixture
@@ -31,9 +32,12 @@ Status: APPROVED
 ```""",
             model="google/gemini-2.0-flash-exp:free",
             tokens_used=100,
+            tokens_prompt=60,
+            tokens_completion=40,
             cost_usd=0.0001,
             latency_ms=300,
             provider="openrouter",
+            finish_reason="stop",
         )
     )
     return client
@@ -51,7 +55,26 @@ def mock_budget_guard():
 @pytest.fixture
 def mock_settings():
     """Mock settings for testing."""
-    return Settings()
+    return Settings(
+        environment="test",
+        log_level="DEBUG",
+        postgres_host="localhost",
+        postgres_port=5432,
+        postgres_db="test",
+        postgres_user="test",
+        postgres_password="test-pass-123",
+        redis_host="localhost",
+        redis_port=6379,
+        redis_db=0,
+        minio_endpoint="localhost:9000",
+        minio_secret_key="minio-secret-123",
+        openrouter_api_key="test-api-key-12345",
+        google_api_key="test-api-key-12345",
+        jwt_secret_key="test-secret-key-min-32-chars-long-123456",
+        human_approval_timeout=300,
+        total_budget_tokens=100000,
+        max_monthly_budget_usd=10.0,
+    )
 
 
 @pytest.fixture
@@ -141,13 +164,17 @@ Status: APPROVED
 ```""",
         model="google/gemini-2.0-flash-exp:free",
         tokens_used=100,
+        tokens_prompt=60,
+        tokens_completion=40,
         cost_usd=0.0001,
         latency_ms=300,
         provider="openrouter",
+        finish_reason="stop",
     )
+    state = create_initial_state("wf-1", "Static analysis", "trace-1")
 
     with patch.object(static_analysis, "_write_file", new=AsyncMock()):
-        result = await static_analysis._parse_output(response, {})
+        result = await static_analysis._parse_output(response, state)
 
         assert result["report_generated"] is True
 
@@ -161,12 +188,16 @@ async def test_parse_output_extracts_json_summary(static_analysis):
 ```""",
         model="google/gemini-2.0-flash-exp:free",
         tokens_used=100,
+        tokens_prompt=60,
+        tokens_completion=40,
         cost_usd=0.0001,
         latency_ms=300,
         provider="openrouter",
+        finish_reason="stop",
     )
+    state = create_initial_state("wf-1", "Static analysis", "trace-1")
 
-    result = await static_analysis._parse_output(response, {})
+    result = await static_analysis._parse_output(response, state)
 
     assert result["status"] == "APPROVED"
     assert result["critical_issues_count"] == 0
@@ -181,13 +212,17 @@ async def test_parse_output_fallback_markdown(static_analysis):
 ```""",
         model="google/gemini-2.0-flash-exp:free",
         tokens_used=100,
+        tokens_prompt=60,
+        tokens_completion=40,
         cost_usd=0.0001,
         latency_ms=300,
         provider="openrouter",
+        finish_reason="stop",
     )
+    state = create_initial_state("wf-1", "Static analysis", "trace-1")
 
     with patch.object(static_analysis, "_write_file", new=AsyncMock()):
-        result = await static_analysis._parse_output(response, {})
+        result = await static_analysis._parse_output(response, state)
 
         assert result["report_generated"] is True
 
@@ -201,12 +236,16 @@ async def test_parse_output_invalid_json(static_analysis):
 ```""",
         model="google/gemini-2.0-flash-exp:free",
         tokens_used=100,
+        tokens_prompt=60,
+        tokens_completion=40,
         cost_usd=0.0001,
         latency_ms=300,
         provider="openrouter",
+        finish_reason="stop",
     )
+    state = create_initial_state("wf-1", "Static analysis", "trace-1")
 
-    result = await static_analysis._parse_output(response, {})
+    result = await static_analysis._parse_output(response, state)
 
     assert result["status"] == "ERROR"
     assert "error" in result
@@ -219,12 +258,16 @@ async def test_parse_output_defaults_to_approved(static_analysis):
         content="No JSON here",
         model="google/gemini-2.0-flash-exp:free",
         tokens_used=50,
+        tokens_prompt=30,
+        tokens_completion=20,
         cost_usd=0.00005,
         latency_ms=300,
         provider="openrouter",
+        finish_reason="stop",
     )
+    state = create_initial_state("wf-1", "Static analysis", "trace-1")
 
-    result = await static_analysis._parse_output(response, {})
+    result = await static_analysis._parse_output(response, state)
 
     assert result["status"] == "APPROVED"
 
@@ -232,7 +275,7 @@ async def test_parse_output_defaults_to_approved(static_analysis):
 @pytest.mark.asyncio
 async def test_build_prompt_includes_tool_results(static_analysis):
     """Test prompt includes all tool outputs."""
-    state = {}
+    state: WorkflowState = create_initial_state("wf-1", "Static analysis", "trace-1")
     tool_results = {
         "black": {"command": "black --check", "return_code": 0, "stdout": "All done!"},
         "ruff": {"command": "ruff check", "return_code": 0, "stdout": ""},

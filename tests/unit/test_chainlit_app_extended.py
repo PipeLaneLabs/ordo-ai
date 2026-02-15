@@ -14,8 +14,10 @@ from __future__ import annotations
 
 import os
 import sys
+from collections.abc import Callable
 from datetime import UTC, datetime
 from types import ModuleType
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -24,7 +26,7 @@ from src.config import Settings
 
 
 @pytest.fixture
-def mock_settings():
+def mock_settings() -> Settings:
     """Create mock settings."""
     settings = MagicMock(spec=Settings)
     settings.environment = "test"
@@ -36,7 +38,7 @@ def _install_chainlit_stub() -> None:  # noqa: C901
     if "chainlit" in sys.modules:
         return
 
-    stub = ModuleType("chainlit")
+    stub: Any = ModuleType("chainlit")
 
     class _UserSession:
         def __init__(self) -> None:
@@ -55,13 +57,13 @@ def _install_chainlit_stub() -> None:  # noqa: C901
         async def send(self) -> _Message:
             return self
 
-    def on_chat_start(func):
+    def on_chat_start(func: Callable[..., Any]) -> Callable[..., Any]:
         return func
 
-    def on_message(func):
+    def on_message(func: Callable[..., Any]) -> Callable[..., Any]:
         return func
 
-    def on_chat_end(func):
+    def on_chat_end(func: Callable[..., Any]) -> Callable[..., Any]:
         return func
 
     async def sleep(_seconds: float) -> None:
@@ -95,7 +97,9 @@ class TestChatSessionInitialization:
     """Tests for chat session initialization."""
 
     @pytest.mark.asyncio
-    async def test_on_chat_start_initializes_session(self, mock_chainlit):
+    async def test_on_chat_start_initializes_session(
+        self, mock_chainlit: MagicMock
+    ) -> None:
         """Test chat start initializes session."""
         mock_user_session = MagicMock()
         mock_chainlit.user_session = mock_user_session
@@ -114,7 +118,9 @@ class TestChatSessionInitialization:
         assert session_data["budget_used"] == 0.0
 
     @pytest.mark.asyncio
-    async def test_on_chat_start_sets_budget_limit(self, mock_chainlit, mock_settings):
+    async def test_on_chat_start_sets_budget_limit(
+        self, mock_chainlit: MagicMock, mock_settings: Settings
+    ) -> None:
         """Test chat start sets budget limit from settings."""
         mock_user_session = MagicMock()
         mock_chainlit.user_session = mock_user_session
@@ -124,7 +130,7 @@ class TestChatSessionInitialization:
         assert budget_limit == 100.0
 
     @pytest.mark.asyncio
-    async def test_on_chat_start_binds_context(self, mock_chainlit):
+    async def test_on_chat_start_binds_context(self, mock_chainlit: MagicMock) -> None:
         """Test chat start binds workflow context."""
         with patch("src.chainlit_app.app.bind_workflow_context") as mock_bind:
             session_id = "test-session-123"
@@ -139,7 +145,7 @@ class TestWorkflowProgressDisplay:
     """Tests for workflow progress display."""
 
     @pytest.mark.asyncio
-    async def test_display_workflow_progress(self, mock_chainlit):
+    async def test_display_workflow_progress(self, mock_chainlit: MagicMock) -> None:
         """Test displaying workflow progress."""
         workflow_state = {
             "workflow_id": "wf-123",
@@ -153,7 +159,7 @@ class TestWorkflowProgressDisplay:
         assert workflow_state["current_agent"] == "SoftwareEngineer"
 
     @pytest.mark.asyncio
-    async def test_update_phase_display(self, mock_chainlit):
+    async def test_update_phase_display(self, mock_chainlit: MagicMock) -> None:
         """Test updating phase display."""
         phases = ["planning", "design", "development", "testing", "delivery"]
         current_phase = phases[2]
@@ -161,7 +167,7 @@ class TestWorkflowProgressDisplay:
         assert current_phase == "development"
 
     @pytest.mark.asyncio
-    async def test_display_agent_status(self, mock_chainlit):
+    async def test_display_agent_status(self, mock_chainlit: MagicMock) -> None:
         """Test displaying agent status."""
         agent_status = {
             "agent_name": "SoftwareEngineer",
@@ -178,7 +184,7 @@ class TestHumanApprovalGates:
     """Tests for human approval gates."""
 
     @pytest.mark.asyncio
-    async def test_display_approval_gate(self, mock_chainlit):
+    async def test_display_approval_gate(self, mock_chainlit: MagicMock) -> None:
         """Test displaying approval gate."""
         approval_request = {
             "workflow_id": "wf-123",
@@ -191,7 +197,7 @@ class TestHumanApprovalGates:
         assert "approve" in approval_request["options"]
 
     @pytest.mark.asyncio
-    async def test_handle_approval_decision(self, mock_chainlit):
+    async def test_handle_approval_decision(self, mock_chainlit: MagicMock) -> None:
         """Test handling approval decision."""
         decision = {
             "workflow_id": "wf-123",
@@ -203,7 +209,7 @@ class TestHumanApprovalGates:
         assert decision["decision"] == "approve"
 
     @pytest.mark.asyncio
-    async def test_handle_rejection_decision(self, mock_chainlit):
+    async def test_handle_rejection_decision(self, mock_chainlit: MagicMock) -> None:
         """Test handling rejection decision."""
         decision = {
             "workflow_id": "wf-123",
@@ -216,7 +222,7 @@ class TestHumanApprovalGates:
         assert "vulnerabilities" in decision["reason"]
 
     @pytest.mark.asyncio
-    async def test_approval_timeout_handling(self, mock_chainlit):
+    async def test_approval_timeout_handling(self, mock_chainlit: MagicMock) -> None:
         """Test handling approval timeout."""
         approval_state = {
             "workflow_id": "wf-123",
@@ -233,7 +239,7 @@ class TestBudgetVisualization:
     """Tests for budget visualization."""
 
     @pytest.mark.asyncio
-    async def test_display_budget_usage(self, mock_chainlit):
+    async def test_display_budget_usage(self, mock_chainlit: MagicMock) -> None:
         """Test displaying budget usage."""
         budget_info = {
             "total_budget_usd": 100.0,
@@ -246,7 +252,7 @@ class TestBudgetVisualization:
         assert budget_info["remaining_budget_usd"] == 64.50
 
     @pytest.mark.asyncio
-    async def test_display_token_usage(self, mock_chainlit):
+    async def test_display_token_usage(self, mock_chainlit: MagicMock) -> None:
         """Test displaying token usage."""
         token_info = {
             "total_tokens": 10000,
@@ -258,9 +264,9 @@ class TestBudgetVisualization:
         assert token_info["usage_percent"] == 45.0
 
     @pytest.mark.asyncio
-    async def test_budget_warning_display(self, mock_chainlit):
+    async def test_budget_warning_display(self, mock_chainlit: MagicMock) -> None:
         """Test displaying budget warning."""
-        budget_info = {
+        budget_info: dict[str, float | str] = {
             "total_budget_usd": 100.0,
             "used_budget_usd": 85.0,
             "remaining_budget_usd": 15.0,
@@ -268,11 +274,13 @@ class TestBudgetVisualization:
             "warning": "Budget usage above 80%",
         }
 
-        assert budget_info["usage_percent"] > 80
+        usage_percent = budget_info["usage_percent"]
+        assert isinstance(usage_percent, float)
+        assert usage_percent > 80
         assert "warning" in budget_info
 
     @pytest.mark.asyncio
-    async def test_budget_exhaustion_display(self, mock_chainlit):
+    async def test_budget_exhaustion_display(self, mock_chainlit: MagicMock) -> None:
         """Test displaying budget exhaustion."""
         budget_info = {
             "total_budget_usd": 100.0,
@@ -290,7 +298,7 @@ class TestRealTimeUpdates:
     """Tests for real-time updates via WebSocket."""
 
     @pytest.mark.asyncio
-    async def test_send_workflow_update(self, mock_chainlit):
+    async def test_send_workflow_update(self, mock_chainlit: MagicMock) -> None:
         """Test sending workflow update."""
         update = {
             "type": "workflow_update",
@@ -304,7 +312,7 @@ class TestRealTimeUpdates:
         assert update["phase"] == "development"
 
     @pytest.mark.asyncio
-    async def test_send_budget_update(self, mock_chainlit):
+    async def test_send_budget_update(self, mock_chainlit: MagicMock) -> None:
         """Test sending budget update."""
         update = {
             "type": "budget_update",
@@ -317,7 +325,7 @@ class TestRealTimeUpdates:
         assert update["type"] == "budget_update"
 
     @pytest.mark.asyncio
-    async def test_send_approval_request(self, mock_chainlit):
+    async def test_send_approval_request(self, mock_chainlit: MagicMock) -> None:
         """Test sending approval request."""
         update = {
             "type": "approval_request",
@@ -330,7 +338,7 @@ class TestRealTimeUpdates:
         assert update["type"] == "approval_request"
 
     @pytest.mark.asyncio
-    async def test_send_error_notification(self, mock_chainlit):
+    async def test_send_error_notification(self, mock_chainlit: MagicMock) -> None:
         """Test sending error notification."""
         update = {
             "type": "error",
@@ -348,7 +356,7 @@ class TestErrorHandling:
     """Tests for error handling in Chainlit app."""
 
     @pytest.mark.asyncio
-    async def test_handle_workflow_error(self, mock_chainlit):
+    async def test_handle_workflow_error(self, mock_chainlit: MagicMock) -> None:
         """Test handling workflow error."""
         error_info = {
             "error_type": "WorkflowError",
@@ -360,7 +368,7 @@ class TestErrorHandling:
         assert error_info["error_type"] == "WorkflowError"
 
     @pytest.mark.asyncio
-    async def test_handle_connection_error(self, mock_chainlit):
+    async def test_handle_connection_error(self, mock_chainlit: MagicMock) -> None:
         """Test handling connection error."""
         error_info = {
             "error_type": "ConnectionError",
@@ -371,7 +379,7 @@ class TestErrorHandling:
         assert error_info["error_type"] == "ConnectionError"
 
     @pytest.mark.asyncio
-    async def test_handle_timeout_error(self, mock_chainlit):
+    async def test_handle_timeout_error(self, mock_chainlit: MagicMock) -> None:
         """Test handling timeout error."""
         error_info = {
             "error_type": "TimeoutError",
@@ -383,7 +391,7 @@ class TestErrorHandling:
         assert error_info["error_type"] == "TimeoutError"
 
     @pytest.mark.asyncio
-    async def test_display_error_message(self, mock_chainlit):
+    async def test_display_error_message(self, mock_chainlit: MagicMock) -> None:
         """Test displaying error message to user."""
         error_display = {
             "title": "Workflow Error",
@@ -398,7 +406,7 @@ class TestChainlitIntegration:
     """Integration tests for Chainlit app."""
 
     @pytest.mark.asyncio
-    async def test_full_workflow_interaction(self, mock_chainlit):
+    async def test_full_workflow_interaction(self, mock_chainlit: MagicMock) -> None:
         """Test complete workflow interaction."""
         # Initialize session
         session_data = {
@@ -426,7 +434,7 @@ class TestChainlitIntegration:
         assert budget["remaining_usd"] == 75.0
 
     @pytest.mark.asyncio
-    async def test_workflow_with_approval_gate(self, mock_chainlit):
+    async def test_workflow_with_approval_gate(self, mock_chainlit: MagicMock) -> None:
         """Test workflow with approval gate."""
         # Initialize session
 
@@ -446,7 +454,7 @@ class TestChainlitIntegration:
         assert decision["decision"] == "approve"
 
     @pytest.mark.asyncio
-    async def test_workflow_with_error_recovery(self, mock_chainlit):
+    async def test_workflow_with_error_recovery(self, mock_chainlit: MagicMock) -> None:
         """Test workflow with error recovery."""
         # Initialize session
 

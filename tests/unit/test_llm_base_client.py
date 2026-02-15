@@ -1,6 +1,7 @@
 """Unit tests for BaseLLMClient - retry logic, timeout handling, error management."""
 
 import asyncio
+from typing import Any, cast
 from unittest.mock import AsyncMock
 
 import pytest
@@ -12,36 +13,47 @@ from src.llm.base_client import BaseLLMClient, LLMResponse
 class TestLLMClient(BaseLLMClient):
     """Concrete implementation for testing abstract base class."""
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.generate_call_count = 0
 
     async def generate(
-        self, prompt: str, temperature: float = 0.7, max_tokens: int = 1000, **kwargs
+        self,
+        prompt: str,
+        max_tokens: int = 2000,
+        temperature: float = 0.7,
+        stop: list[str] | None = None,
+        model: str | None = None,
+        **_kwargs: object,
     ) -> LLMResponse:
         """Mock generate method."""
         self.generate_call_count += 1
         return LLMResponse(
             content=f"Response to: {prompt[:20]}",
-            model="test-model",
+            model=model or "test-model",
             tokens_used=100,
+            tokens_prompt=60,
+            tokens_completion=40,
             cost_usd=0.001,
+            latency_ms=120,
+            provider="test",
+            finish_reason="stop",
         )
 
     def count_tokens(self, text: str) -> int:
         """Mock token counting."""
         return len(text.split())
 
-    def calculate_cost(self, tokens: int, model: str = "test-model") -> float:
+    def calculate_cost(self, tokens_prompt: int, tokens_completion: int) -> float:
         """Mock cost calculation."""
-        return tokens * 0.00001
+        return (tokens_prompt + tokens_completion) * 0.00001
 
 
 class TestBaseLLMClient:
     """Test suite for BaseLLMClient abstract class."""
 
     @pytest.fixture
-    def client(self):
+    def client(self) -> TestLLMClient:
         """Create test client instance."""
         return TestLLMClient(
             max_retries=3,
@@ -51,7 +63,7 @@ class TestBaseLLMClient:
         )
 
     @pytest.mark.asyncio
-    async def test_retry_with_backoff_success(self, client):
+    async def test_retry_with_backoff_success(self, client: TestLLMClient) -> None:
         """Test successful operation on first attempt."""
         operation = AsyncMock(return_value="success")
 
@@ -61,10 +73,10 @@ class TestBaseLLMClient:
         operation.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_retry_with_backoff_timeout(self, client):
+    async def test_retry_with_backoff_timeout(self, client: TestLLMClient) -> None:
         """Test timeout handling with retry."""
 
-        async def slow_operation():
+        async def slow_operation() -> str:
             await asyncio.sleep(10)  # Exceeds 5s timeout
             return "success"
 
@@ -74,11 +86,13 @@ class TestBaseLLMClient:
         assert "failed after" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_retry_with_backoff_transient_errors(self, client):
+    async def test_retry_with_backoff_transient_errors(
+        self, client: TestLLMClient
+    ) -> None:
         """Test retry on transient errors (rate limit, server error)."""
         call_count = 0
 
-        async def failing_operation():
+        async def failing_operation() -> str:
             nonlocal call_count
             call_count += 1
             if call_count < 3:
@@ -96,10 +110,12 @@ class TestBaseLLMClient:
         assert call_count == 3  # Failed twice, succeeded on third
 
     @pytest.mark.asyncio
-    async def test_retry_with_backoff_permanent_error(self, client):
+    async def test_retry_with_backoff_permanent_error(
+        self, client: TestLLMClient
+    ) -> None:
         """Test that 4xx errors (except 429) don't retry."""
 
-        async def bad_request_operation():
+        async def bad_request_operation() -> str:
             raise LLMProviderError(
                 message="Invalid request",
                 provider="test",
@@ -112,10 +128,10 @@ class TestBaseLLMClient:
         assert "Invalid request" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_retry_with_backoff_max_retries(self, client):
+    async def test_retry_with_backoff_max_retries(self, client: TestLLMClient) -> None:
         """Test max retries exhausted."""
 
-        async def always_fails():
+        async def always_fails() -> str:
             raise LLMProviderError(
                 message="Server error",
                 provider="test",
@@ -128,11 +144,13 @@ class TestBaseLLMClient:
         assert "failed after" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_retry_with_backoff_exponential_delay(self, client):
+    async def test_retry_with_backoff_exponential_delay(
+        self, client: TestLLMClient
+    ) -> None:
         """Test exponential backoff delay capping at 60 seconds."""
-        call_times = []
+        call_times: list[float] = []
 
-        async def track_timing():
+        async def track_timing() -> str:
             call_times.append(asyncio.get_event_loop().time())
             if len(call_times) < 3:
                 raise LLMProviderError(
@@ -149,19 +167,19 @@ class TestBaseLLMClient:
         # Second retry delay should be ~0.2s (0.1 * 2)
         assert call_times[2] - call_times[1] >= 0.19
 
-    def test_count_tokens(self, client):
+    def test_count_tokens(self, client: TestLLMClient) -> None:
         """Test token counting."""
         text = "This is a test sentence"
         tokens = client.count_tokens(text)
         assert tokens == 5  # Simple word count
 
-    def test_calculate_cost(self, client):
+    def test_calculate_cost(self, client: TestLLMClient) -> None:
         """Test cost calculation."""
-        cost = client.calculate_cost(1000, "test-model")
+        cost = client.calculate_cost(500, 500)
         assert cost == 0.01  # 1000 * 0.00001
 
     @pytest.mark.asyncio
-    async def test_generate_structured_success(self, client):
+    async def test_generate_structured_success(self, client: TestLLMClient) -> None:
         """Test structured output generation with Pydantic model."""
         from pydantic import BaseModel
 
@@ -172,7 +190,8 @@ class TestBaseLLMClient:
         # Mock the generate method to return JSON
         # Mock the structured generation to return a TestModel instance
         test_instance = TestModel(name="John", age=30)
-        client.generate_structured = AsyncMock(return_value=test_instance)
+        client_any = cast(Any, client)
+        client_any.generate_structured = AsyncMock(return_value=test_instance)
 
         result = await client.generate_structured(
             prompt="Generate user data",
@@ -184,7 +203,9 @@ class TestBaseLLMClient:
         assert result.age == 30
 
     @pytest.mark.asyncio
-    async def test_generate_structured_validation_error(self, client):
+    async def test_generate_structured_validation_error(
+        self, client: TestLLMClient
+    ) -> None:
         """Test structured output with invalid JSON."""
         from pydantic import BaseModel
 
@@ -193,14 +214,18 @@ class TestBaseLLMClient:
             age: int
 
         # Mock generate to return invalid JSON that won't parse to TestModel
-        client.generate = AsyncMock(
+        client_any = cast(Any, client)
+        client_any.generate = AsyncMock(
             return_value=LLMResponse(
                 content='{"name": "John"}',  # Missing required 'age' field
                 model="test-model",
                 tokens_used=50,
+                tokens_prompt=30,
+                tokens_completion=20,
                 cost_usd=0.0005,
                 latency_ms=100,
                 provider="test",
+                finish_reason="stop",
             )
         )
 
@@ -213,6 +238,6 @@ class TestBaseLLMClient:
         # Error message contains validation details
         assert "validation error" in str(exc_info.value).lower()
 
-    def test_get_provider_name(self, client):
+    def test_get_provider_name(self, client: TestLLMClient) -> None:
         """Test provider name retrieval."""
         assert client._get_provider_name() == "unknown"

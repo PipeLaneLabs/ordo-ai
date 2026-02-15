@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
+from types import TracebackType
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -22,7 +24,12 @@ class _AsyncFile:
     async def __aenter__(self) -> _AsyncFile:
         return self
 
-    async def __aexit__(self, _exc_type, _exc, _tb) -> None:
+    async def __aexit__(
+        self,
+        _exc_type: type[BaseException] | None,
+        _exc: BaseException | None,
+        _tb: TracebackType | None,
+    ) -> None:
         return None
 
 
@@ -38,8 +45,11 @@ def quality_engineer() -> QualityEngineerAgent:
 
 
 @pytest.mark.asyncio
-async def test_read_src_files_collects_content(quality_engineer, monkeypatch) -> None:
-    fake_walk = [("src", [], ["sample.py"])]
+async def test_read_src_files_collects_content(
+    quality_engineer: QualityEngineerAgent,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_walk: list[tuple[str, list[str], list[str]]] = [("src", [], ["sample.py"])]
 
     monkeypatch.setattr(os, "walk", lambda _root: fake_walk)
 
@@ -53,7 +63,9 @@ async def test_read_src_files_collects_content(quality_engineer, monkeypatch) ->
 
 @pytest.mark.asyncio
 async def test_read_existing_tests_reads_files(
-    quality_engineer, tmp_path, monkeypatch
+    quality_engineer: QualityEngineerAgent,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     tests_dir = tmp_path / "tests"
     tests_dir.mkdir()
@@ -70,7 +82,11 @@ async def test_read_existing_tests_reads_files(
     assert "test_sample.py" in content
 
 
-def test_extract_coverage_from_json(quality_engineer, tmp_path, monkeypatch) -> None:
+def test_extract_coverage_from_json(
+    quality_engineer: QualityEngineerAgent,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     coverage_data = {"totals": {"percent_covered": 88.5}}
     (tmp_path / "coverage.json").write_text(json.dumps(coverage_data), encoding="utf-8")
 
@@ -83,7 +99,9 @@ def test_extract_coverage_from_json(quality_engineer, tmp_path, monkeypatch) -> 
 
 
 def test_extract_coverage_json_error_returns_zero(
-    quality_engineer, tmp_path, monkeypatch
+    quality_engineer: QualityEngineerAgent,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     (tmp_path / "coverage.json").write_text("not-json", encoding="utf-8")
 

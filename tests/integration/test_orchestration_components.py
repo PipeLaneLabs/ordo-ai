@@ -1,11 +1,13 @@
 """Integration tests for Phase 2 orchestration components."""
 
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from src.llm.google_client import GoogleClient
 from src.llm.openrouter_client import OpenRouterClient
+from src.orchestration.state import WorkflowState, create_initial_state
 
 
 class TestLLMClientFallback:
@@ -99,14 +101,17 @@ class TestCheckpointPersistence:
             repo.pool = mock_pool
 
             # Test state
-            original_state = {
-                "workflow_id": "wf-integration-test",
-                "user_request": "Test integration",
-                "state_version": 1,
-                "current_phase": "development",
-                "budget_used_tokens": 5000,
-                "code_files": {"main.py": "print('hello')"},
-            }
+            original_state = cast(
+                WorkflowState,
+                {
+                    "workflow_id": "wf-integration-test",
+                    "user_request": "Test integration",
+                    "state_version": 1,
+                    "current_phase": "development",
+                    "budget_used_tokens": 5000,
+                    "code_files": {"main.py": "print('hello')"},
+                },
+            )
 
             # Save checkpoint
             checkpoint_id = await repo.save_checkpoint(
@@ -141,7 +146,6 @@ class TestBudgetTracking:
     async def test_budget_tracking_with_llm_calls(self):
         """Test that budget is tracked correctly across multiple LLM calls."""
         from src.orchestration.budget_guard import BudgetGuard
-        from src.orchestration.state import create_initial_state
 
         with patch("src.config.settings") as mock_settings:
             mock_settings.max_tokens_per_workflow = 100_000

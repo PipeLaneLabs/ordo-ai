@@ -24,9 +24,12 @@ def mock_llm_client():
             content="```python:tests/unit/test_example.py\ndef test_example():\n    assert True\n```",
             model="deepseek/deepseek-chat",
             tokens_used=100,
+            tokens_prompt=60,
+            tokens_completion=40,
             cost_usd=0.0001,
             latency_ms=500,
             provider="openrouter",
+            finish_reason="stop",
         )
     )
     return client
@@ -42,9 +45,15 @@ def mock_budget_guard():
 
 
 @pytest.fixture
-def mock_settings():
+def mock_settings() -> Settings:
     """Mock settings for testing."""
-    return Settings()
+    return Settings(
+        openrouter_api_key="sk-fake-key-for-testing",
+        google_api_key="fake-google-key",
+        jwt_secret_key="test-secret-key-min-32-chars-long-123456",
+        postgres_password="test_password_123",
+        minio_secret_key="fake-minio-key",
+    )
 
 
 @pytest.fixture
@@ -167,9 +176,12 @@ def test_b():
 ```""",
         model="deepseek/deepseek-chat",
         tokens_used=200,
+        tokens_prompt=120,
+        tokens_completion=80,
         cost_usd=0.0002,
         latency_ms=500,
         provider="openrouter",
+        finish_reason="stop",
     )
 
     with (
@@ -207,9 +219,12 @@ def test_a():
 ```""",
         model="deepseek/deepseek-chat",
         tokens_used=200,
+        tokens_prompt=120,
+        tokens_completion=80,
         cost_usd=0.0002,
         latency_ms=500,
         provider="openrouter",
+        finish_reason="stop",
     )
 
     with (

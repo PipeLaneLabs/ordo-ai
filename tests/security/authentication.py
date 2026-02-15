@@ -26,7 +26,7 @@ def test_jwt_creation_and_validation():
     Tests that a JWT token can be created and validated successfully.
     """
     user_id = "test_user"
-    roles = [Role.DEVELOPER.value]
+    roles: list[str] = [Role.DEVELOPER.value]
     token = jwt_service.create_access_token(user_id, roles)
 
     payload = jwt_service.verify_token(token)
@@ -39,7 +39,7 @@ def test_jwt_expired():
     Tests that an expired JWT token fails validation.
     """
     user_id = "test_user"
-    roles = [Role.DEVELOPER.value]
+    roles: list[str] = [Role.DEVELOPER.value]
     with freeze_time("2023-01-01 12:00:00"):
         token = jwt_service.create_access_token(user_id, roles)
 
@@ -55,7 +55,7 @@ def test_jwt_invalid_signature():
     Tests that a JWT with an invalid signature fails validation.
     """
     user_id = "test_user"
-    roles = [Role.DEVELOPER.value]
+    roles: list[str] = [Role.DEVELOPER.value]
     token = jwt_service.create_access_token(user_id, roles)
 
     # Tamper with the token
@@ -121,7 +121,7 @@ def test_jwt_empty_roles():
     Tests JWT creation with empty roles list.
     """
     user_id = "test_user"
-    roles = []
+    roles: list[str] = []
     token = jwt_service.create_access_token(user_id, roles)
 
     payload = jwt_service.verify_token(token)
@@ -134,7 +134,7 @@ def test_jwt_multiple_roles():
     Tests JWT creation with multiple roles.
     """
     user_id = "test_user"
-    roles = [Role.DEVELOPER.value, Role.VIEWER.value]
+    roles: list[str] = [Role.DEVELOPER.value, Role.VIEWER.value]
     token = jwt_service.create_access_token(user_id, roles)
 
     payload = jwt_service.verify_token(token)
@@ -148,7 +148,7 @@ def test_jwt_custom_expiration():
     Tests JWT creation with custom expiration time.
     """
     user_id = "test_user"
-    roles = [Role.DEVELOPER.value]
+    roles: list[str] = [Role.DEVELOPER.value]
 
     # Create token with 30 minute expiration
     from datetime import timedelta

@@ -10,26 +10,42 @@ Tests cover all workflow control endpoints including:
 - Error handling and edge cases
 """
 
+import importlib
 import uuid
 from datetime import UTC, datetime
+from typing import cast
 from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi import HTTPException, status
 
 
-try:
-    from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
-except ImportError:
+def _resolve_jwt_errors() -> tuple[type[Exception], type[Exception]]:
     try:
-        from jwt import ExpiredSignatureError, InvalidTokenError
-    except ImportError:
-        # Fallback for PyJWT 2.8+
-        class ExpiredSignatureError(Exception):
-            pass
+        jwt_exceptions = importlib.import_module("jwt.exceptions")
+        return (
+            cast(type[Exception], jwt_exceptions.ExpiredSignatureError),
+            cast(type[Exception], jwt_exceptions.InvalidTokenError),
+        )
+    except Exception:
+        try:
+            jwt_module = importlib.import_module("jwt")
+            return (
+                cast(type[Exception], jwt_module.ExpiredSignatureError),
+                cast(type[Exception], jwt_module.InvalidTokenError),
+            )
+        except Exception:
 
-        class InvalidTokenError(Exception):
-            pass
+            class ExpiredSignatureError(Exception):
+                pass
+
+            class InvalidTokenError(Exception):
+                pass
+
+            return ExpiredSignatureError, InvalidTokenError
+
+
+ExpiredSignatureError, InvalidTokenError = _resolve_jwt_errors()
 
 
 from src.api.schemas import (

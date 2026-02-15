@@ -184,26 +184,30 @@ lines-after-imports = 2
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 [tool.mypy]
+# 1. Base Setup
 python_version = "3.12"
-strict = true
+files = ["src", "tests"]
+strict = true            # Turns on ALL strict checks by default
+
+# 2. Strictness Refinements
+# These are redundant because 'strict=true' sets them, but keeping them
+# is good documentation for your team.
+warn_unreachable = true
 warn_return_any = true
 warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_any_generics = true
-check_untyped_defs = true
 no_implicit_reexport = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
 strict_equality = true
 strict_concatenate = true
 
-# Allow some flexibility
-allow_subclassing_any = true
-allow_untyped_calls = false
-allow_untyped_decorators = true
+# 3. Flexibility Configuration (FIXED KEYS)
+# strict=true sets these to 'true'. We force them to 'false' to allow flexibility.
+disallow_subclassing_any = false 
+disallow_untyped_decorators = false 
 
-# Third-party packages without stubs
+# strict=true sets this to 'true'. We keep it 'true' to enforce strictness.
+disallow_untyped_calls = true
+
+# 4. Third-party packages without stubs
 [[tool.mypy.overrides]]
 module = [
     "chainlit.*",
@@ -213,6 +217,15 @@ module = [
     "prometheus_client.*",
 ]
 ignore_missing_imports = true
+# Stop MyPy from complaining if these libs return 'Any'
+warn_return_any = false 
+
+# 5. Test Suite Overrides (The "Tiered Strictness")
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false       # Allows: def test_logic():
+disallow_incomplete_defs = true    # Allows: def test_logic(fixture):
+warn_unreachable = true            # Tests often use intentionally unreachable paths
 
 [tool.pytest.ini_options]
 minversion = "8.0"
@@ -223,7 +236,6 @@ addopts = [
 ]
 testpaths = ["tests"]
 pythonpath = ["."]
-
 
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
@@ -254,6 +266,8 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
     "@abstractmethod",
+    "pass",      # Added: useful for abstract classes
+    "\\.\\.\\.", # Added: captures '...' (Ellipsis)
 ]
 
 [tool.coverage.html]

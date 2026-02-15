@@ -49,10 +49,8 @@ lint:
 	@poetry run black --check src/ tests/
 	@echo "--- Linting with Ruff..."
 	@poetry run ruff check src/ tests/
-	@echo "--- Type-checking with MyPy (src)..."
-	@poetry run mypy src/ --strict
-	@echo "--- Type-checking with MyPy (tests)..."
-	@poetry run mypy tests/ --ignore-missing-imports
+	@echo "--- Type-checking with MyPy..."
+	@poetry run mypy
 	@echo "✅ All checks passed!"
 
 .PHONY: format
