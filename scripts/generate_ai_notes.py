@@ -49,7 +49,9 @@ def run_command(command):
         # Executes the command, captures stdout, and checks for errors.
         # text=True decodes stdout as UTF-8.
         # check=True raises a CalledProcessError if the command returns a non-zero exit code.
-        result = subprocess.run(command, check=True, text=True, capture_output=True, shell=True)
+        result = subprocess.run(
+            command, check=True, text=True, capture_output=True, shell=True
+        )
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
         # If the command fails, print the error and exit.
@@ -103,7 +105,10 @@ def generate_notes(prompt, api_key, api_url, model_name, version):
     payload = {
         "model": model_name,
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT_TEMPLATE.format(version=version)},
+            {
+                "role": "system",
+                "content": SYSTEM_PROMPT_TEMPLATE.format(version=version),
+            },
             {"role": "user", "content": prompt},
         ],
         "temperature": 0.4,
@@ -135,7 +140,9 @@ def main():
         default="https://api.openai.com/v1/chat/completions",
         help="The API endpoint for the chat completions service.",
     )
-    parser.add_argument("--model", default="gpt-4o", help="The name of the model to use for generation.")
+    parser.add_argument(
+        "--model", default="gpt-4o", help="The name of the model to use for generation."
+    )
     args = parser.parse_args()
 
     current_tag = args.tag
@@ -151,7 +158,11 @@ def main():
     user_prompt = f"Here are the commit messages since tag {previous_tag}:\n\n{commits}"
 
     ai_notes = generate_notes(
-        prompt=user_prompt, api_key=args.api_key, api_url=args.api_url, model_name=args.model, version=current_tag
+        prompt=user_prompt,
+        api_key=args.api_key,
+        api_url=args.api_url,
+        model_name=args.model,
+        version=current_tag,
     )
 
     print(ai_notes)

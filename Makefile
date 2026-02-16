@@ -46,9 +46,9 @@ test:
 lint:
 	@echo "🔍 Running code quality checks..."
 	@echo "--- Checking formatting with Black..."
-	@poetry run black --check src/ tests/
+	@poetry run black --check .
 	@echo "--- Linting with Ruff..."
-	@poetry run ruff check src/ tests/
+	@poetry run ruff check .
 	@echo "--- Type-checking with MyPy..."
 	@poetry run mypy
 	@echo "✅ All checks passed!"
@@ -56,8 +56,8 @@ lint:
 .PHONY: format
 format:
 	@echo "🎨 Auto-formatting code..."
-	@poetry run black src/ tests/
-	@poetry run ruff check --fix src/ tests/
+	@poetry run black .
+	@poetry run ruff check --fix .
 	@echo "✅ Formatting complete."
 
 .PHONY: security-scan
