@@ -110,9 +110,16 @@ def mock_settings() -> Settings:
     return Settings(
         environment="test",
         log_level="DEBUG",
-        postgres_url="postgresql://test:test@localhost/test",
-        redis_url="redis://localhost:6379/0",
+        postgres_host="localhost",
+        postgres_port=5432,
+        postgres_db="test",
+        postgres_user="test",
+        postgres_password="test-pass-123",
+        redis_host="localhost",
+        redis_port=6379,
+        redis_db=0,
         minio_endpoint="localhost:9000",
+        minio_secret_key="minio-secret-123",
         openrouter_api_key="test-api-key-12345",
         google_api_key="test-api-key-12345",
         jwt_secret_key="test-secret-key-min-32-chars-long-123456",
@@ -228,7 +235,7 @@ class TestStrategyValidatorAgentApprovalFlow:
         mock_budget_guard: MagicMock,
         mock_settings: Settings,
         sample_workflow_state: WorkflowState,
-        monkeypatch,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test _parse_output with APPROVED validation."""
         # Arrange
@@ -258,7 +265,7 @@ class TestStrategyValidatorAgentApprovalFlow:
         mock_budget_guard: MagicMock,
         mock_settings: Settings,
         sample_workflow_state: WorkflowState,
-        monkeypatch,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test execute() succeeds with APPROVED validation."""
         # Arrange
@@ -288,7 +295,7 @@ class TestStrategyValidatorAgentRejectionFlow:
         mock_budget_guard: MagicMock,
         mock_settings: Settings,
         sample_workflow_state: WorkflowState,
-        monkeypatch,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test _parse_output raises AgentRejectionError when REJECTED."""
         # Arrange
@@ -318,7 +325,7 @@ class TestStrategyValidatorAgentRejectionFlow:
         mock_budget_guard: MagicMock,
         mock_settings: Settings,
         sample_workflow_state: WorkflowState,
-        monkeypatch,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test execute() raises AgentRejectionError when validation fails."""
         # Arrange
@@ -367,7 +374,7 @@ class TestStrategyValidatorAgentTokenBudget:
         mock_budget_guard: MagicMock,
         mock_settings: Settings,
         sample_workflow_state: WorkflowState,
-        monkeypatch,
+        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """Test execute() reserves correct token budget."""
         # Arrange

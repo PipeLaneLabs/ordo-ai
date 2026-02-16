@@ -233,6 +233,14 @@ We welcome contributions, especially in the following areas:
 
 ---
 
+## 🙌 Contributors
+
+CONTRIBUTORS_START
+No contributors yet.
+CONTRIBUTORS_END
+
+---
+
 ## 🔐 Security
 
 ### Environment Variables

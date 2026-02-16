@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import importlib
 import sys
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
+from typing import Any, cast
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -31,14 +32,14 @@ class _FakeMessage:
         return self
 
 
-def _make_fake_chainlit() -> SimpleNamespace:
+def _make_fake_chainlit() -> ModuleType:
     sent_messages: list[str] = []
     sleep_calls: list[float] = []
-    ask_response = {"value": "Build a sample API"}
+    ask_response: dict[str, str | None] = {"value": "Build a sample API"}
 
     class _AskUserMessage:
         def __init__(self, content: str, timeout: int | None = None) -> None:
-            self.content = ask_response["value"]
+            self.content: str | None = ask_response["value"]
             self.timeout = timeout
 
         async def send(self) -> _AskUserMessage | None:
@@ -58,21 +59,21 @@ def _make_fake_chainlit() -> SimpleNamespace:
     def on_chat_end(func):
         return func
 
-    return SimpleNamespace(
-        user_session=_FakeUserSession(),
-        Message=lambda content: _FakeMessage(content, sent_messages),
-        AskUserMessage=_AskUserMessage,
-        on_chat_start=on_chat_start,
-        on_message=on_message,
-        on_chat_end=on_chat_end,
-        sleep=sleep,
-        sent_messages=sent_messages,
-        sleep_calls=sleep_calls,
-        ask_response=ask_response,
-    )
+    fake_cl: Any = ModuleType("chainlit")
+    fake_cl.user_session = _FakeUserSession()
+    fake_cl.Message = lambda content: _FakeMessage(content, sent_messages)
+    fake_cl.AskUserMessage = _AskUserMessage
+    fake_cl.on_chat_start = on_chat_start
+    fake_cl.on_message = on_message
+    fake_cl.on_chat_end = on_chat_end
+    fake_cl.sleep = sleep
+    fake_cl.sent_messages = sent_messages
+    fake_cl.sleep_calls = sleep_calls
+    fake_cl.ask_response = ask_response
+    return cast(ModuleType, fake_cl)
 
 
-def _import_app(fake_cl: SimpleNamespace) -> object:
+def _import_app(fake_cl: ModuleType) -> Any:
     sys.modules.pop("src.chainlit_app.app", None)
     sys.modules["chainlit"] = fake_cl
     return importlib.import_module("src.chainlit_app.app")

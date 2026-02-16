@@ -1,0 +1,104 @@
+# =================================================================
+# 🤖 AI-Generated Release Notes Workflow
+# =================================================================
+# This workflow triggers after 'semantic-release' creates a new release.
+# It then uses an LLM to generate a human-friendly narrative for the
+# release notes and updates the release in place.
+# =================================================================
+
+name: AI Release Notes
+
+# -----------------------------------------------------------------
+# TRIGGER
+# -----------------------------------------------------------------
+# The workflow is triggered only when a new release is 'published'.
+# This ensures it runs *after* your existing semantic-release
+# workflow has created the initial release.
+# -----------------------------------------------------------------
+on:
+  release:
+    types: [published]
+
+# -----------------------------------------------------------------
+# PERMISSIONS
+# -----------------------------------------------------------------
+# It needs 'contents: write' to checkout the repository and to
+# edit the GitHub release.
+# -----------------------------------------------------------------
+permissions:
+  contents: write
+
+jobs:
+  generate-notes:
+    runs-on: ubuntu-latest
+    name: Generate AI Release Notes
+    
+    steps:
+      # -----------------------------------------------------------
+      # STEP 1: CHECKOUT REPOSITORY
+      # -----------------------------------------------------------
+      # We need to check out the code to access the git history and
+      # run our Python script. fetch-depth: 0 ensures we get all
+      # tags and commit history.
+      # -----------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # -----------------------------------------------------------
+      # STEP 2: SETUP PYTHON & DEPENDENCIES
+      # -----------------------------------------------------------
+      # Sets up the Python environment and installs the 'requests'
+      # library, which our script will use to make the API call
+      # to the LLM.
+      # -----------------------------------------------------------
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+          
+      - name: Install dependencies
+        run: pip install requests
+
+      # -----------------------------------------------------------
+      # STEP 3: GENERATE RELEASE NOTES
+      # -----------------------------------------------------------
+      # This is the core step. It runs our Python script.
+      # - The new tag is passed from the release event.
+      # - The OpenAI API key is passed securely from secrets.
+      # - The script's output (the AI-generated notes) is saved to a
+      #   file named 'ai_notes.md'.
+      # `set -o pipefail` ensures the workflow fails if the script fails.
+      # -----------------------------------------------------------
+      - name: Generate release notes via Python script
+        id: generate
+        env:
+          # Your OpenRouter API key should be stored as a secret named OPENROUTER_API_KEY.
+          # The script is compatible with any OpenAI-style API.
+          OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          set -o pipefail
+          python scripts/generate_ai_notes.py \
+            --tag ${{ github.event.release.tag_name }} \
+            --api-key ${{ env.OPENROUTER_API_KEY }} \
+            --api-url "https://openrouter.ai/api/v1/chat/completions" \
+            --model "anthropic/claude-3-haiku" > ai_notes.md
+            # You can change the model to any other model available on OpenRouter,
+            # for example: "google/gemini-pro", "mistralai/mistral-7b-instruct", etc.
+
+
+      # -----------------------------------------------------------
+      # STEP 4: UPDATE GITHUB RELEASE
+      # -----------------------------------------------------------
+      # This step uses the official GitHub CLI ('gh') to edit the
+      # release that triggered this workflow.
+      # It replaces the body of the release with the content of our
+      # 'ai_notes.md' file.
+      # -----------------------------------------------------------
+      - name: Update release with AI-generated notes
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          gh release edit ${{ github.event.release.tag_name }} 
+            --notes-file ai_notes.md

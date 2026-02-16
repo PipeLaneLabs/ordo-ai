@@ -1,14 +1,15 @@
 version: 2
 updates:
-  # 📦 Python dependencies (pip ecosystem works with Poetry projects)
-  - package-ecosystem: "pip" 
+  # 📦 Python dependencies (Poetry)
+  - package-ecosystem: "pip"
     directory: "/"
-    target-branch: "develop"  # Forces updates into the Alpha tier
+    target-branch: "develop" # Updates go to Alpha tier first
     schedule:
       interval: "daily"
-      # Note: 'day' is ignored for 'daily' intervals; only 'time' applies
       time: "00:00"
+      timezone: "Etc/UTC" # Good practice to be explicit
     groups:
+      # Groups all python updates into a single PR to reduce noise
       dependencies:
         patterns:
           - "*"
@@ -17,15 +18,20 @@ updates:
       - "automated"
     open-pull-requests-limit: 5
     commit-message:
-      prefix: "chore"
+      prefix: "fix"
       include: "scope"
 
   # 🤖 GitHub Actions updates
   - package-ecosystem: "github-actions"
     directory: "/"
-    target-branch: "develop" # FIXED: Prevents PRs from targeting 'main'
+    target-branch: "develop"
     schedule:
-      interval: "monthly"
+      interval: "weekly"  # FIXED: Added closing quote
+      day: "saturday"
+      time: "00:00"
+      timezone: "Etc/UTC"
     labels:
       - "dependencies"
       - "github-actions"
+    commit-message:
+      prefix: "fix"

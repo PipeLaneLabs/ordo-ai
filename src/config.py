@@ -206,6 +206,18 @@ class Settings(BaseSettings):
         default=90, description="Days to retain artifacts (MinIO)"
     )
 
+    # Versioning
+    version: str = Field(default="0.0.0", description="Application version")
+
+    @field_validator("version", mode="before")
+    @classmethod
+    def load_version(cls, v: str) -> str:
+        # Pydantic will auto-load "VERSION" from env if it exists,
+        # otherwise we can fallback to the module version
+        from src import __version__
+
+        return v or __version__
+
 
 # Global settings instance
 # Settings are loaded from environment variables (.env file)

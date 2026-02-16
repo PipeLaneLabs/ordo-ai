@@ -5,10 +5,15 @@ Tests Settings class validation, environment variable loading,
 and configuration constraints.
 """
 
+from typing import Any, cast
+
 import pytest
 from pydantic import ValidationError as PydanticValidationError
 
 from src.config import Settings
+
+
+SettingsType = cast(Any, Settings)
 
 
 class TestSettingsValidation:
@@ -23,7 +28,7 @@ class TestSettingsValidation:
         monkeypatch.setenv("POSTGRES_PASSWORD", "test_password_123")
         monkeypatch.setenv("MINIO_SECRET_KEY", "test_minio_secret_123")
 
-        settings = Settings()
+        settings = SettingsType()
 
         assert settings.openrouter_api_key == "test_key_1234567890"
         assert settings.google_api_key == "test_google_key_1234567890"
@@ -40,7 +45,7 @@ class TestSettingsValidation:
         monkeypatch.setenv("MINIO_SECRET_KEY", "test_minio_secret_123")
 
         with pytest.raises(PydanticValidationError) as exc_info:
-            Settings()
+            SettingsType()
 
         assert "at least 10 characters" in str(exc_info.value).lower()
 
@@ -53,7 +58,7 @@ class TestSettingsValidation:
         monkeypatch.setenv("MINIO_SECRET_KEY", "test_minio_secret_123")
 
         with pytest.raises(PydanticValidationError) as exc_info:
-            Settings()
+            SettingsType()
 
         assert "at least 32 characters" in str(exc_info.value).lower()
 
@@ -66,7 +71,7 @@ class TestSettingsValidation:
         monkeypatch.setenv("MINIO_SECRET_KEY", "test_minio_secret_123")
 
         with pytest.raises(PydanticValidationError) as exc_info:
-            Settings()
+            SettingsType()
 
         assert "at least 8 characters" in str(exc_info.value).lower()
 
@@ -90,7 +95,7 @@ class TestSettingsValidation:
         monkeypatch.delenv("MAX_MONTHLY_BUDGET_USD", raising=False)
         monkeypatch.delenv("BUDGET_ALERT_THRESHOLD_PCT", raising=False)
 
-        settings = Settings(_env_file=None)
+        settings = SettingsType(_env_file=None)
 
         # Check default values
         assert settings.environment == "development"
@@ -125,7 +130,7 @@ class TestSettingsValidation:
         monkeypatch.setenv("MAX_TOKENS_PER_WORKFLOW", "1000000")
         monkeypatch.setenv("MAX_MONTHLY_BUDGET_USD", "50.0")
 
-        settings = Settings()
+        settings = SettingsType()
 
         assert settings.environment == "production"
         assert settings.log_level == "DEBUG"
@@ -142,7 +147,7 @@ class TestSettingsValidation:
         monkeypatch.setenv("POSTGRES_PASSWORD", "test_password_123")
         monkeypatch.setenv("MINIO_SECRET_KEY", "test_minio_secret_123")
 
-        settings = Settings()
+        settings = SettingsType()
 
         expected_url = (
             f"postgresql+asyncpg://{settings.postgres_user}:{settings.postgres_password}"
@@ -158,7 +163,7 @@ class TestSettingsValidation:
         monkeypatch.setenv("POSTGRES_PASSWORD", "test_password_123")
         monkeypatch.setenv("MINIO_SECRET_KEY", "test_minio_secret_123")
 
-        settings = Settings()
+        settings = SettingsType()
 
         expected_url = (
             f"redis://{settings.redis_host}:{settings.redis_port}/{settings.redis_db}"
@@ -175,7 +180,7 @@ class TestSettingsValidation:
         monkeypatch.setenv("MAX_TOKENS_PER_WORKFLOW", "-1000")  # Invalid
 
         with pytest.raises(PydanticValidationError):
-            Settings()
+            SettingsType()
 
     def test_alert_threshold_range(self, monkeypatch):
         """Test that alert threshold is between 0 and 100."""
@@ -187,4 +192,4 @@ class TestSettingsValidation:
         monkeypatch.setenv("BUDGET_ALERT_THRESHOLD_PCT", "150")  # Invalid
 
         with pytest.raises(PydanticValidationError):
-            Settings()
+            SettingsType()

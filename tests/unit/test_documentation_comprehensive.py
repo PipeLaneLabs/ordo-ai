@@ -232,9 +232,13 @@ class TestParseOutput:
         response = LLMResponse(
             content=response_content,
             tokens_used=1000,
+            tokens_prompt=600,
+            tokens_completion=400,
+            cost_usd=0.0,
             model="test-model",
             latency_ms=100,
             provider="test",
+            finish_reason="stop",
         )
 
         with patch.object(documentation_agent, "_write_file") as mock_write:
@@ -272,9 +276,13 @@ Run `pip install project`
         response = LLMResponse(
             content=response_content,
             tokens_used=500,
+            tokens_prompt=300,
+            tokens_completion=200,
+            cost_usd=0.0,
             model="test-model",
             latency_ms=100,
             provider="test",
+            finish_reason="stop",
         )
 
         with patch.object(documentation_agent, "_write_file") as mock_write:
@@ -296,9 +304,13 @@ Run `pip install project`
         response = LLMResponse(
             content="",
             tokens_used=0,
+            tokens_prompt=0,
+            tokens_completion=0,
+            cost_usd=0.0,
             model="test-model",
             latency_ms=100,
             provider="test",
+            finish_reason="stop",
         )
 
         with pytest.raises(ValueError) as exc_info:
@@ -314,9 +326,13 @@ Run `pip install project`
         response = LLMResponse(
             content="This is just plain text with no structure",
             tokens_used=100,
+            tokens_prompt=60,
+            tokens_completion=40,
+            cost_usd=0.0,
             model="test-model",
             latency_ms=100,
             provider="test",
+            finish_reason="stop",
         )
 
         with pytest.raises(ValueError) as exc_info:
@@ -342,9 +358,13 @@ Run `pip install project`
         response = LLMResponse(
             content=response_content,
             tokens_used=800,
+            tokens_prompt=480,
+            tokens_completion=320,
+            cost_usd=0.0,
             model="test-model",
             latency_ms=100,
             provider="test",
+            finish_reason="stop",
         )
 
         with patch.object(documentation_agent, "_write_file") as mock_write:
@@ -374,9 +394,13 @@ Run `pip install project`
         response = LLMResponse(
             content=response_content,
             tokens_used=600,
+            tokens_prompt=360,
+            tokens_completion=240,
+            cost_usd=0.0,
             model="test-model",
             latency_ms=100,
             provider="test",
+            finish_reason="stop",
         )
 
         with patch.object(documentation_agent, "_write_file") as mock_write:
@@ -495,9 +519,13 @@ class TestDocumentationAgentIntegration:
             </FILE>
             """,
             tokens_used=1000,
+            tokens_prompt=600,
+            tokens_completion=400,
+            cost_usd=0.0,
             model="test-model",
             latency_ms=100,
             provider="test",
+            finish_reason="stop",
         )
 
         with patch.object(documentation_agent, "_read_if_exists") as mock_read:

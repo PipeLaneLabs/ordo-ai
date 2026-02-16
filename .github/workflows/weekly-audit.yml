@@ -14,39 +14,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Fetch full history for comprehensive scanning
           fetch-depth: 0
       
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-      
-      - name: Install Poetry
+      # 1. MODERN CACHING
+      - name: Install Poetry 2.3.1
         run: |
-          curl -sSL https://install.python-poetry.org | python3 -
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           $HOME/.local/bin/poetry self add "poetry-dynamic-versioning[plugin]"
-      
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'poetry'
+          # This helps the action find the poetry executable we just installed
+          cache-dependency-path: poetry.lock
+          
       - name: Configure Poetry
         run: |
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
       
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v3
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            venv-${{ runner.os }}-
-      
       - name: Install dependencies
         run: poetry install --no-root --with dev
       
+      # 2. RUN LOCKED TOOLS (No pip install needed)
       - name: Run pip-audit (OSV Database)
         run: |
-          poetry run pip install pip-audit
+          # Uses the version locked in poetry.lock
           poetry run pip-audit --desc --format json --output pip-audit-report.json || true
       
       - name: Display pip-audit results
@@ -86,16 +82,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-      
-      - name: Install Poetry
+      - name: Install Poetry 2.3.1
         run: |
-          curl -sSL https://install.python-poetry.org | python3 -
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           $HOME/.local/bin/poetry self add "poetry-dynamic-versioning[plugin]"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'poetry'
+          # This helps the action find the poetry executable we just installed
+          cache-dependency-path: poetry.lock
       
       - name: Install dependencies
         run: poetry install --no-root
@@ -126,7 +125,6 @@ jobs:
       - name: Create SBOM release (Optional)
         if: github.ref == 'refs/heads/main'
         run: |
-          # Tag the SBOM with the current date for versioning
           DATE=$(date +%Y%m%d)
           echo "SBOM generated on $DATE" > sbom-README.txt
           echo "Project: Multi-Tier Agent Ecosystem" >> sbom-README.txt
@@ -139,23 +137,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-      
-      - name: Install Poetry
+      - name: Install Poetry 2.3.1
         run: |
-          curl -sSL https://install.python-poetry.org | python3 -
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           $HOME/.local/bin/poetry self add "poetry-dynamic-versioning[plugin]"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'poetry'
+          # This helps the action find the poetry executable we just installed
+          cache-dependency-path: poetry.lock
       
       - name: Install dependencies
-        run: poetry install --no-root
+        run: poetry install --no-root --with dev
       
       - name: Generate license report (Markdown)
         run: |
-          poetry run pip install pip-licenses
+          # pip-licenses is now installed via poetry install
           poetry run pip-licenses --format=markdown --output-file=LICENSES.md
           echo "=== License Report ==="
           cat LICENSES.md
@@ -173,8 +174,12 @@ jobs:
           # List of licenses that should trigger a warning
           PROHIBITED = ['GPL-3.0', 'GPL-2.0', 'AGPL-3.0', 'LGPL-3.0', 'LGPL-2.1', 'SSPL-1.0']
           
-          with open('licenses.json', 'r') as f:
-              licenses = json.load(f)
+          try:
+              with open('licenses.json', 'r') as f:
+                  licenses = json.load(f)
+          except FileNotFoundError:
+              print("⚠️ licenses.json not found.")
+              sys.exit(1)
           
           found_prohibited = []
           for pkg in licenses:
@@ -187,7 +192,6 @@ jobs:
               print('⚠️ WARNING: Found packages with potentially problematic licenses:')
               for name, license in found_prohibited:
                   print(f'  - {name}: {license}')
-              # Don't fail the workflow, just warn
               sys.exit(0)
           else:
               print('✅ All licenses are compliant')
@@ -213,12 +217,12 @@ jobs:
           fetch-depth: 0  # Full history
       
       - name: TruffleHog Deep Scan
-        uses: trufflesecurity/trufflehog@main
+        # 3. PINNED VERSION (Safer than @main)
+        uses: trufflesecurity/trufflehog@v3
         with:
           path: ./
-          # Scan entire repository history
           extra_args: --only-verified --json --debug
-        continue-on-error: true  # Don't fail the workflow, just report
+        continue-on-error: true
       
       - name: Create scan summary
         if: always()
@@ -233,22 +237,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-      
-      - name: Install Poetry
+      - name: Install Poetry 2.3.1
         run: |
-          curl -sSL https://install.python-poetry.org | python3 -
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           $HOME/.local/bin/poetry self add "poetry-dynamic-versioning[plugin]"
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'poetry'
+          # This helps the action find the poetry executable we just installed
+          cache-dependency-path: poetry.lock
       
       - name: Install dependencies
         run: poetry install --no-root --with dev
       
       - name: Run Radon complexity analysis
         run: |
+          # Radon is now installed via poetry install
           poetry run radon cc src/ -a -s -j > radon-complexity.json
           echo "=== Code Complexity Report ==="
           poetry run radon cc src/ -a -s

@@ -21,7 +21,7 @@ from src.exceptions import (
 class TestWorkflowError:
     """Test base WorkflowError exception."""
 
-    def test_workflow_error_is_exception(self):
+    def test_workflow_error_is_exception(self) -> None:
         """WorkflowError should inherit from Exception."""
         error = WorkflowError("Test error")
         assert isinstance(error, Exception)
@@ -31,7 +31,7 @@ class TestWorkflowError:
 class TestBudgetExhaustedError:
     """Test budget exhaustion exception."""
 
-    def test_token_budget_exhausted(self):
+    def test_token_budget_exhausted(self) -> None:
         """Test token budget exhaustion message."""
         error = BudgetExhaustedError(used=100000, limit=50000, budget_type="tokens")
         assert error.used == 100000
@@ -41,7 +41,7 @@ class TestBudgetExhaustedError:
         assert "50,000" in str(error)
         assert "tokens" in str(error)
 
-    def test_cost_budget_exhausted(self):
+    def test_cost_budget_exhausted(self) -> None:
         """Test cost budget exhaustion message."""
         error = BudgetExhaustedError(used=25.50, limit=20.00, budget_type="USD")
         assert error.used == 25.50
@@ -50,7 +50,7 @@ class TestBudgetExhaustedError:
         assert "26" in str(error) or "25" in str(error)  # Rounded display
         assert "USD" in str(error)
 
-    def test_default_budget_type(self):
+    def test_default_budget_type(self) -> None:
         """Test default budget_type is 'tokens'."""
         error = BudgetExhaustedError(used=1000, limit=500)
         assert error.budget_type == "tokens"
@@ -59,7 +59,7 @@ class TestBudgetExhaustedError:
 class TestAgentRejectionError:
     """Test agent rejection exception."""
 
-    def test_basic_rejection(self):
+    def test_basic_rejection(self) -> None:
         """Test basic rejection without details."""
         error = AgentRejectionError(
             agent="Software Engineer",
@@ -74,7 +74,7 @@ class TestAgentRejectionError:
         assert "Static Analysis Agent" in str(error)
         assert "Type errors found" in str(error)
 
-    def test_rejection_with_details(self):
+    def test_rejection_with_details(self) -> None:
         """Test rejection with error details."""
         details = {"file": "main.py", "line": 45, "error_type": "type-arg"}
         error = AgentRejectionError(
@@ -87,7 +87,7 @@ class TestAgentRejectionError:
         assert error.details["file"] == "main.py"
         assert error.details["line"] == 45
 
-    def test_rejection_none_details(self):
+    def test_rejection_none_details(self) -> None:
         """Test that None details becomes empty dict."""
         error = AgentRejectionError(
             agent="Software Engineer",
@@ -101,7 +101,7 @@ class TestAgentRejectionError:
 class TestValidationError:
     """Test validation exception."""
 
-    def test_single_failure(self):
+    def test_single_failure(self) -> None:
         """Test validation error with single failure."""
         error = ValidationError(
             validation_type="requirements", failures=["Missing acceptance criteria"]
@@ -111,7 +111,7 @@ class TestValidationError:
         assert "Missing acceptance criteria" in error.failures
         assert "requirements" in str(error).lower()
 
-    def test_multiple_failures(self):
+    def test_multiple_failures(self) -> None:
         """Test validation error with multiple failures."""
         failures = [
             "Missing acceptance criteria",
@@ -128,7 +128,7 @@ class TestValidationError:
 class TestConfigurationError:
     """Test configuration exception."""
 
-    def test_missing_config(self):
+    def test_missing_config(self) -> None:
         """Test missing configuration error."""
         error = ConfigurationError(
             config_name="OPENROUTER_API_KEY", reason="Environment variable not set"
@@ -138,7 +138,7 @@ class TestConfigurationError:
         assert "OPENROUTER_API_KEY" in str(error)
         assert "not set" in str(error)
 
-    def test_invalid_config(self):
+    def test_invalid_config(self) -> None:
         """Test invalid configuration error."""
         error = ConfigurationError(
             config_name="MAX_TOKENS_PER_WORKFLOW",
@@ -151,7 +151,7 @@ class TestConfigurationError:
 class TestSecurityViolationError:
     """Test security violation exception."""
 
-    def test_single_vulnerability(self):
+    def test_single_vulnerability(self) -> None:
         """Test single security vulnerability."""
         error = SecurityViolationError(
             vulnerabilities=["SQL injection in user_service.py:45"],
@@ -161,7 +161,7 @@ class TestSecurityViolationError:
         assert error.severity == "CRITICAL"
         assert "SQL injection" in str(error)
 
-    def test_multiple_vulnerabilities(self):
+    def test_multiple_vulnerabilities(self) -> None:
         """Test multiple security vulnerabilities."""
         vulns = ["XSS in routes.py:23", "CSRF token missing", "Weak password policy"]
         error = SecurityViolationError(vulnerabilities=vulns, severity="HIGH")
@@ -172,7 +172,7 @@ class TestSecurityViolationError:
 class TestDatabaseConnectionError:
     """Test database connection exception."""
 
-    def test_connection_refused(self):
+    def test_connection_refused(self) -> None:
         """Test connection refused error."""
         error = DatabaseConnectionError(
             database="PostgreSQL",
@@ -184,7 +184,7 @@ class TestDatabaseConnectionError:
         assert "PostgreSQL" in str(error)
         assert "connect" in str(error)
 
-    def test_authentication_failed(self):
+    def test_authentication_failed(self) -> None:
         """Test authentication failure."""
         error = DatabaseConnectionError(
             database="Redis",
@@ -199,7 +199,7 @@ class TestDatabaseConnectionError:
 class TestLLMProviderError:
     """Test LLM provider exception."""
 
-    def test_provider_error_with_model(self):
+    def test_provider_error_with_model(self) -> None:
         """Test LLM provider error with model specified."""
         error = LLMProviderError(
             message="API rate limit exceeded",
@@ -211,7 +211,7 @@ class TestLLMProviderError:
         assert error.details["model"] == "gpt-4"
         assert "API rate limit exceeded" in str(error)
 
-    def test_provider_error_without_model(self):
+    def test_provider_error_without_model(self) -> None:
         """Test LLM provider error without model specified."""
         error = LLMProviderError(message="Invalid API key", provider="Google")
         assert error.provider == "Google"
@@ -222,7 +222,7 @@ class TestLLMProviderError:
 class TestInfiniteLoopDetectedError:
     """Test infinite loop detection exception."""
 
-    def test_default_max_rejections(self):
+    def test_default_max_rejections(self) -> None:
         """Test default max rejections limit."""
         error = InfiniteLoopDetectedError(agent_name="TestAgent", rejection_count=5)
         assert error.rejection_count == 5
@@ -230,7 +230,7 @@ class TestInfiniteLoopDetectedError:
         assert "5 iterations" in str(error)
         assert "TestAgent" in str(error)
 
-    def test_custom_max_rejections(self):
+    def test_custom_max_rejections(self) -> None:
         """Test custom max rejections limit."""
         error = InfiniteLoopDetectedError(rejection_count=10, max_iterations=5)
         assert error.rejection_count == 10

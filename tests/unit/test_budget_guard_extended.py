@@ -11,6 +11,7 @@ Tests cover:
 NOTE: These tests require proper async implementation of budget guard methods.
 """
 
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -293,10 +294,13 @@ class TestStressScenarios:
         """Test concurrent budget checks."""
         import asyncio
 
-        async def check_budget():
-            return await budget_guard.check_budget(
-                workflow_state=sample_workflow_state,
-                tokens_required=100,
+        async def check_budget() -> dict[str, Any]:
+            return cast(
+                dict[str, Any],
+                await budget_guard.check_budget(
+                    workflow_state=sample_workflow_state,
+                    tokens_required=100,
+                ),
             )
 
         tasks = [check_budget() for _ in range(5)]

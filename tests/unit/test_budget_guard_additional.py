@@ -3,16 +3,21 @@
 from __future__ import annotations
 
 import json
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from src.exceptions import BudgetExhaustedError
 from src.orchestration.budget_guard import BudgetGuard
+from src.orchestration.state import WorkflowState
+from src.storage.cache import RedisCache
 
 
 class _FakeCache:
-    def __init__(self, data: dict | None = None, connect_error: bool = False) -> None:
+    def __init__(
+        self, data: dict[str, object] | None = None, connect_error: bool = False
+    ) -> None:
         self._data = data
         self._connect_error = connect_error
         self.set_calls: list[tuple[str, str, int | None]] = []
@@ -30,15 +35,18 @@ class _FakeCache:
         self.set_calls.append((key, value, ttl_seconds))
 
 
-def _state() -> dict:
-    return {
-        "workflow_id": "wf-1",
-        "budget_used_tokens": 50,
-        "budget_used_usd": 5.0,
-        "budget_remaining_tokens": 50,
-        "budget_remaining_usd": 45.0,
-        "agent_token_usage": {"agent": 10},
-    }
+def _state() -> WorkflowState:
+    return cast(
+        WorkflowState,
+        {
+            "workflow_id": "wf-1",
+            "budget_used_tokens": 50,
+            "budget_used_usd": 5.0,
+            "budget_remaining_tokens": 50,
+            "budget_remaining_usd": 45.0,
+            "agent_token_usage": {"agent": 10},
+        },
+    )
 
 
 def test_reserve_budget_warns_on_token_threshold() -> None:
@@ -91,7 +99,7 @@ async def test_check_budget_with_workflow_id_uses_cache() -> None:
     guard = BudgetGuard(
         max_tokens_per_workflow=100,
         max_monthly_budget_usd=10.0,
-        cache=cache,
+        cache=cast(RedisCache, cache),
     )
 
     result = await guard.check_budget(
@@ -111,7 +119,7 @@ async def test_check_budget_raises_when_over_limit() -> None:
     guard = BudgetGuard(
         max_tokens_per_workflow=100,
         max_monthly_budget_usd=10.0,
-        cache=cache,
+        cache=cast(RedisCache, cache),
     )
 
     with pytest.raises(BudgetExhaustedError):
@@ -129,7 +137,7 @@ async def test_reserve_budget_async_persists_to_cache() -> None:
     guard = BudgetGuard(
         max_tokens_per_workflow=100,
         max_monthly_budget_usd=10.0,
-        cache=cache,
+        cache=cast(RedisCache, cache),
     )
 
     mock_logger = MagicMock()
@@ -162,7 +170,7 @@ async def test_reserve_budget_async_persists_to_cache() -> None:
 @pytest.mark.asyncio
 async def test_ensure_cache_connected_handles_failure() -> None:
     cache = _FakeCache(connect_error=True)
-    guard = BudgetGuard(cache=cache)
+    guard = BudgetGuard(cache=cast(RedisCache, cache))
 
     with patch("src.orchestration.budget_guard.logger.warning") as mock_warn:
         await guard._ensure_cache_connected()

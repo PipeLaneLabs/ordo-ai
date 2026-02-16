@@ -34,19 +34,27 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.generate_token.outputs.token }}
       
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      
+      # 1. INSTALL POETRY FIRST (Moved Up)
       - name: Install Poetry
         run: |
           curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          # Install the plugin so Poetry can read git tags
+          # Install plugin in Poetry's CLI context
           $HOME/.local/bin/poetry self add "poetry-dynamic-versioning[plugin]"
       
-      - name: Install python-semantic-release
-        run: pip install python-semantic-release
+      # 2. NOW SET UP PYTHON & CACHE (Moved Down)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'poetry'
+      
+      - name: Configure Poetry
+        run: |
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+
+      - name: Install dependencies
+        run: poetry install --no-root --with dev
       
       - name: Python Semantic Release
         env:
@@ -55,6 +63,5 @@ jobs:
           git config user.name "ordo-ai-factory-bot[bot]"
           git config user.email "ordo-ai-factory-bot[bot]@users.noreply.github.com"
           
-          # This will now only create/push a TAG based on your pyproject.toml config
-          semantic-release version
-          semantic-release publish
+          poetry run semantic-release version
+          poetry run semantic-release publish

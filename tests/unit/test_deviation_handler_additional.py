@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -12,6 +13,7 @@ from src.config import Settings
 from src.exceptions import HumanApprovalTimeoutError, WorkflowError
 from src.llm.base_client import LLMResponse
 from src.orchestration.budget_guard import BudgetGuard
+from src.orchestration.state import WorkflowState, create_initial_state
 
 
 @pytest.fixture
@@ -27,29 +29,33 @@ def handler() -> DeviationHandlerAgent:
     )
 
 
-def _state() -> dict:
-    return {
-        "workflow_id": "wf-1",
-        "user_request": "Do work",
-        "current_phase": "planning",
-        "current_agent": "Validator",
-        "rejection_count": 0,
-        "blocking_issues": ["issue"],
-        "code_files": {},
-        "test_files": {},
-        "routing_decision": {},
-    }
+def _state() -> WorkflowState:
+    state = create_initial_state("wf-1", "Do work", "trace-1")
+    state["current_phase"] = "planning"
+    state["current_agent"] = "Validator"
+    state["current_task"] = "deviation_handling"
+    state["rejection_count"] = 0
+    state["blocking_issues"] = ["issue"]
+    state["code_files"] = {}
+    state["test_files"] = {}
+    state["routing_decision"] = {}
+    return state
 
 
 @pytest.mark.asyncio
-async def test_parse_output_valid_json(handler) -> None:
+async def test_parse_output_valid_json(
+    handler: DeviationHandlerAgent,
+) -> None:
     response = LLMResponse(
         content='{"root_cause":"x","target_agent":"QualityEngineer","reasoning":"y","circular_routing_detected":false,"escalate_to_human":false,"recommended_action":"fix"}',
         model="test",
         tokens_used=1,
+        tokens_prompt=1,
+        tokens_completion=0,
         cost_usd=0.0,
         latency_ms=1,
         provider="test",
+        finish_reason="stop",
     )
 
     with patch.object(handler, "_append_deviation_log", new=AsyncMock()):
@@ -59,7 +65,9 @@ async def test_parse_output_valid_json(handler) -> None:
 
 
 @pytest.mark.asyncio
-async def test_build_prompt_includes_context(handler) -> None:
+async def test_build_prompt_includes_context(
+    handler: DeviationHandlerAgent,
+) -> None:
     state = _state()
 
     prompt = await handler._build_prompt(
@@ -73,7 +81,9 @@ async def test_build_prompt_includes_context(handler) -> None:
 
 
 @pytest.mark.asyncio
-async def test_append_deviation_log_writes_entry(handler) -> None:
+async def test_append_deviation_log_writes_entry(
+    handler: DeviationHandlerAgent,
+) -> None:
     state = _state()
     analysis = {
         "root_cause": "x",
@@ -94,14 +104,19 @@ async def test_append_deviation_log_writes_entry(handler) -> None:
 
 
 @pytest.mark.asyncio
-async def test_parse_output_invalid_json_fallback(handler) -> None:
+async def test_parse_output_invalid_json_fallback(
+    handler: DeviationHandlerAgent,
+) -> None:
     response = LLMResponse(
         content="not-json",
         model="test",
         tokens_used=1,
+        tokens_prompt=1,
+        tokens_completion=0,
         cost_usd=0.0,
         latency_ms=1,
         provider="test",
+        finish_reason="stop",
     )
 
     with patch.object(handler, "_append_deviation_log", new=AsyncMock()):
@@ -111,14 +126,19 @@ async def test_parse_output_invalid_json_fallback(handler) -> None:
 
 
 @pytest.mark.asyncio
-async def test_parse_output_escalates_on_max_iterations(handler) -> None:
+async def test_parse_output_escalates_on_max_iterations(
+    handler: DeviationHandlerAgent,
+) -> None:
     response = LLMResponse(
         content='{"root_cause":"x","target_agent":"QualityEngineer","reasoning":"y","circular_routing_detected":false,"escalate_to_human":false,"recommended_action":"fix"}',
         model="test",
         tokens_used=1,
+        tokens_prompt=1,
+        tokens_completion=0,
         cost_usd=0.0,
         latency_ms=1,
         provider="test",
+        finish_reason="stop",
     )
     state = _state()
     state["rejection_count"] = 2
@@ -130,16 +150,16 @@ async def test_parse_output_escalates_on_max_iterations(handler) -> None:
         await handler._parse_output(response, state)
 
 
-def test_format_blocking_issues(handler) -> None:
+def test_format_blocking_issues(handler: DeviationHandlerAgent) -> None:
     assert handler._format_blocking_issues([]) == "None"
     assert "- a" in handler._format_blocking_issues(["a"])
 
 
-def test_map_agent_to_tier_default(handler) -> None:
+def test_map_agent_to_tier_default(handler: DeviationHandlerAgent) -> None:
     assert handler._map_agent_to_tier("UnknownAgent") == "tier_3_engineer"
 
 
-def test_check_circular_routing(handler) -> None:
+def test_check_circular_routing(handler: DeviationHandlerAgent) -> None:
     state = _state()
     state["routing_decision"] = {"target_agent": "QualityEngineer"}
     state["rejection_count"] = 2
@@ -148,7 +168,9 @@ def test_check_circular_routing(handler) -> None:
 
 
 @pytest.mark.asyncio
-async def test_log_deviation_updates_state(handler) -> None:
+async def test_log_deviation_updates_state(
+    handler: DeviationHandlerAgent,
+) -> None:
     state = _state()
 
     with patch.object(handler, "_append_to_file", new=AsyncMock()):
@@ -159,7 +181,10 @@ async def test_log_deviation_updates_state(handler) -> None:
 
 
 @pytest.mark.asyncio
-async def test_maybe_archive_log_archives(handler, tmp_path) -> None:
+async def test_maybe_archive_log_archives(
+    handler: DeviationHandlerAgent,
+    tmp_path: Path,
+) -> None:
     log_path = tmp_path / "DEVIATION_LOG.md"
     log_path.write_text("## Deviation Entry\n## Deviation Entry\n", encoding="utf-8")
     handler.deviation_log_path = log_path
@@ -178,7 +203,9 @@ async def test_maybe_archive_log_archives(handler, tmp_path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_attempt_recovery_max_retries(handler) -> None:
+async def test_attempt_recovery_max_retries(
+    handler: DeviationHandlerAgent,
+) -> None:
     state = _state()
     state["retry_count"] = 3
 
@@ -187,7 +214,9 @@ async def test_attempt_recovery_max_retries(handler) -> None:
 
 
 @pytest.mark.asyncio
-async def test_rollback_state_with_checkpoint_manager(handler) -> None:
+async def test_rollback_state_with_checkpoint_manager(
+    handler: DeviationHandlerAgent,
+) -> None:
     state = _state()
     checkpoint = SimpleNamespace(checkpoint_id="ckpt-1")
     manager = MagicMock()
@@ -199,7 +228,9 @@ async def test_rollback_state_with_checkpoint_manager(handler) -> None:
 
 
 @pytest.mark.asyncio
-async def test_escalate_to_human_sets_flags(handler) -> None:
+async def test_escalate_to_human_sets_flags(
+    handler: DeviationHandlerAgent,
+) -> None:
     state = _state()
 
     with (
@@ -209,6 +240,6 @@ async def test_escalate_to_human_sets_flags(handler) -> None:
         await handler.escalate_to_human(state, reason="Needs review")
 
 
-def test_format_dict(handler) -> None:
+def test_format_dict(handler: DeviationHandlerAgent) -> None:
     assert handler._format_dict({}) == "None"
     assert "key" in handler._format_dict({"key": "value"})

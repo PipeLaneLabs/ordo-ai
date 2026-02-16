@@ -16,6 +16,8 @@ allow-licenses:
   - PSF-2.0           # Python Software Foundation (used by stdlib)
   - 0BSD              # Zero-Clause BSD (very permissive)
   - Unlicense         # Public domain
+  - HPND-Markus-Kuhn  # Required by wcwidth (MIT AND HPND-Markus-Kuhn)
+  - AGPL-3.0          # Security scanning tools (TruffleHog)
 
 # Note: deny-licenses is specified in the workflow file to avoid conflicts
 # You can only use allow-licenses OR deny-licenses, not both
@@ -37,3 +39,13 @@ allow-dependencies-licenses:
   - pkg:pypi/mcp
   - pkg:pypi/multidict
   - pkg:pypi/python-multipart
+  - pkg:pypi/wcwidth
+  - pkg:pypi/librt
+  - pkg:pypi/langsmith
+  - pkg:pypi/pycparser
+  - pkg:pypi/python-gitlab      # LGPL-3.0 (Required by semantic-release)
+  - pkg:pypi/gitdb              # BSD-3-Clause + GPL-1.0-or-later (Sub-dep of GitPython)
+  - pkg:pypi/dotty-dict         # Low Scorecard score (2.8) exception
+  - pkg:github/trufflesecurity/trufflehog
+
+warn-on-openssf-scorecard-level: 3

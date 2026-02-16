@@ -1,0 +1,72 @@
+name: Update Contributors
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  update-contributors:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate Bot Token
+        id: generate_token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.generate_token.outputs.token }}
+
+      # 1. Install Poetry FIRST (Consistency with your other files)
+      - name: Install Poetry 2.3.1
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      # 2. Setup Python + Cache
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "poetry"
+
+      - name: Install dependencies
+        run: poetry install --no-root
+
+      - name: Update contributors
+        env:
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+        # Use 'poetry run' to ensure your script has access to your libs
+        run: poetry run python scripts/update_contributors.py --readme README.md
+
+      - name: Check for changes
+        id: check
+        run: git diff --quiet README.md || echo "changes=true" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        if: steps.check.outputs.changes == 'true'
+        env:
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+        run: |
+          git config user.name "ordo-ai-factory-bot[bot]"
+          git config user.email "ordo-ai-factory-bot[bot]@users.noreply.github.com"
+
+          BRANCH_NAME="chore/update-contributors-${{ github.run_number }}"
+          git checkout -b "$BRANCH_NAME"
+
+          git add README.md
+          git commit -m "chore: update contributors list"
+
+          git push -u origin "$BRANCH_NAME"
+
+          gh pr create \
+            --title "chore: update contributors list" \
+            --body "This PR automatically updates the contributors list based on recent activity." \
+            --label "documentation" \
+            --label "automated" \
+            --base "develop" \
+            --head "$BRANCH_NAME"

@@ -20,17 +20,23 @@ jobs:
     
     steps:
       - uses: actions/checkout@v4
+        with:
+          # CRITICAL FIX 1: Fetch full history so the action can compare commits
+          fetch-depth: 0 
       
       - name: Dependency Review Action
         uses: actions/dependency-review-action@v4
         with:
-          # Reference the config file for license/vulnerability rules
           config-file: './.github/dependency-review-config.yml'
-          # Block PRs that add high/critical vulnerabilities
           fail-on-severity: high
-          # Allow informational/low/medium vulnerabilities (will warn but not block)
-          # Comment out the line below if you want to block ALL vulnerabilities
-          # fail-on-severity: low
+          # -------------------------------------------------------
+          # FIX: Explicitly set refs based on the trigger type
+          # -------------------------------------------------------
+          # If PR: Use the PR's base. If Manual: Use the previous commit (HEAD^1)
+          base-ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || 'HEAD^1' }}
+          
+          # If PR: Use the PR's head. If Manual: Use the current commit (HEAD)
+          head-ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'HEAD' }}
 
   secret-scan:
     runs-on: ubuntu-latest
@@ -46,8 +52,11 @@ jobs:
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: ${{ github.event.pull_request.base.sha }}
-          head: ${{ github.event.pull_request.head.sha }}
+          # CRITICAL FIX 2: Handle Manual Trigger (workflow_dispatch)
+          # We apply the same logic as dependency-review to prevent crashing when 'pull_request' is null
+          base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || 'HEAD^1' }}
+          head: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'HEAD' }}
+          
           # Only fail on verified secrets (reduces false positives)
           extra_args: --only-verified
 

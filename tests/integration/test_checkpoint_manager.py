@@ -1,9 +1,12 @@
 """Integration tests for CheckpointManager with LangGraph integration."""
 
+from typing import Any, cast
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+from langchain_core.runnables import RunnableConfig
+from langgraph.checkpoint.base import Checkpoint, CheckpointMetadata
 
 from src.config import Settings
 from src.orchestration.checkpoints import CheckpointManager
@@ -16,9 +19,16 @@ def mock_settings() -> Settings:
     return Settings(
         environment="test",
         log_level="DEBUG",
-        postgres_url="postgresql://test:test@localhost/test",
-        redis_url="redis://localhost:6379/0",
+        postgres_host="localhost",
+        postgres_port=5432,
+        postgres_db="test",
+        postgres_user="test",
+        postgres_password="test-pass-123",
+        redis_host="localhost",
+        redis_port=6379,
+        redis_db=0,
         minio_endpoint="localhost:9000",
+        minio_secret_key="minio-secret-123",
         openrouter_api_key="test-api-key-12345",
         google_api_key="test-api-key-12345",
         jwt_secret_key="test-secret-key-min-32-chars-long-123456",
@@ -34,7 +44,7 @@ def sample_workflow_state() -> WorkflowState:
     return {
         "workflow_id": "test-workflow-456",
         "user_request": "Test checkpoint functionality",
-        "current_phase": "testing",
+        "current_phase": "validation",
         "current_task": "checkpoint_test",
         "current_agent": "CheckpointManager",
         "rejection_count": 0,
@@ -72,6 +82,10 @@ def sample_workflow_state() -> WorkflowState:
     }
 
 
+def _repo(manager: CheckpointManager) -> Any:
+    return cast(Any, manager.repository)
+
+
 class TestCheckpointManagerInitialization:
     """Test CheckpointManager initialization."""
 
@@ -107,26 +121,28 @@ class TestCheckpointManagerConnection:
         """Test connect() delegates to repository."""
         # Arrange
         manager = CheckpointManager(settings=mock_settings)
-        manager.repository.connect = AsyncMock()
+        repo = _repo(manager)
+        repo.connect = AsyncMock()
 
         # Act
         await manager.connect()
 
         # Assert
-        manager.repository.connect.assert_called_once()
+        repo.connect.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_disconnect(self, mock_settings: Settings) -> None:
         """Test disconnect() delegates to repository."""
         # Arrange
         manager = CheckpointManager(settings=mock_settings)
-        manager.repository.disconnect = AsyncMock()
+        repo = _repo(manager)
+        repo.disconnect = AsyncMock()
 
         # Act
         await manager.disconnect()
 
         # Assert
-        manager.repository.disconnect.assert_called_once()
+        repo.disconnect.assert_called_once()
 
 
 class TestCheckpointManagerAput:
@@ -141,28 +157,32 @@ class TestCheckpointManagerAput:
         """Test aput() saves checkpoint to repository."""
         # Arrange
         manager = CheckpointManager(settings=mock_settings)
-        manager.repository.save_checkpoint = AsyncMock(return_value="checkpoint-123")
-        manager.repository.save_workflow_metadata = AsyncMock()
-        manager.repository.log_audit_event = AsyncMock()
+        repo = _repo(manager)
+        repo.save_checkpoint = AsyncMock(return_value="checkpoint-123")
+        repo.save_workflow_metadata = AsyncMock()
+        repo.log_audit_event = AsyncMock()
 
-        config = {"workflow_id": "test-workflow-456"}
-        checkpoint = {
-            "v": 1,
-            "ts": "checkpoint-123",
-            "id": "checkpoint-123",
-            "channel_values": {"state": sample_workflow_state},
-            "channel_versions": {},
-            "versions_seen": {},
-            "pending_sends": [],
-        }
-        metadata = {"source": "test"}
+        config = cast(RunnableConfig, {"workflow_id": "test-workflow-456"})
+        checkpoint = cast(
+            Checkpoint,
+            {
+                "v": 1,
+                "ts": "checkpoint-123",
+                "id": "checkpoint-123",
+                "channel_values": {"state": sample_workflow_state},
+                "channel_versions": {},
+                "versions_seen": {},
+                "pending_sends": [],
+            },
+        )
+        metadata = cast(CheckpointMetadata, {"source": "test"})
 
         # Act
         result_config = await manager.aput(config, checkpoint, metadata, {})
 
         # Assert
-        manager.repository.save_checkpoint.assert_called_once()
-        assert result_config["checkpoint_id"] == "checkpoint-123"
+        repo.save_checkpoint.assert_called_once()
+        assert cast(Any, result_config)["checkpoint_id"] == "checkpoint-123"
 
     @pytest.mark.asyncio
     async def test_aput_saves_workflow_metadata(
@@ -173,28 +193,32 @@ class TestCheckpointManagerAput:
         """Test aput() saves workflow metadata."""
         # Arrange
         manager = CheckpointManager(settings=mock_settings)
-        manager.repository.save_checkpoint = AsyncMock(return_value="checkpoint-123")
-        manager.repository.save_workflow_metadata = AsyncMock()
-        manager.repository.log_audit_event = AsyncMock()
+        repo = _repo(manager)
+        repo.save_checkpoint = AsyncMock(return_value="checkpoint-123")
+        repo.save_workflow_metadata = AsyncMock()
+        repo.log_audit_event = AsyncMock()
 
-        config = {"workflow_id": "test-workflow-456"}
-        checkpoint = {
-            "v": 1,
-            "ts": "checkpoint-123",
-            "id": "checkpoint-123",
-            "channel_values": {"state": sample_workflow_state},
-            "channel_versions": {},
-            "versions_seen": {},
-            "pending_sends": [],
-        }
-        metadata = {"source": "test"}
+        config = cast(RunnableConfig, {"workflow_id": "test-workflow-456"})
+        checkpoint = cast(
+            Checkpoint,
+            {
+                "v": 1,
+                "ts": "checkpoint-123",
+                "id": "checkpoint-123",
+                "channel_values": {"state": sample_workflow_state},
+                "channel_versions": {},
+                "versions_seen": {},
+                "pending_sends": [],
+            },
+        )
+        metadata = cast(CheckpointMetadata, {"source": "test"})
 
         # Act
         await manager.aput(config, checkpoint, metadata, {})
 
         # Assert
-        manager.repository.save_workflow_metadata.assert_called_once()
-        call_kwargs = manager.repository.save_workflow_metadata.call_args.kwargs
+        repo.save_workflow_metadata.assert_called_once()
+        call_kwargs = repo.save_workflow_metadata.call_args.kwargs
         assert call_kwargs["workflow_id"] == "test-workflow-456"
         assert call_kwargs["user_request"] == "Test checkpoint functionality"
         assert call_kwargs["budget_used_usd"] == 0.01
@@ -208,28 +232,32 @@ class TestCheckpointManagerAput:
         """Test aput() logs audit event."""
         # Arrange
         manager = CheckpointManager(settings=mock_settings)
-        manager.repository.save_checkpoint = AsyncMock(return_value="checkpoint-123")
-        manager.repository.save_workflow_metadata = AsyncMock()
-        manager.repository.log_audit_event = AsyncMock()
+        repo = _repo(manager)
+        repo.save_checkpoint = AsyncMock(return_value="checkpoint-123")
+        repo.save_workflow_metadata = AsyncMock()
+        repo.log_audit_event = AsyncMock()
 
-        config = {"workflow_id": "test-workflow-456"}
-        checkpoint = {
-            "v": 1,
-            "ts": "checkpoint-123",
-            "id": "checkpoint-123",
-            "channel_values": {"state": sample_workflow_state},
-            "channel_versions": {},
-            "versions_seen": {},
-            "pending_sends": [],
-        }
-        metadata = {"source": "test"}
+        config = cast(RunnableConfig, {"workflow_id": "test-workflow-456"})
+        checkpoint = cast(
+            Checkpoint,
+            {
+                "v": 1,
+                "ts": "checkpoint-123",
+                "id": "checkpoint-123",
+                "channel_values": {"state": sample_workflow_state},
+                "channel_versions": {},
+                "versions_seen": {},
+                "pending_sends": [],
+            },
+        )
+        metadata = cast(CheckpointMetadata, {"source": "test"})
 
         # Act
         await manager.aput(config, checkpoint, metadata, {})
 
         # Assert
-        manager.repository.log_audit_event.assert_called_once()
-        call_kwargs = manager.repository.log_audit_event.call_args.kwargs
+        repo.log_audit_event.assert_called_once()
+        call_kwargs = repo.log_audit_event.call_args.kwargs
         assert call_kwargs["event_type"] == "CHECKPOINT_SAVED"
         assert call_kwargs["agent_name"] == "CheckpointManager"
 
@@ -246,17 +274,16 @@ class TestCheckpointManagerAget:
         """Test aget() loads checkpoint from repository."""
         # Arrange
         manager = CheckpointManager(settings=mock_settings)
-        manager.repository.load_checkpoint = AsyncMock(
-            return_value=sample_workflow_state
-        )
+        repo = _repo(manager)
+        repo.load_checkpoint = AsyncMock(return_value=sample_workflow_state)
 
-        config = {"checkpoint_id": "checkpoint-123"}
+        config = cast(RunnableConfig, {"checkpoint_id": "checkpoint-123"})
 
         # Act
         checkpoint = await manager.aget(config)
 
         # Assert
-        manager.repository.load_checkpoint.assert_called_once_with("checkpoint-123")
+        repo.load_checkpoint.assert_called_once_with("checkpoint-123")
         assert checkpoint is not None
         assert checkpoint["channel_values"]["state"] == sample_workflow_state
 
@@ -268,7 +295,7 @@ class TestCheckpointManagerAget:
         """Test aget() returns None when checkpoint_id is missing."""
         # Arrange
         manager = CheckpointManager(settings=mock_settings)
-        config = {}
+        config: RunnableConfig = cast(RunnableConfig, {})
 
         # Act
         checkpoint = await manager.aget(config)
@@ -284,11 +311,10 @@ class TestCheckpointManagerAget:
         """Test aget() returns None on repository error."""
         # Arrange
         manager = CheckpointManager(settings=mock_settings)
-        manager.repository.load_checkpoint = AsyncMock(
-            side_effect=Exception("Database error")
-        )
+        repo = _repo(manager)
+        repo.load_checkpoint = AsyncMock(side_effect=Exception("Database error"))
 
-        config = {"checkpoint_id": "checkpoint-123"}
+        config = cast(RunnableConfig, {"checkpoint_id": "checkpoint-123"})
 
         # Act
         checkpoint = await manager.aget(config)
@@ -309,7 +335,8 @@ class TestCheckpointManagerAlist:
         """Test alist() returns checkpoint list."""
         # Arrange
         manager = CheckpointManager(settings=mock_settings)
-        manager.repository.list_checkpoints = AsyncMock(
+        repo = _repo(manager)
+        repo.list_checkpoints = AsyncMock(
             return_value=[
                 {
                     "checkpoint_id": "checkpoint-1",
@@ -323,11 +350,12 @@ class TestCheckpointManagerAlist:
                 },
             ]
         )
-        manager.repository.load_checkpoint = AsyncMock(
-            return_value=sample_workflow_state
-        )
+        repo.load_checkpoint = AsyncMock(return_value=sample_workflow_state)
 
-        config = {"configurable": {"workflow_id": "test-workflow-456"}}
+        config = cast(
+            RunnableConfig,
+            {"configurable": {"workflow_id": "test-workflow-456"}},
+        )
 
         # Act
         checkpoints = []
@@ -336,7 +364,7 @@ class TestCheckpointManagerAlist:
 
         # Assert
         assert len(checkpoints) == 2
-        manager.repository.list_checkpoints.assert_called_once()
+        repo.list_checkpoints.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_alist_respects_limit(
@@ -346,9 +374,10 @@ class TestCheckpointManagerAlist:
         """Test alist() respects limit parameter."""
         # Arrange
         manager = CheckpointManager(settings=mock_settings)
-        manager.repository.list_checkpoints = AsyncMock(return_value=[])
+        repo = _repo(manager)
+        repo.list_checkpoints = AsyncMock(return_value=[])
 
-        config = {"workflow_id": "test-workflow-456"}
+        config = cast(RunnableConfig, {"workflow_id": "test-workflow-456"})
 
         # Act
         checkpoints = []
@@ -356,7 +385,7 @@ class TestCheckpointManagerAlist:
             checkpoints.append(checkpoint_tuple)
 
         # Assert
-        call_kwargs = manager.repository.list_checkpoints.call_args.kwargs
+        call_kwargs = repo.list_checkpoints.call_args.kwargs
         assert call_kwargs["limit"] == 5
 
     @pytest.mark.asyncio
@@ -367,7 +396,7 @@ class TestCheckpointManagerAlist:
         """Test alist() returns empty for missing workflow_id."""
         # Arrange
         manager = CheckpointManager(settings=mock_settings)
-        config = {}
+        config: RunnableConfig = cast(RunnableConfig, {})
 
         # Act
         checkpoints = []
@@ -389,16 +418,15 @@ class TestCheckpointManagerCleanup:
         """Test cleanup_old_checkpoints() delegates to repository."""
         # Arrange
         manager = CheckpointManager(settings=mock_settings)
-        manager.repository.cleanup_old_checkpoints = AsyncMock(return_value=5)
+        repo = _repo(manager)
+        repo.cleanup_old_checkpoints = AsyncMock(return_value=5)
 
         # Act
         deleted_count = await manager.cleanup_old_checkpoints()
 
         # Assert
         assert deleted_count == 5
-        manager.repository.cleanup_old_checkpoints.assert_called_once_with(
-            retention_hours=48
-        )
+        repo.cleanup_old_checkpoints.assert_called_once_with(retention_hours=48)
 
 
 class TestCheckpointManagerStateConversion:
@@ -431,15 +459,18 @@ class TestCheckpointManagerStateConversion:
         """Test _checkpoint_to_state() extracts state."""
         # Arrange
         manager = CheckpointManager(settings=mock_settings)
-        checkpoint = {
-            "v": 2,
-            "ts": "checkpoint-123",
-            "id": "checkpoint-123",
-            "channel_values": {"state": sample_workflow_state},
-            "channel_versions": {},
-            "versions_seen": {},
-            "pending_sends": [],
-        }
+        checkpoint = cast(
+            Checkpoint,
+            {
+                "v": 2,
+                "ts": "checkpoint-123",
+                "id": "checkpoint-123",
+                "channel_values": {"state": sample_workflow_state},
+                "channel_versions": {},
+                "versions_seen": {},
+                "pending_sends": [],
+            },
+        )
 
         # Act
         state = manager._checkpoint_to_state(checkpoint)

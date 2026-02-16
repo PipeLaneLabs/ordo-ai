@@ -1,6 +1,7 @@
 """Unit tests for ImplementationPlannerAgent."""
 
 import sys
+from typing import Any, cast
 from unittest.mock import MagicMock
 
 
@@ -12,7 +13,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src.agents.tier_2.implementation_planner import ImplementationPlannerAgent
-from src.orchestration.state import WorkflowState
+from src.orchestration.state import WorkflowState, create_initial_state
 
 
 @pytest.fixture
@@ -42,21 +43,20 @@ def agent(mock_llm_client, mock_budget_guard, mock_settings):
         budget_guard=mock_budget_guard,
         settings=mock_settings,
     )
-    # Mock file operations to avoid disk I/O
-    agent._read_if_exists = AsyncMock()
-    agent._write_file = AsyncMock()
+    agent_any = cast(Any, agent)
+    agent_any._read_if_exists = AsyncMock()
+    agent_any._write_file = AsyncMock()
     return agent
 
 
 @pytest.fixture
-def workflow_state():
-    return WorkflowState(
-        workflow_id="wf-123",
-        budget_remaining_tokens=10000,
-        budget_remaining_usd=1.0,
-        budget_used_tokens=0,
-        budget_used_usd=0.0,
-    )
+def workflow_state() -> WorkflowState:
+    state = create_initial_state("wf-123", "Plan implementation", "trace-123")
+    state["budget_remaining_tokens"] = 10000
+    state["budget_remaining_usd"] = 1.0
+    state["budget_used_tokens"] = 0
+    state["budget_used_usd"] = 0.0
+    return state
 
 
 @pytest.mark.anyio

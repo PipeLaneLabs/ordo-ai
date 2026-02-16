@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from src import __version__
 
 
-def test_health_check(test_client: TestClient):
+def test_health_check(test_client: TestClient) -> None:
     """
     Tests the /health endpoint.
     """
@@ -17,7 +17,7 @@ def test_health_check(test_client: TestClient):
     assert json_response["details"]["version"] == __version__
 
 
-def test_readiness_check(test_client: TestClient):
+def test_readiness_check(test_client: TestClient) -> None:
     """
     Tests the /ready endpoint.
     """
@@ -28,7 +28,7 @@ def test_readiness_check(test_client: TestClient):
     assert "dependencies" in json_response
 
 
-def test_health_check_structure(test_client: TestClient):
+def test_health_check_structure(test_client: TestClient) -> None:
     """
     Tests the structure and content of health check response.
     """
@@ -55,7 +55,7 @@ def test_health_check_structure(test_client: TestClient):
     assert services["application"] in ["healthy", "unhealthy", "degraded"]
 
 
-def test_readiness_check_structure(test_client: TestClient):
+def test_readiness_check_structure(test_client: TestClient) -> None:
     """
     Tests the structure and content of readiness check response.
     """
@@ -88,7 +88,7 @@ def test_readiness_check_structure(test_client: TestClient):
     assert dependencies["minio"] in ["healthy", "unhealthy", "degraded"]
 
 
-def test_root_endpoint(test_client: TestClient):
+def test_root_endpoint(test_client: TestClient) -> None:
     """
     Tests the root endpoint returns API information.
     """
@@ -112,7 +112,7 @@ def test_root_endpoint(test_client: TestClient):
     assert data["metrics"] == "/metrics"
 
 
-def test_health_check_content_type(test_client: TestClient):
+def test_health_check_content_type(test_client: TestClient) -> None:
     """
     Tests that health endpoints return JSON content type.
     """
@@ -125,7 +125,7 @@ def test_health_check_content_type(test_client: TestClient):
     assert response.headers["content-type"].startswith("application/json")
 
 
-def test_health_endpoints_availability(test_client: TestClient):
+def test_health_endpoints_availability(test_client: TestClient) -> None:
     """
     Tests that health endpoints are always available and responsive.
     """

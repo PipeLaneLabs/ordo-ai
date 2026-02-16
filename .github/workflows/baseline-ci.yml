@@ -9,7 +9,7 @@ on:
     branches: [main, staging, develop]
   push:
     # Trigger on personal work branches only
-    branches: ['feature/**', 'task/**', 'feat/**', 'fix/**', 'chore/**']
+    branches: ['feature/**', 'task/**', 'feat/**', 'fix/**', 'chore/**', 'dependabot/**']
   workflow_dispatch: # --- ADDED: MANUAL TRIGGER ---
 
 jobs:
@@ -23,40 +23,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-      
       - name: Install Poetry 2.3.1
         run: |
           curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'poetry'
+          # This helps the action find the poetry executable we just installed
+          cache-dependency-path: poetry.lock
       
       - name: Configure Poetry
         run: |
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
       
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v3
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            venv-${{ runner.os }}-
-      
       - name: Install dependencies
         run: poetry install --no-root --with dev
       
       - name: Run Black formatter check
-        run: poetry run black --check src/ tests/
+        run: poetry run black --check .
       
       - name: Run Ruff linter
-        run: poetry run ruff check src/ tests/
+        run: poetry run ruff check .
       
       - name: Run MyPy type checker
-        run: poetry run mypy src/ --strict
+        run: poetry run mypy
 
   # ------------------------------------------------------------------
   # JOB 2: TEST SUITE (Unit & Integration)
@@ -93,29 +88,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-      
       - name: Install Poetry 2.3.1
         run: |
           curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'poetry'
+          # This helps the action find the poetry executable we just installed
+          cache-dependency-path: poetry.lock
       
       - name: Configure Poetry
         run: |
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
-      
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v3
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            venv-${{ runner.os }}-
-      
+            
       - name: Install dependencies
         run: poetry install --no-root --with dev
 
@@ -137,11 +127,12 @@ jobs:
           REDIS_PORT: 6379
         run: |
           set -o pipefail
+          # Added --cov (The On Switch)
+          # Removed --cov=src and --cov-fail-under (Handled by TOML)
           poetry run pytest tests/unit/ -v \
-            --cov=src \
+            --cov \
             --cov-report=xml \
             --cov-report=term-missing \
-            --cov-fail-under=70 \
             --junitxml=reports/unit-junit.xml \
             --durations=20 \
             --durations-min=0.5 2>&1 | tee reports/unit-timing.txt
@@ -280,37 +271,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.12'
-      
+      # 1. NEW CACHING
       - name: Install Poetry 2.3.1
         run: |
           curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'poetry'
+          # This helps the action find the poetry executable we just installed
+          cache-dependency-path: poetry.lock
       
       - name: Configure Poetry
         run: |
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
       
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v3
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            venv-${{ runner.os }}-
-      
       - name: Install dependencies
         run: poetry install --no-root --with dev
       
+      # 2. SECURE BANDIT RUN
       - name: Run Bandit security scanner
-        run: |
-          poetry run pip install bandit
-          # Use .bandit config to skip B608 false positives (f-strings for LLM prompts, not SQL)
-          poetry run bandit -r src/ -ll -c .bandit -f json -o bandit-report.json
+        # Runs the locked version from poetry.lock
+        run: poetry run bandit -c .bandit -f json -o bandit-report.json src/
       
       - name: Display Bandit results
         if: always()

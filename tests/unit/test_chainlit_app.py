@@ -11,17 +11,21 @@ from __future__ import annotations
 
 import os
 import sys
+from collections.abc import Callable
 from types import ModuleType
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
+from src.orchestration.state import WorkflowState, create_initial_state
 
 
 def _install_chainlit_stub() -> None:  # noqa: C901
     if "chainlit" in sys.modules:
         return
 
-    stub = ModuleType("chainlit")
+    stub: Any = ModuleType("chainlit")
 
     class _UserSession:
         def __init__(self) -> None:
@@ -48,13 +52,13 @@ def _install_chainlit_stub() -> None:  # noqa: C901
         async def send(self) -> _AskUserMessage:
             return self
 
-    def on_chat_start(func):
+    def on_chat_start(func: Callable[..., Any]) -> Callable[..., Any]:
         return func
 
-    def on_message(func):
+    def on_message(func: Callable[..., Any]) -> Callable[..., Any]:
         return func
 
-    def on_chat_end(func):
+    def on_chat_end(func: Callable[..., Any]) -> Callable[..., Any]:
         return func
 
     async def sleep(_seconds: float) -> None:
@@ -73,6 +77,16 @@ def _install_chainlit_stub() -> None:  # noqa: C901
 
 if os.getenv("RUN_CHAINLIT_REAL") != "1":
     _install_chainlit_stub()
+
+_handle_approval: Any
+_handle_budget_query: Any
+_handle_check_status: Any
+_handle_generic_request: Any
+_handle_start_workflow: Any
+on_chat_start: Any
+on_message: Any
+ChainlitCallback: Any
+create_chainlit_callbacks: Any
 
 # Conditional imports to prevent collection errors
 try:
@@ -96,6 +110,14 @@ except Exception:
     on_message = None
     ChainlitCallback = None
     create_chainlit_callbacks = None
+
+
+def _make_state() -> WorkflowState:
+    state = create_initial_state("test", "test request", "test")
+    state["current_phase"] = "planning"
+    state["current_task"] = "test"
+    state["current_agent"] = "test"
+    return state
 
 
 class TestChainlitApp:
@@ -275,48 +297,8 @@ class TestChainlitCallbacks:
 
         with patch("chainlit.Message") as mock_msg:
             mock_msg.return_value.send = AsyncMock()
-            await callback.on_node_start(
-                "tier_1_planning",
-                {  # type: ignore[arg-type]
-                    "workflow_id": "test",
-                    "user_request": "test",
-                    "trace_id": "test",
-                    "current_phase": "test",
-                    "current_task": "test",
-                    "current_agent": "test",
-                    "rejection_count": 0,
-                    "state_version": 1,
-                    "requirements": "",
-                    "architecture": "",
-                    "tasks": "",
-                    "dependencies": "",
-                    "infrastructure": "",
-                    "observability": "",
-                    "code_files": {},
-                    "test_files": {},
-                    "partial_artifacts": {},
-                    "validation_report": "",
-                    "deviation_log": "",
-                    "compliance_log": "",
-                    "quality_report": "",
-                    "security_report": "",
-                    "acceptance_report": "",
-                    "budget_used_tokens": 0,
-                    "budget_used_usd": 0.0,
-                    "budget_remaining_tokens": 0,
-                    "budget_remaining_usd": 0.0,
-                    "agent_token_usage": {},
-                    "quality_gates_passed": [],
-                    "blocking_issues": [],
-                    "awaiting_human_approval": False,
-                    "approval_gate": None,
-                    "approval_timeout": None,
-                    "routing_decision": None,
-                    "escalation_flag": False,
-                    "created_at": "2026-01-30T08:56:51.284Z",
-                    "updated_at": "2026-01-30T08:56:51.284Z",
-                },
-            )
+            state = _make_state()
+            await callback.on_node_start("tier_1_planning", state)
             mock_msg.assert_called_once()
 
     @pytest.mark.asyncio
@@ -326,7 +308,8 @@ class TestChainlitCallbacks:
 
         with patch("chainlit.Message") as mock_msg:
             mock_msg.return_value.send = AsyncMock()
-            await callback.on_node_end("tier_1_planning", {}, {"status": "ok"})
+            state = _make_state()
+            await callback.on_node_end("tier_1_planning", state, {"status": "ok"})
             mock_msg.assert_called_once()
 
     @pytest.mark.asyncio
@@ -336,7 +319,8 @@ class TestChainlitCallbacks:
 
         with patch("chainlit.Message") as mock_msg:
             mock_msg.return_value.send = AsyncMock()
-            await callback.on_rejection("tier_4_validator", "Invalid output", {})
+            state = _make_state()
+            await callback.on_rejection("tier_4_validator", "Invalid output", state)
             mock_msg.assert_called_once()
 
     @pytest.mark.asyncio
@@ -346,7 +330,8 @@ class TestChainlitCallbacks:
 
         with patch("chainlit.Message") as mock_msg:
             mock_msg.return_value.send = AsyncMock()
-            await callback.on_approval("tier_4_validator", {})
+            state = _make_state()
+            await callback.on_approval("tier_4_validator", state)
             mock_msg.assert_called_once()
 
     @pytest.mark.asyncio
@@ -356,9 +341,10 @@ class TestChainlitCallbacks:
 
         with patch("chainlit.Message") as mock_msg:
             mock_msg.return_value.send = AsyncMock()
+            state = _make_state()
             await callback.on_human_gate(
                 "approval_gate",
-                {},
+                state,
                 "Approve architecture design?",
             )
             mock_msg.assert_called_once()

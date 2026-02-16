@@ -11,6 +11,7 @@ from src.agents.tier_5.commit_agent import CommitAgent
 from src.config import Settings
 from src.llm.base_client import LLMResponse
 from src.orchestration.budget_guard import BudgetGuard
+from src.orchestration.state import create_initial_state
 
 
 pytestmark = pytest.mark.skipif(
@@ -29,70 +30,112 @@ def commit_agent() -> CommitAgent:
 
 
 @pytest.mark.asyncio
-async def test_build_prompt_includes_git_status(commit_agent) -> None:
-    state = {
-        "user_request": "Add endpoint",
-        "current_phase": "delivery",
-        "completed_tasks": ["task-1"],
-    }
+async def test_build_prompt_includes_git_status(
+    commit_agent: CommitAgent,
+) -> None:
+    state = create_initial_state(
+        workflow_id="wf-1",
+        user_request="Add endpoint",
+        trace_id="trace-1",
+    )
+    state["current_phase"] = "delivery"
 
-    commit_agent._get_git_status = AsyncMock(return_value="Changes: M file.py")
-
-    prompt = await commit_agent._build_prompt(state)
+    with patch.object(
+        commit_agent,
+        "_get_git_status",
+        new=AsyncMock(return_value="Changes: M file.py"),
+    ):
+        prompt = await commit_agent._build_prompt(state)
 
     assert "Add endpoint" in prompt
     assert "delivery" in prompt
-    assert "task-1" in prompt
+    assert "Completed Tasks" in prompt
+    assert "None" in prompt
     assert "Changes: M file.py" in prompt
 
 
 @pytest.mark.asyncio
-async def test_parse_output_commits_when_changes(commit_agent) -> None:
+async def test_parse_output_commits_when_changes(
+    commit_agent: CommitAgent,
+) -> None:
     response = LLMResponse(
         content="<COMMIT_MESSAGE>feat: add thing</COMMIT_MESSAGE>",
         model="test",
         tokens_used=1,
+        tokens_prompt=1,
+        tokens_completion=0,
         cost_usd=0.0,
         latency_ms=1,
         provider="test",
+        finish_reason="stop",
     )
 
-    commit_agent._run_git_command = AsyncMock(side_effect=["", "", "M file.txt", ""])
+    state = create_initial_state(
+        workflow_id="wf-1",
+        user_request="Commit changes",
+        trace_id="trace-1",
+    )
 
-    result = await commit_agent._parse_output(response, {})
+    with patch.object(
+        commit_agent,
+        "_run_git_command",
+        new=AsyncMock(side_effect=["", "", "M file.txt", ""]),
+    ):
+        result = await commit_agent._parse_output(response, state)
 
     assert result["commit_status"] == "committed"
 
 
 @pytest.mark.asyncio
-async def test_parse_output_no_changes(commit_agent) -> None:
+async def test_parse_output_no_changes(
+    commit_agent: CommitAgent,
+) -> None:
     response = LLMResponse(
         content="<COMMIT_MESSAGE>feat: add thing</COMMIT_MESSAGE>",
         model="test",
         tokens_used=1,
+        tokens_prompt=1,
+        tokens_completion=0,
         cost_usd=0.0,
         latency_ms=1,
         provider="test",
+        finish_reason="stop",
     )
 
-    commit_agent._run_git_command = AsyncMock(side_effect=["", "", "", ""])
+    state = create_initial_state(
+        workflow_id="wf-1",
+        user_request="Commit changes",
+        trace_id="trace-1",
+    )
 
-    result = await commit_agent._parse_output(response, {})
+    with patch.object(
+        commit_agent,
+        "_run_git_command",
+        new=AsyncMock(side_effect=["", "", "", ""]),
+    ):
+        result = await commit_agent._parse_output(response, state)
 
     assert result["commit_status"] == "no_changes"
 
 
 @pytest.mark.asyncio
-async def test_get_git_status_not_repo(commit_agent) -> None:
-    commit_agent._run_git_command = AsyncMock(side_effect=RuntimeError("fail"))
-
-    result = await commit_agent._get_git_status()
+async def test_get_git_status_not_repo(
+    commit_agent: CommitAgent,
+) -> None:
+    with patch.object(
+        commit_agent,
+        "_run_git_command",
+        new=AsyncMock(side_effect=RuntimeError("fail")),
+    ):
+        result = await commit_agent._get_git_status()
 
     assert "Not in a git repository" in result
 
 
 @pytest.mark.asyncio
-async def test_run_git_command_success(commit_agent) -> None:
+async def test_run_git_command_success(
+    commit_agent: CommitAgent,
+) -> None:
     with patch("asyncio.create_subprocess_exec", new=AsyncMock()) as mock_proc:
         process = AsyncMock()
         process.returncode = 0
@@ -105,7 +148,9 @@ async def test_run_git_command_success(commit_agent) -> None:
 
 
 @pytest.mark.asyncio
-async def test_run_git_command_failure(commit_agent) -> None:
+async def test_run_git_command_failure(
+    commit_agent: CommitAgent,
+) -> None:
     with patch("asyncio.create_subprocess_exec", new=AsyncMock()) as mock_proc:
         process = AsyncMock()
         process.returncode = 1

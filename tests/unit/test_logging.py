@@ -22,8 +22,9 @@ class TestAddAppContext:
     def test_add_app_context_enriches_event_dict(self):
         """Test that add_app_context adds application context."""
         event_dict = {"event": "test_event"}
+        logger = logging.getLogger("test")
 
-        result = add_app_context(None, None, event_dict)
+        result = add_app_context(logger, "info", event_dict)
 
         assert result["service"] == "agent-api"
         assert result["environment"] is not None
@@ -33,8 +34,9 @@ class TestAddAppContext:
     def test_add_app_context_preserves_existing_fields(self):
         """Test that add_app_context preserves existing fields."""
         event_dict = {"event": "test_event", "custom_field": "custom_value"}
+        logger = logging.getLogger("test")
 
-        result = add_app_context(None, None, event_dict)
+        result = add_app_context(logger, "info", event_dict)
 
         assert result["custom_field"] == "custom_value"
         assert result["service"] == "agent-api"

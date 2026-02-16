@@ -1,3 +1,4 @@
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -5,7 +6,7 @@ import pytest
 from src.agents.tier_4.product_validator import ProductValidatorAgent
 from src.agents.tier_4.security_validator import SecurityValidatorAgent
 from src.llm.base_client import LLMResponse
-from src.orchestration.state import WorkflowState
+from src.orchestration.state import create_initial_state
 
 
 @pytest.fixture
@@ -37,8 +38,9 @@ async def test_security_validator_workflow(mock_deps, tmp_path):
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(content, encoding="utf-8")
 
-    agent._read_if_exists = mock_read
-    agent._write_file = mock_write
+    agent_any = cast(Any, agent)
+    agent_any._read_if_exists = mock_read
+    agent_any._write_file = mock_write
 
     # Create required files
     (tmp_path / "REQUIREMENTS.md").write_text("Requirements...", encoding="utf-8")
@@ -49,19 +51,25 @@ async def test_security_validator_workflow(mock_deps, tmp_path):
     mock_deps["llm_client"].generate.return_value = LLMResponse(
         content="**Overall Status:** ✅ APPROVED\n**Critical Issues (P0):** 0",
         tokens_used=100,
+        tokens_prompt=50,
+        tokens_completion=50,
         cost_usd=0.0,
         model="test-model",
         latency_ms=150,
         provider="test-provider",
+        finish_reason="stop",
     )
 
-    state: WorkflowState = {"current_phase": "tier_4"}
+    state = create_initial_state("wf-1", "Security validation", "trace-1")
+    state["current_phase"] = "validation"
 
     # Execute
     new_state = await agent.execute(state)
 
     # Verify State Update
-    assert new_state["partial_artifacts"]["security_status"] == "APPROVED"
+    partial_artifacts = cast(dict[str, object], new_state["partial_artifacts"])
+    security_status = cast(str, partial_artifacts["security_status"])
+    assert security_status == "APPROVED"
     assert new_state["current_agent"] == "SecurityValidator"
 
     # Verify Report Created
@@ -84,8 +92,9 @@ async def test_product_validator_workflow(mock_deps, tmp_path):
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(content, encoding="utf-8")
 
-    agent._read_if_exists = mock_read
-    agent._write_file = mock_write
+    agent_any = cast(Any, agent)
+    agent_any._read_if_exists = mock_read
+    agent_any._write_file = mock_write
 
     # Create required files
     (tmp_path / "REQUIREMENTS.md").write_text("Reqs", encoding="utf-8")
@@ -93,15 +102,21 @@ async def test_product_validator_workflow(mock_deps, tmp_path):
     mock_deps["llm_client"].generate.return_value = LLMResponse(
         content="**Overall Status:** ✅ APPROVED\n**Functional Requirements Met:** 5/5",
         tokens_used=100,
+        tokens_prompt=50,
+        tokens_completion=50,
         cost_usd=0.0,
         model="test-model",
         latency_ms=150,
         provider="test-provider",
+        finish_reason="stop",
     )
 
-    state: WorkflowState = {"current_phase": "tier_4", "user_request": "Test Request"}
+    state = create_initial_state("wf-2", "Test Request", "trace-2")
+    state["current_phase"] = "validation"
 
     new_state = await agent.execute(state)
 
-    assert new_state["partial_artifacts"]["acceptance_status"] == "APPROVED"
+    partial_artifacts = cast(dict[str, object], new_state["partial_artifacts"])
+    acceptance_status = cast(str, partial_artifacts["acceptance_status"])
+    assert acceptance_status == "APPROVED"
     assert (tmp_path / "ACCEPTANCE_REPORT.md").exists()

@@ -5,7 +5,7 @@ import pytest
 
 from src.agents.tier_4.security_validator import SecurityValidatorAgent
 from src.llm.base_client import LLMResponse
-from src.orchestration.state import WorkflowState
+from src.orchestration.state import create_initial_state
 
 
 @pytest.fixture
@@ -45,7 +45,8 @@ async def test_initialization(security_agent):
 @pytest.mark.asyncio
 async def test_build_prompt(security_agent):
     # Mock data
-    state: WorkflowState = {"current_phase": "tier_4"}
+    state = create_initial_state("wf-1", "Security validation", "trace-1")
+    state["current_phase"] = "validation"
 
     # Mock file reading
     security_agent._read_if_exists = AsyncMock(
@@ -96,7 +97,7 @@ async def test_format_code_files_limit(security_agent):
 
 @pytest.mark.asyncio
 async def test_parse_output_approved(security_agent):
-    state: WorkflowState = {}
+    state = create_initial_state("wf-1", "Security validation", "trace-1")
     llm_response = LLMResponse(
         content="""
 ```markdown
@@ -107,10 +108,13 @@ async def test_parse_output_approved(security_agent):
 ```
 """,
         tokens_used=100,
+        tokens_prompt=50,
+        tokens_completion=50,
         cost_usd=0.0,
         model="test-model",
         latency_ms=150,
         provider="test-provider",
+        finish_reason="stop",
     )
 
     security_agent._write_file = AsyncMock()
@@ -125,7 +129,7 @@ async def test_parse_output_approved(security_agent):
 
 @pytest.mark.asyncio
 async def test_parse_output_rejected(security_agent):
-    state: WorkflowState = {}
+    state = create_initial_state("wf-1", "Security validation", "trace-1")
     llm_response = LLMResponse(
         content="""
 # Security Validation Report
@@ -138,10 +142,13 @@ async def test_parse_output_rejected(security_agent):
 ```
 """,
         tokens_used=100,
+        tokens_prompt=50,
+        tokens_completion=50,
         cost_usd=0.0,
         model="test-model",
         latency_ms=150,
         provider="test-provider",
+        finish_reason="stop",
     )
 
     security_agent._write_file = AsyncMock()
