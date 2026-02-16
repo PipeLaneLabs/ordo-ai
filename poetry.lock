@@ -1540,33 +1540,23 @@ files = [
 smmap = ">=3.0.1,<6"
 
 [[package]]
-name = "gitdb2"
-version = "4.0.2"
-description = "A mirror package for gitdb"
-optional = false
-python-versions = "*"
-groups = ["dev"]
-files = [
-    {file = "gitdb2-4.0.2-py3-none-any.whl", hash = "sha256:a1c974e5fab8c2c90192c1367c81cbc54baec04244bda1816e9c8ab377d1cba3"},
-    {file = "gitdb2-4.0.2.tar.gz", hash = "sha256:0986cb4003de743f2b3aba4c828edd1ab58ce98e1c4a8acf72ef02760d4beb4e"},
-]
-
-[package.dependencies]
-gitdb = ">=4.0.1"
-
-[[package]]
 name = "gitpython"
-version = "3.0.6"
-description = "Python Git Library"
+version = "3.1.46"
+description = "GitPython is a Python library used to interact with Git repositories"
 optional = false
-python-versions = ">=3.4"
+python-versions = ">=3.7"
 groups = ["dev"]
 files = [
-    {file = "GitPython-3.0.6-py3-none-any.whl", hash = "sha256:5b5b7b29baa27680a7dff85f171a251d48ac37c5f04cba15d381b56991cc7a48"},
+    {file = "gitpython-3.1.46-py3-none-any.whl", hash = "sha256:79812ed143d9d25b6d176a10bb511de0f9c67b1fa641d82097b0ab90398a2058"},
+    {file = "gitpython-3.1.46.tar.gz", hash = "sha256:400124c7d0ef4ea03f7310ac2fbf7151e09ff97f2a3288d64a440c584a29c37f"},
 ]
 
 [package.dependencies]
-gitdb2 = ">=2.0.0"
+gitdb = ">=4.0.1,<5"
+
+[package.extras]
+doc = ["sphinx (>=7.1.2,<7.2)", "sphinx-autodoc-typehints", "sphinx_rtd_theme"]
+test = ["coverage[toml]", "ddt (>=1.1.1,!=1.4.3)", "mock ; python_version < \"3.8\"", "mypy (==1.18.2) ; python_version >= \"3.9\"", "pre-commit", "pytest (>=7.3.1)", "pytest-cov", "pytest-instafail", "pytest-mock", "pytest-sugar", "typing-extensions ; python_version < \"3.11\""]
 
 [[package]]
 name = "google-ai-generativelanguage"
@@ -6698,34 +6688,6 @@ tenacity = ">=8.2.3,<10.0"
 datasets = ["pandas"]
 
 [[package]]
-name = "trufflehog"
-version = "2.2.1"
-description = "Searches through git repositories for high entropy strings, digging deep into commit history."
-optional = false
-python-versions = "*"
-groups = ["dev"]
-files = [
-    {file = "truffleHog-2.2.1-py2.py3-none-any.whl", hash = "sha256:ac411e29ffac06555cdc40ed1cbff0b3c74cb0ed26af2a0432ed15e61b94e6b5"},
-    {file = "truffleHog-2.2.1.tar.gz", hash = "sha256:7f0d09c8cda2a90ae42f81405e5944a3325d90a5842d2dde014471e4d65c71e4"},
-]
-
-[package.dependencies]
-GitPython = "3.0.6"
-truffleHogRegexes = "0.0.7"
-
-[[package]]
-name = "trufflehogregexes"
-version = "0.0.7"
-description = "These regexes power truffleHog."
-optional = false
-python-versions = "*"
-groups = ["dev"]
-files = [
-    {file = "truffleHogRegexes-0.0.7-py2.py3-none-any.whl", hash = "sha256:627e7cd246153135dea86bacd1253df262c525874f9008395ffe81eb63f92352"},
-    {file = "truffleHogRegexes-0.0.7.tar.gz", hash = "sha256:b81dfc60c86c1e353f436a0e201fd88edb72d5a574615a7858485c59edf32405"},
-]
-
-[[package]]
 name = "typer"
 version = "0.23.1"
 description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
@@ -7716,4 +7678,4 @@ cffi = ["cffi (>=1.17,<2.0) ; platform_python_implementation != \"PyPy\" and pyt
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.13"
-content-hash = "ea9d42328842e9cd9a15496298d132664773772da31086189a793dc0d22e86b8"
+content-hash = "10a86213deaec73637ed28f6a963d817e11feeed361082c5dc07398a02781784"

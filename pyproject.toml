@@ -83,7 +83,7 @@ commitizen = "^4.13.7"
 pytest-benchmark = "^5.2.3"
 pip-licenses = "^5.5.1"
 python-semantic-release = "^10.5.3"
-trufflehog = "^2.2.1"
+gitpython = ">=3.1.44"
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning>=1.0.0,<2.0.0"]
