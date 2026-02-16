@@ -23,16 +23,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Install Poetry 2.3.1
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'poetry'
-      
-      - name: Install Poetry 2.3.1
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          # This helps the action find the poetry executable we just installed
+          cache-dependency-path: poetry.lock
       
       - name: Configure Poetry
         run: |
@@ -86,16 +88,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Install Poetry 2.3.1
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'poetry'
-      
-      - name: Install Poetry 2.3.1
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          # This helps the action find the poetry executable we just installed
+          cache-dependency-path: poetry.lock
       
       - name: Configure Poetry
         run: |
@@ -268,16 +272,18 @@ jobs:
       - uses: actions/checkout@v4
       
       # 1. NEW CACHING
+      - name: Install Poetry 2.3.1
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'poetry'
-      
-      - name: Install Poetry 2.3.1
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          # This helps the action find the poetry executable we just installed
+          cache-dependency-path: poetry.lock
       
       - name: Configure Poetry
         run: |

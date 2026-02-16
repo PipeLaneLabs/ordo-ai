@@ -34,25 +34,25 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.generate_token.outputs.token }}
       
-      # 1. MODERN CACHING
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: 'poetry'
-      
+      # 1. INSTALL POETRY FIRST (Moved Up)
       - name: Install Poetry
         run: |
           curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-          # We still need the plugin installed in Poetry's CLI context
+          # Install plugin in Poetry's CLI context
           $HOME/.local/bin/poetry self add "poetry-dynamic-versioning[plugin]"
+      
+      # 2. NOW SET UP PYTHON & CACHE (Moved Down)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'poetry'
       
       - name: Configure Poetry
         run: |
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
 
-      # 2. INSTALL FROM LOCK FILE (Safer than pip install)
       - name: Install dependencies
         run: poetry install --no-root --with dev
       
@@ -63,6 +63,5 @@ jobs:
           git config user.name "ordo-ai-factory-bot[bot]"
           git config user.email "ordo-ai-factory-bot[bot]@users.noreply.github.com"
           
-          # 3. RUN VIA POETRY (Uses the locked version)
           poetry run semantic-release version
           poetry run semantic-release publish

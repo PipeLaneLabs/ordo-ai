@@ -17,18 +17,20 @@ jobs:
           fetch-depth: 0
       
       # 1. MODERN CACHING
+      - name: Install Poetry 2.3.1
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          $HOME/.local/bin/poetry self add "poetry-dynamic-versioning[plugin]"
+
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'poetry'
-      
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          $HOME/.local/bin/poetry self add "poetry-dynamic-versioning[plugin]"
-      
+          # This helps the action find the poetry executable we just installed
+          cache-dependency-path: poetry.lock
+          
       - name: Configure Poetry
         run: |
           poetry config virtualenvs.create true
@@ -80,19 +82,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Install Poetry 2.3.1
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          $HOME/.local/bin/poetry self add "poetry-dynamic-versioning[plugin]"
+
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          # Note: SBOM generation might not strictly need dev deps, 
-          # but caching poetry makes install faster.
           cache: 'poetry'
-      
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          $HOME/.local/bin/poetry self add "poetry-dynamic-versioning[plugin]"
+          # This helps the action find the poetry executable we just installed
+          cache-dependency-path: poetry.lock
       
       - name: Install dependencies
         run: poetry install --no-root
@@ -135,17 +137,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Install Poetry 2.3.1
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          $HOME/.local/bin/poetry self add "poetry-dynamic-versioning[plugin]"
+
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'poetry'
-      
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          $HOME/.local/bin/poetry self add "poetry-dynamic-versioning[plugin]"
+          # This helps the action find the poetry executable we just installed
+          cache-dependency-path: poetry.lock
       
       - name: Install dependencies
         run: poetry install --no-root --with dev
@@ -233,17 +237,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Install Poetry 2.3.1
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.3.1
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          $HOME/.local/bin/poetry self add "poetry-dynamic-versioning[plugin]"
+
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'poetry'
-      
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          $HOME/.local/bin/poetry self add "poetry-dynamic-versioning[plugin]"
+          # This helps the action find the poetry executable we just installed
+          cache-dependency-path: poetry.lock
       
       - name: Install dependencies
         run: poetry install --no-root --with dev
