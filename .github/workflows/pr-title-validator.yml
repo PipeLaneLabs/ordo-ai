@@ -11,10 +11,13 @@ jobs:
   validate-pr-title:
     name: Validate PR Title
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+      statuses: write
     steps:
       - uses: amannn/action-semantic-pull-request@v5
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           # Ensure the type is one of your allowed types
           types: |
