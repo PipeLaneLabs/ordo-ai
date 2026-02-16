@@ -17,6 +17,7 @@ allow-licenses:
   - 0BSD              # Zero-Clause BSD (very permissive)
   - Unlicense         # Public domain
   - HPND-Markus-Kuhn  # Required by wcwidth (MIT AND HPND-Markus-Kuhn)
+  - AGPL-3.0          # Security scanning tools (TruffleHog)
 
 # Note: deny-licenses is specified in the workflow file to avoid conflicts
 # You can only use allow-licenses OR deny-licenses, not both
