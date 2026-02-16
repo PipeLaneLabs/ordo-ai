@@ -46,5 +46,7 @@ allow-dependencies-licenses:
   - pkg:pypi/gitdb              # BSD-3-Clause + GPL-1.0-or-later (Sub-dep of GitPython)
   - pkg:pypi/dotty-dict         # Low Scorecard score (2.8) exception
   - pkg:pypi/trufflehogregexes  # GPL-3.0 (If any remnants exist)
+  - pkg:github/trufflesecurity/trufflehog
+  - pkg:github/trufflesecurity/trufflehog@main
 
 warn-on-openssf-scorecard-level: 3
