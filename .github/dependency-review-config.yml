@@ -45,9 +45,6 @@ allow-dependencies-licenses:
   - pkg:pypi/python-gitlab      # LGPL-3.0 (Required by semantic-release)
   - pkg:pypi/gitdb              # BSD-3-Clause + GPL-1.0-or-later (Sub-dep of GitPython)
   - pkg:pypi/dotty-dict         # Low Scorecard score (2.8) exception
-  - trufflesecurity/trufflehog
-  - trufflesecurity/trufflehog@main
-  - trufflesecurity/trufflehog@3.*.*
   - pkg:github/trufflesecurity/trufflehog
 
 warn-on-openssf-scorecard-level: 3
