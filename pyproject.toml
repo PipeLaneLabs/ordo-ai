@@ -17,7 +17,7 @@ python = ">=3.12,<3.13"  # Force Python 3.12.x only (LangGraph compatibility)
 
 # Core Orchestration (LangGraph Stack)
 langgraph = "^0.4.0"
-langgraph-checkpoint = "^3.0.0"  # Security fix for CVE-2025-64439
+langgraph-checkpoint = "^4.0.0"  # Security fix for CVE-2025-64439
 langchain = "^0.3.0"
 langchain-openai = "^0.2.0"
 langchain-google-genai = "^2.0.0"
