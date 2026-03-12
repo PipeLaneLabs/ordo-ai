@@ -63,7 +63,7 @@ pytest-rerunfailures = "^14.0.0"
 freezegun = "^1.5.1"
 
 # Code Quality
-black = "^24.10.0"
+black = "^26.3.1"
 ruff = "^0.8.0"
 mypy = "^1.13.0"
 radon = "^5.1.0"
