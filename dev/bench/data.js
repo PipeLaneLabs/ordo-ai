@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1777527374309,
+  "lastUpdate": 1777614459542,
   "repoUrl": "https://github.com/PipeLaneLabs/ordo-ai",
   "entries": {
     "Benchmark": [
@@ -3313,6 +3313,49 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 2.1037271574544654e-8",
             "extra": "mean: 242.65216598346532 nsec\nrounds: 198966"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "name": "Harmandeep Pal",
+            "username": "harmandeeppal",
+            "email": "108556948+harmandeeppal@users.noreply.github.com"
+          },
+          "committer": {
+            "name": "GitHub",
+            "username": "web-flow",
+            "email": "noreply@github.com"
+          },
+          "id": "c052239be3bc8410f4d81c053c2465b430cd9537",
+          "message": "Merge pull request #35 from PipeLaneLabs/staging\n\nci: enforce tiered branch promotion and unify semantic release + dynamic versioning",
+          "timestamp": "2026-02-13T07:05:14Z",
+          "url": "https://github.com/PipeLaneLabs/ordo-ai/commit/c052239be3bc8410f4d81c053c2465b430cd9537"
+        },
+        "date": 1777614458676,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "tests/performance/test_benchmarks.py::test_agent_response_latency",
+            "value": 5724.839741071567,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0007977729224231219",
+            "extra": "mean: 174.6773787964275 usec\nrounds: 1745"
+          },
+          {
+            "name": "tests/performance/test_benchmarks.py::test_checkpoint_save_performance",
+            "value": 3726367.9075317266,
+            "unit": "iter/sec",
+            "range": "stddev: 4.1946002606411346e-8",
+            "extra": "mean: 268.3578285382939 nsec\nrounds: 67898"
+          },
+          {
+            "name": "tests/performance/test_benchmarks.py::test_budget_guard_check_performance",
+            "value": 3700451.466768012,
+            "unit": "iter/sec",
+            "range": "stddev: 4.454914500598356e-8",
+            "extra": "mean: 270.2372964435617 nsec\nrounds: 193051"
           }
         ]
       }
