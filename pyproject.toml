@@ -70,7 +70,7 @@ radon = "^5.1.0"
 pre-commit = "^4.0.0"
 
 # Security Scanning
-pip = "^26.0"  # Security fix for CVE-2026-1703
+pip = "^26.1"  # Security fix for CVE-2026-1703
 pip-audit = "^2.7.0"
 safety = "^3.3.0"
 types-aiofiles = "^25.1.0.20251011"
